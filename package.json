@@ -1,0 +1,29 @@
+{
+    "private": true,
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@quasar/vite-plugin": "^1.5.0",
+        "@vitejs/plugin-vue": "^4.4.0",
+        "autoprefixer": "^10.4.16",
+        "axios": "^1.5.1",
+        "laravel-vite-plugin": "^0.8.1",
+        "postcss": "^8.4.31",
+        "pug": "^3.0.2",
+        "sass": "1.32.12",
+        "vite": "^4.4.11",
+        "vite-svg-loader": "^4.0.0"
+    },
+    "dependencies": {
+        "@inertiajs/vue3": "^1.0.12",
+        "@lordicon/element": "^1.6.0",
+        "@quasar/extras": "^1.16.7",
+        "lottie-web": "^5.12.2",
+        "nprogress": "^0.2.0",
+        "quasar": "^2.13.0",
+        "vue": "^3.3.4",
+        "ziggy-js": "^2.1.0"
+    }
+}
