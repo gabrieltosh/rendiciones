@@ -14,8 +14,12 @@ class Document extends Model
         'type_document_sap',
         'type_calculation',
         'profile_id',
+        'ice',
+        'tasas',
+        'exento'
     ];
     public function detail(){
         return $this->hasMany(DocumentDetail::class,'document_id','id');
     }
+
 }

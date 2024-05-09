@@ -92,6 +92,20 @@
                                 Administración
                             </q-item-section>
                         </template>
+                        <q-item class="cursor-pointer q-ml-sm" @click="router.visit(route('panel.management.index'))" clickable>
+                            <q-item-section avatar>
+                                <q-avatar
+                                    class="submenu-icon-inactive"
+                                    icon="hdr_weak"
+                                >
+                                </q-avatar>
+                            </q-item-section>
+                            <q-item-section>
+                                <q-item-label class="text-menu"
+                                    >Configuración</q-item-label
+                                >
+                            </q-item-section>
+                        </q-item>
                         <q-item class="cursor-pointer q-ml-sm" @click="HandleVisitUser()" clickable>
                             <q-item-section avatar>
                                 <q-avatar
@@ -117,20 +131,6 @@
                             <q-item-section>
                                 <q-item-label class="text-menu"
                                     >Perfiles</q-item-label
-                                >
-                            </q-item-section>
-                        </q-item>
-                        <q-item class="cursor-pointer q-ml-sm" clickable @click="router.visit(route('panel.supplier.index'))">
-                            <q-item-section avatar>
-                                <q-avatar
-                                    class="submenu-icon-active"
-                                    icon="hdr_weak"
-                                >
-                                </q-avatar>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label class="text-menu"
-                                    >Proveedores</q-item-label
                                 >
                             </q-item-section>
                         </q-item>
@@ -400,7 +400,18 @@ body.screen--sm {
         border-radius: 0.5rem ;
     }
 }
-
+.text-grid{
+    font-size: 12px;
+    white-space: normal;
+}
+.title-grid{
+    font-weight: bold;
+    color: #344767 ;
+    font-size: 11.5px;
+}
+.card-grid{
+    border-radius: 1rem ;
+}
 //TABLE
 .table-theme {
     box-shadow: 0 20px 27px 10px rgba(0, 0, 0, 0) ;

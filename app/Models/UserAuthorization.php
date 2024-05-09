@@ -5,13 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Employee extends Model
+class UserAuthorization extends Model
 {
     use HasFactory;
-    protected $table='employees';
+    protected $table='user_authorizations';
     protected $fillable=[
-        'profile_id',
-        'card_code',
-        'card_name'
+            'user_id',
+            'auth_user_id'
     ];
 }

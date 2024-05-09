@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Administration\AuthController;
 use App\Http\Controllers\Panel\PanelController;
 use App\Http\Controllers\Administration\UserController;
+use App\Http\Controllers\Administration\ManagementController;
 use App\Http\Controllers\Administration\ProfileController;
 use App\Http\Controllers\Administration\DocumentController;
 use App\Http\Controllers\Administration\SupplierController;
@@ -19,7 +20,7 @@ use App\Http\Controllers\Accountability\AccountabilityController;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::get('test', [ProfileController::class, 'HandleGetAccounts'])->name('test');
+Route::get('test', [AccountabilityController::class, 'HandleExportSAP'])->name('test');
 
 
 Route::middleware('guest')->group(function() {
@@ -29,7 +30,6 @@ Route::middleware('guest')->group(function() {
     Route::post('login', [AuthController::class, 'HandleLoginAuth'])->name('login.store');
 });
 
-
 Route::middleware('auth')->group(function() {
 
     Route::get('');
@@ -37,6 +37,10 @@ Route::middleware('auth')->group(function() {
     Route::post('logout', [AuthController::class, 'HandleLogoutAuth'])->name('auth.logout');
 
     Route::name('panel.')->prefix('panel')->group(function(){
+        Route::name('management.')->prefix('management')->controller(ManagementController::class)->group(function(){
+            Route::get('','HandleIndexManagement')->name('index');
+            Route::post('','HandleUpdateManagement')->name('update');
+        });
         Route::delete('{id}/user',[UserController::class,'HandleDeleteUser'])->name('user.delete');
         Route::name('user.')->prefix('user')->controller(UserController::class)->group(function(){
             Route::get('','HandleIndexUser')->name('index');
@@ -72,7 +76,6 @@ Route::middleware('auth')->group(function() {
 
         Route::name('accountability.')->prefix('accountability')->group(function(){
             Route::get('profiles',[AccountabilityProfileController::class,'HandleIndexProfiles'])->name('profiles');
-
             Route::name('manage.')->prefix('{profile_id}/manage')->controller(AccountabilityController::class)->group(function(){
                 Route::get('','HandleIndexAccountability')->name('index');
                 Route::post('','HandleStoreAccountability')->name('store');
@@ -82,8 +85,10 @@ Route::middleware('auth')->group(function() {
                 Route::name('detail.')->prefix('{id}/detail')->group(function(){
                     Route::get('','HandleDetailAccountability')->name('index');
                     Route::get('create','HandleCreateDocument')->name('create');
-                    Route::get('store','HandleCreateDocument')->name('store');
-                    Route::get('{id}/edit','HandleEditAccountability')->name('edit');
+                    Route::post('store','HandleStoreDocument')->name('store');
+                    Route::post('update','HandleUpdateDocument')->name('update');
+                    Route::delete('{document_id}/delete','HandleDeleteDocument')->name('delete');
+                    Route::get('{document_id}/edit','HandleEditDocument')->name('edit');
                 });
             });
         });

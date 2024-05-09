@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('document_details', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('document_id');
-            $table->enum('type',['IVA','IT','IUE','RC-IVA','EXCENTO','TASA','ICE']);
+            $table->enum('type',['IVA','IT','IUE','RC-IVA','EXENTO','TASA','ICE']);
             $table->string('percentage');
             $table->string('account');
             $table->foreign('document_id')->references('id')->on('documents');

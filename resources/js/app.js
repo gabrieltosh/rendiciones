@@ -11,8 +11,10 @@ import { createApp, h } from "vue";
 import { ZiggyVue } from 'ziggy-js';
 import { Notify,Dialog } from "quasar";
 const appName = import.meta.env.VITE_APP_NAME;
+
 import lottie from "lottie-web";
 import { defineElement } from "@lordicon/element";
+
 defineElement(lottie.loadAnimation);
 
 

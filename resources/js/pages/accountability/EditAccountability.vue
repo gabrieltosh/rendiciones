@@ -38,11 +38,20 @@
                             <div class="form-label" for="device_name">
                                 Empleado
                             </div>
-                            <q-input
-                                v-model="form.employee"
+                            <q-select
+                                class="input-theme"
                                 dense
                                 outlined
-                                class="input-theme"
+                                :options="options.employees"
+                                v-model="form.employee"
+                                option-value="card_code"
+                                option-label="card_name"
+                                emit-value
+                                map-options
+                                use-input
+                                input-debounce="0"
+                                @filter="HandleFilterEmployee"
+                                clearable
                             />
                             <div v-if="errors.employee" class="container-error">
                                 <ul
@@ -196,6 +205,7 @@ let message = ref(page.props.flash.message);
 let type = ref(page.props.flash.type);
 const options = ref({
     accounts: null,
+    employees:[]
 });
 const loading = ref({
     card: false,
@@ -229,5 +239,20 @@ function HandleFilterAccounts(val, update) {
 }
 onMounted(() => {
     options.value.accounts = page.props.accounts;
+    options.value.employees = page.props.employees;
 })
+function HandleFilterEmployee(val,update){
+    if (val === "") {
+        update(() => {
+            options.value.employees = page.props.employees;
+        });
+        return;
+    }
+    update(() => {
+        const needle = val.toLowerCase();
+        options.value.employees = page.props.employees.filter(
+            (v) => v.card_name.toLowerCase().indexOf(needle) > -1
+        );
+    });
+}
 </script>

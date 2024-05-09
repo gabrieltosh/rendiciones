@@ -21,7 +21,9 @@ return new class extends Migration
             $table->string('distribution_rule_one')->nullable();
             $table->string('distribution_rule_second')->nullable();
             $table->string('distribution_rule_three')->nullable();
-            $table->string('card_code');
+            $table->string('distribution_rule_four')->nullable();
+            $table->string('distribution_rule_five')->nullable();
+            $table->string('card_code')->nullable();
             $table->string('password');
             $table->enum('status',['Activo','PreActivo','Bloqueado']);
             $table->rememberToken();

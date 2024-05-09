@@ -20,7 +20,6 @@ class AccountabilityDetail extends Model
         'authorization_number',
         'cuf',
         'control_code',
-        'supplier_code',
         'business_name',
         'nit',
         'concept',
@@ -45,5 +44,8 @@ class AccountabilityDetail extends Model
                 return Carbon::parse($value)->setTimezone('America/La_Paz')->format('Y-m-d g:i A');
             }
         );
+    }
+    public function document(){
+        return $this->belongsTo(Document::class,'document_id','id');
     }
 }

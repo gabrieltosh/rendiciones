@@ -89,12 +89,6 @@
                             <q-td key="name" :props="props">
                                 {{ props.row.name }}
                             </q-td>
-                            <q-td key="employee_code" :props="props">
-                                {{ props.row.employee_code }}
-                            </q-td>
-                            <q-td key="supplier_code" :props="props">
-                                {{ props.row.supplier_code }}
-                            </q-td>
                             <q-td key="type_currency" :props="props">
                                 {{ props.row.type_currency }}
                             </q-td>
@@ -142,17 +136,10 @@ const table = ref({
             sortable: true,
         },
         {
-            name: "employee_code",
+            name: "type_currency",
             align: "center",
-            label: "Codigo Empleado",
-            field: "employee_code",
-            sortable: true,
-        },
-        {
-            name: "supplier_code",
-            align: "center",
-            label: "Codigo Proveedor",
-            field: "supplier_code",
+            label: "Tipo Moneda",
+            field: "type_currency",
             sortable: true,
         },
         {

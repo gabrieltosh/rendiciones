@@ -16,6 +16,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('type_document_sap');
             $table->enum('type_calculation',['Grossing Up','Grossing Down']);
+            $table->decimal('ice',8,2)->default(0); //descuento
+            $table->decimal('tasas',8,2)->default(0); //descuento
+            $table->decimal('exento',8,2)->default(0); //descuento
             $table->unsignedBigInteger('profile_id');
             $table->foreign('profile_id')->references('id')->on('profiles');
             $table->timestamps();

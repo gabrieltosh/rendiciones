@@ -20,19 +20,18 @@ return new class extends Migration
             $table->unsignedBigInteger('document_id'); //tipo de documento
             $table->string('document_number'); //numero de documento
             $table->string('authorization_number'); //numero de autorización
-            $table->string('cuf'); //codigo de control
-            $table->string('control_code'); //codigo de control
-            $table->unsignedBigInteger('supplier_code'); //codigo de proveedor;
+            $table->string('cuf')->nullable(); //codigo de control
+            $table->string('control_code')->nullable(); //codigo de control
             $table->string('business_name'); //razon social
             $table->string('nit'); //NIT
             $table->string('concept'); //concepto
             $table->decimal('amount',8,2); //importe
-            $table->decimal('discount',8,2)->nullable(); //descuento
-            $table->decimal('excento',8,2)->nullable(); //descuento
-            $table->decimal('rate',8,2)->nullable(); //Tasa
-            $table->decimal('gift_card',8,2)->nullable(); //gif card
-            $table->decimal('rate_zero',8,2)->nullable(); //Tasa Cero
-            $table->decimal('ice',8,2)->nullable(); //Tasa Cero
+            $table->decimal('discount',8,2)->nullable()->default(0); //descuento
+            $table->decimal('excento',8,2)->nullable()->default(0); //descuento
+            $table->decimal('rate',8,2)->nullable()->default(0); //Tasa
+            $table->decimal('gift_card',8,2)->nullable()->default(0); //gif card
+            $table->decimal('rate_zero',8,2)->nullable()->default(0); //Tasa Cero
+            $table->decimal('ice',8,2)->nullable()->default(0); //Tasa Cero
             $table->string('project_code')->nullable(); // codigo proyecto
             $table->string('distribution_rule_one')->nullable(); //Centro de Costo 1
             $table->string('distribution_rule_second')->nullable(); //Centro de Costo 2

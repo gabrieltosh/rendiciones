@@ -15,13 +15,16 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('profile_id');
             $table->unsignedBigInteger('user_id');
-            $table->string('employee')->nullable();
-            $table->string('account');
+            $table->string('employee_code')->nullable();
+            $table->string('employee_name')->nullable();
+            $table->string('account_code');
+            $table->string('account_name');
             $table->decimal('total',8,2);
             $table->string('description');
             $table->string('preliminary')->nullable();
             $table->date('start_date');
             $table->date('end_date');
+            $table->enum('status',['Pendiente','Rechazado','Autorizado'])->nullable();
             $table->foreign('profile_id')->references('id')->on('profiles');
             $table->foreign('user_id')->references('id')->on('users');
             $table->timestamps();

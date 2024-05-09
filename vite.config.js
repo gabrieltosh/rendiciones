@@ -17,7 +17,12 @@ export default defineConfig({
             refresh: true,
         }),
         vue({
-            template: { transformAssetUrls },
+            template: {
+                transformAssetUrls,
+                compilerOptions:{
+                    isCustomElement: (tag) =>['lord-icon'].includes(tag)
+                }
+            },
         }),
         svgLoader(),
         quasar({

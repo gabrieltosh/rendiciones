@@ -4,7 +4,7 @@
         <div class="q-px-sm q-py-md">
             <div class="row q-col-gutter-md">
                 <div
-                    class="col-sm-4"
+                    class="col-sm-3 col-xs-12"
                     v-for="(profile, index) in profiles"
                     :key="index"
                 >
@@ -28,7 +28,8 @@
                             "
                         >
                             <lord-icon
-                                src="https://cdn.lordicon.com/dnbjoceq.json"
+                                target=".q-card"
+                                src="https://cdn.lordicon.com/dlzzlyaa.json"
                                 trigger="hover"
                                 colors="primary:white,secondary:#08a88a"
                                 style="width: 50px; height: 50px"
@@ -42,41 +43,10 @@
                                 <div class="form-label">
                                     {{ profile.profile.name }}
                                 </div>
-                            </div>
-                            <div class="col-12 q-mt-sm">
-                                <q-separator spaced />
-                                <q-list dense>
-                                    <q-item class="text-right">
-                                        <q-item-section>
-                                            <q-item-label caption
-                                                >Codigo Empleado</q-item-label
-                                            >
-                                            <q-item-label>{{
-                                                profile.profile.employee_code
-                                            }}</q-item-label>
-                                        </q-item-section>
-                                    </q-item>
-                                    <q-item class="text-right">
-                                        <q-item-section>
-                                            <q-item-label caption
-                                                >Codigo Proveedor</q-item-label
-                                            >
-                                            <q-item-label>{{
-                                                profile.profile.supplier_code
-                                            }}</q-item-label>
-                                        </q-item-section>
-                                    </q-item>
-                                    <q-item class="text-right">
-                                        <q-item-section>
-                                            <q-item-label caption
-                                                >Tipo de Moneda</q-item-label
-                                            >
-                                            <q-item-label>{{
-                                                profile.profile.type_currency
-                                            }}</q-item-label>
-                                        </q-item-section>
-                                    </q-item>
-                                </q-list>
+                                <q-separator spaced  />
+                                <div class="text-caption">
+                                    Tipo Moneda: <strong>{{ profile.profile.type_currency }}</strong>
+                                </div>
                             </div>
                         </div>
                     </q-card>
@@ -91,7 +61,6 @@ import { ref, watch, onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
-
 
 defineProps({
     title: String,

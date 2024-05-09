@@ -7,13 +7,14 @@ use App\Models\Profile;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\UserAuthorization;
 use App\Http\Requests\Administration\UserRequest;
 use Session;
 use Redirect;
 use Illuminate\Database\QueryException;
 use Inertia\Inertia;
 use Auth;
-
+use DB;
 class UserController extends Controller
 {
     public function HandleStoreUser(UserRequest $request)
@@ -26,7 +27,10 @@ class UserController extends Controller
             'distribution_rule_one' => $request->distribution_rule_one,
             'distribution_rule_second' => $request->distribution_rule_second,
             'distribution_rule_three' => $request->distribution_rule_three,
+            'distribution_rule_four' => $request->distribution_rule_four,
+            'distribution_rule_five' => $request->distribution_rule_five,
             'password' => $request->password,
+            'card_code' => $request->card_code,
             'status' => 'PreActivo'
         ]);
         foreach ($request->profiles as $name_profile) {
@@ -34,6 +38,13 @@ class UserController extends Controller
             UserProfile::create([
                 'user_id' => $user->id,
                 'profile_id' => $profile->id
+            ]);
+        }
+        $users=$this->HandleFormatUser($request->users);
+        foreach($users as $id){
+            UserAuthorization::create([
+                'user_id'=>$user->id,
+                'auth_user_id'=>$id
             ]);
         }
         Session::flash('message', "Usuario creado correctamente");
@@ -51,6 +62,12 @@ class UserController extends Controller
             ->pluck('profile_id')
             ->toArray();
 
+        $users = UserAuthorization::select('auth_user_id')
+                ->where('user_id',$request->id)
+                ->get()
+                ->pluck('auth_user_id')
+                ->toArray();
+
         $profiles_request = [];
         foreach ($request->profiles as $name_profile) {
             $profile = Profile::where('name', $name_profile)->first();
@@ -59,6 +76,13 @@ class UserController extends Controller
 
         $to_delete_profile = array_diff($profiles, $profiles_request);
         $to_create_profile = array_diff($profiles_request, $profiles);
+
+        $to_delete_users = array_diff($users, $this->HandleFormatUser($request->users));
+        $to_create_users = array_diff($this->HandleFormatUser($request->users), $users);
+
+        UserAuthorization::where('user_id',$request->id)
+                        ->whereIn('auth_user_id',$to_delete_users)
+                        ->delete();
 
         UserProfile::whereIn('profile_id', $to_delete_profile)
             ->where('user_id', $request->id)
@@ -72,17 +96,34 @@ class UserController extends Controller
             ]);
         }
 
+        foreach($to_create_users as $auth_user_id){
+            UserAuthorization::create([
+                'user_id' => $request->id,
+                'auth_user_id' => $auth_user_id
+            ]);
+        }
         User::findOrFail($request->id)->fill([
             'name' => $request->name,
             'email' => $request->email,
             'username' => $request->username,
             'type' => $request->type,
+            'card_code' => $request->card_code,
             'distribution_rule_one' => $request->distribution_rule_one,
             'distribution_rule_second' => $request->distribution_rule_second,
             'distribution_rule_three' => $request->distribution_rule_three,
+            'distribution_rule_four' => $request->distribution_rule_four,
+            'distribution_rule_five' => $request->distribution_rule_five,
             'status' => $request->status
         ])->save();
         return Redirect::route('panel.user.index');
+    }
+    public function HandleFormatUser($data){
+        $users=[];
+        foreach ($data as $value) {
+            $user=explode('-',$value);
+            array_push($users,$user[0]);
+        }
+        return $users;
     }
     public function HandleEditUser($id)
     {
@@ -94,11 +135,25 @@ class UserController extends Controller
                         ->where('user_id',$id)
                         ->get()
                         ->pluck('name');
+        $users=User::select(
+                            DB::raw("CONCAT(id,'-',name) as label"),
+                        )
+                        ->where('id','!=',$user->id)
+                        ->get();
+        $user->users=UserAuthorization::select(
+                                DB::raw("CONCAT(T1.id,'-',T1.name) as label"),
+                            )
+                            ->join('users as T1','T1.id','auth_user_id')
+                            ->where('user_id',$user->id)
+                            ->get()
+                            ->pluck('label');
         return Inertia::render(
             'administration/users/EditUser',
             [
                 'user' => $user,
-                'profiles' => $profiles
+                'profiles' => $profiles,
+                'distribution'=>$this->HandleGetDistributions(),
+                'users'=>$users
             ]
         );
     }
@@ -121,10 +176,15 @@ class UserController extends Controller
     {
         Session::put('title', 'Crear Usuario');
         $profiles = Profile::select('name as label', 'id')->get();
+        $users=User::select(
+                DB::raw("CONCAT(id,'-',name) as label"),
+            )->get();
         return Inertia::render(
             'administration/users/CreateUser',
             [
-                'profiles' => $profiles
+                'profiles' => $profiles,
+                'distribution'=>$this->HandleGetDistributions(),
+                'users'=>$users
             ]
         );
     }
@@ -133,5 +193,22 @@ class UserController extends Controller
         Session::put('title', 'Usuarios');
         $data = User::orderBy('id', 'desc')->get();
         return Inertia::render("administration/users/IndexUser")->with('data', $data);
+    }
+    public function HandleGetDistributions()
+    {
+        $data = array();
+        for ($i = 1; $i <= 5; $i++) {
+            $data[$i] =
+             DB::connection('sap')
+                    ->table('OPRC as T1')
+                    ->select(
+                        DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
+                        'T1.PrcCode',
+                        'T1.PrcName'
+                    )
+                    ->where('T1.DimCode', $i)
+                    ->get();
+        }
+        return $data;
     }
 }

@@ -26,8 +26,11 @@ class User extends Authenticatable
         'distribution_rule_one',
         'distribution_rule_second',
         'distribution_rule_three',
+        'distribution_rule_four',
+        'distribution_rule_five',
         'password',
-        'status'
+        'status',
+        'card_code'
     ];
 
     /**

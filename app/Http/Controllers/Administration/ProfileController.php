@@ -15,7 +15,9 @@ use App\Models\Profile;
 use DB;
 use App\Http\Requests\Administration\ProfileRequest;
 use App\Models\Document;
+use App\Models\Employee;
 use App\Models\DocumentDetail;
+use App\Models\Management;
 class ProfileController extends Controller
 {
     public function HandleGetAccounts(){
@@ -78,6 +80,22 @@ class ProfileController extends Controller
                 ->get();
         return $data_format;
     }
+    public function HandleGetEmployeeFormat($data){
+        $card_codes=[];
+        foreach($data as $value){
+            $card_code=explode('-',$value);
+            array_push($card_codes,$card_code[0]);
+        }
+        $data_format=DB::connection('sap')
+                        ->table('OCRD as T1')
+                        ->select(
+                            'T1.CardCode',
+                            'T1.CardName',
+                        )
+                        ->whereIn('T1.CardCode',$card_codes)
+                        ->get();
+        return $data_format;
+    }
 
     public function HandleStoreProfile(ProfileRequest $request){
         $profile=Profile::create([
@@ -100,11 +118,21 @@ class ProfileController extends Controller
                 'account_name'=>$account->AcctName,
             ]);
         }
+        foreach($this->HandleGetEmployeeFormat($request->employees) as $employee){
+            Employee::create([
+                'profile_id'=>$profile->id,
+                'card_code'=>$employee->CardCode,
+                'card_name'=>$employee->CardName
+            ]);
+        }
         foreach ($request->documents as $document){
             $document_create=Document::create([
                 'name'=>$document['name'],
                 'type_document_sap'=>$document['type_document_sap'],
                 'type_calculation'=>$document['type_calculation'],
+                'ice'=>$document['ice'],
+                'tasas'=>$document['tasas'],
+                'exento'=>$document['exento'],
                 'profile_id'=>$profile->id,
             ]);
             foreach ($document['detail'] as $item) {
@@ -140,6 +168,17 @@ class ProfileController extends Controller
         ->get();
         return $data;
     }
+    public function HandleGetEmpSAP($employess){
+        $data = DB::connection('sap')
+        ->table('OCRD as T1')
+        ->select(
+            'T1.CardCode',
+            'T1.CardName',
+        )
+        ->whereIn('T1.CardCode', $employess)
+        ->get();
+        return $data;
+    }
 
     public function HandleUpdateProfile(ProfileRequest $request)
     {
@@ -159,14 +198,22 @@ class ProfileController extends Controller
                                 ->where('profile_id',$request->id)
                                 ->pluck('account_code')
                                 ->toArray();
+        $employees=Employee::select('card_code')
+                            ->where('profile_id',$request->id)
+                            ->pluck('card_code')
+                            ->toArray();
 
         $to_delete_detail=array_diff($detail,$this->HandleGetAccountCode($request->detail));
         $to_delete_general=array_diff($general,$this->HandleGetAccountCode($request->general));
         $to_create_detail=array_diff($this->HandleGetAccountCode($request->detail),$detail);
         $to_create_general=array_diff($this->HandleGetAccountCode($request->general),$general);
 
+        $to_delete_employee=array_diff($employees,$this->HandleGetAccountCode($request->employees));
+        $to_create_employee=array_diff($this->HandleGetAccountCode($request->employees),$employees);
+
         DetailAccounts::whereIn('account_code',$to_delete_detail)->delete();
         GeneralAccounts::whereIn('account_code',$to_delete_general)->delete();
+        Employee::whereIn('card_code',$to_delete_employee)->delete();
 
         foreach ($this->HandleGetAccountSAP($to_create_detail) as $account){
             DetailAccounts::create([
@@ -184,12 +231,22 @@ class ProfileController extends Controller
                 'account_name'=>$account->AcctName,
             ]);
         }
+        foreach ($this->HandleGetEmpSAP($to_create_employee) as $employee){
+            Employee::create([
+                'profile_id'=>$request->id,
+                'card_code'=>$employee->CardCode,
+                'card_name'=>$employee->CardName
+            ]);
+        }
         foreach ($request->documents as $document){
             if(!isset($document['id'])){
                 $document_create=Document::create([
                     'name'=>$document['name'],
                     'type_document_sap'=>$document['type_document_sap'],
                     'type_calculation'=>$document['type_calculation'],
+                    'ice'=>$document['ice'],
+                    'tasas'=>$document['tasas'],
+                    'exento'=>$document['exento'],
                     'profile_id'=>$request->id,
                 ]);
                 foreach ($document['detail'] as $item) {
@@ -213,6 +270,9 @@ class ProfileController extends Controller
                         'name'=>$document['name'],
                         'type_document_sap'=>$document['type_document_sap'],
                         'type_calculation'=>$document['type_calculation'],
+                        'ice'=>$document['ice'],
+                        'tasas'=>$document['tasas'],
+                        'exento'=>$document['exento'],
                     ])->save();
                     foreach ($document['detail'] as $item) {
                         if(!isset($item['id'])){
@@ -242,6 +302,8 @@ class ProfileController extends Controller
     public function HandleEditProfile($id)
     {
         Session::put('title', 'Editar Profile');
+        $field_name_emp=Management::where('name','employee_enablement_field')->first();
+        $field_value_emp=Management::where('name','employee_enablement_field_value')->first();
         $currencies=DB::connection('sap')
             ->table('OCRN as T1')
             ->select(
@@ -257,6 +319,9 @@ class ProfileController extends Controller
                     'type_document_sap',
                     'type_calculation',
                     'profile_id',
+                    'ice',
+                    'tasas',
+                    'exento',
                     DB::raw("0 as for_delete"),
                 )->orderBy('id','asc');
             },
@@ -293,13 +358,29 @@ class ProfileController extends Controller
                         ->orderBy('T1.Levels')
                         ->orderBy('T1.FatherNum')
                         ->get();
+
+        $profile->employees=DB::table('employees as T1')
+                                ->select(
+                                    DB::raw("CONCAT(T1.card_code,'-',T1.card_name) as label")
+                                )
+                                ->where('profile_id',$id)
+                                ->pluck('label');
+
+        $employees=DB::connection('sap')
+                                ->table('OCRD as T1')
+                                ->select(
+                                    DB::raw("CONCAT(T1.CardCode,'-',T1.CardName) as label")
+                                )
+                                ->where($field_name_emp->value,$field_value_emp->value)
+                                ->get();
         return Inertia::render('administration/profile/EditProfile',[
-            'type'=>['IVA','IT','IUE','RC-IVA','EXCENTO','TASA','ICE'],
+            'type'=>['IVA','IT','IUE','RC-IVA'],
             'type_calculation'=>['Grossing Up','Grossing Down'],
             'accounts'=>$this->HandleGetAccounts(),
             'currencies'=>$currencies,
             'profile'=>$profile,
-            'accounts_document'=>$accounts
+            'accounts_document'=>$accounts,
+            'employees'=>$employees
         ]);
     }
     public function HandleDeleteProfile($id)
@@ -320,6 +401,8 @@ class ProfileController extends Controller
     public function HandleCreateProfile()
     {
         Session::put('title', 'Crear Perfil');
+        $field_name_emp=Management::where('name','employee_enablement_field')->first();
+        $field_value_emp=Management::where('name','employee_enablement_field_value')->first();
         $currencies=DB::connection('sap')
             ->table('OCRN as T1')
             ->select(
@@ -338,12 +421,20 @@ class ProfileController extends Controller
             ->orderBy('T1.FatherNum')
             ->get();
 
+        $employees=DB::connection('sap')
+            ->table('OCRD as T1')
+            ->select(
+                DB::raw("CONCAT(T1.CardCode,'-',T1.CardName) as label")
+            )
+            ->where($field_name_emp->value,$field_value_emp->value)
+            ->get();
         return Inertia::render('administration/profile/CreateProfile',[
-            'type'=>['IVA','IT','IUE','RC-IVA','EXCENTO','TASA','ICE'],
+            'type'=>['IVA','IT','IUE','RC-IVA'],
             'type_calculation'=>['Grossing Up','Grossing Down'],
             'accounts'=>$this->HandleGetAccounts(),
             'currencies'=>$currencies,
-            'accounts_document'=>$accounts
+            'accounts_document'=>$accounts,
+            'employees'=>$employees
         ]);
     }
     public function HandleIndexProfile()

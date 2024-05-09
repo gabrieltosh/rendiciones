@@ -14,12 +14,15 @@ class Accountability extends Model
     protected $fillable=[
         'profile_id',
         'user_id',
-        'employee',
-        'account',
+        'employee_code',
+        'employee_name',
+        'account_code',
+        'account_name',
         'total',
         'description',
         'preliminary',
         'start_date',
+        'status',
         'end_date',
     ];
     public function createdAt(): Attribute
