@@ -570,7 +570,7 @@
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref } from "vue";
+import { ref,onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
@@ -626,4 +626,14 @@ function HandleFilterAccounts(node, filter) {
     const filt = filter.toLowerCase();
     return node.label && node.label.toLowerCase().indexOf(filt) > -1;
 }
+onMounted(() => {
+    if(page.props.flash.message){
+        message.value = page.props.flash.message;
+        type.value = page.props.flash.type;
+        $q.notify({
+            type: type.value,
+            message: message.value,
+        });
+    }
+})
 </script>

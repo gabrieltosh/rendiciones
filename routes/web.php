@@ -10,6 +10,7 @@ use App\Http\Controllers\Administration\DocumentController;
 use App\Http\Controllers\Administration\SupplierController;
 use App\Http\Controllers\Accountability\ProfileController as AccountabilityProfileController;
 use App\Http\Controllers\Accountability\AccountabilityController;
+use App\Http\Controllers\Authorization\AccountabilityController as AuthAccountabilityController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -75,14 +76,13 @@ Route::middleware('auth')->group(function() {
         });
 
         Route::name('accountability.')->prefix('accountability')->group(function(){
-            Route::get('profiles',[AccountabilityProfileController::class,'HandleIndexProfiles'])->name('profiles');
-            Route::name('manage.')->prefix('{profile_id}/manage')->controller(AccountabilityController::class)->group(function(){
+            Route::name('authorization.')->prefix('authorization')->controller(AuthAccountabilityController::class)->group(function(){
                 Route::get('','HandleIndexAccountability')->name('index');
-                Route::post('','HandleStoreAccountability')->name('store');
-                Route::put('','HandleUpdateAccountability')->name('update');
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
-                Route::get('create','HandleCreateAccountability')->name('create');
+                Route::put('','HandleUpdateAccountability')->name('update');
                 Route::name('detail.')->prefix('{id}/detail')->group(function(){
+                    Route::post('status','HandleUpdateStatus')->name('status');
+                    Route::post('export','HandleExportSAP')->name('export');
                     Route::get('','HandleDetailAccountability')->name('index');
                     Route::get('create','HandleCreateDocument')->name('create');
                     Route::post('store','HandleStoreDocument')->name('store');
@@ -91,6 +91,24 @@ Route::middleware('auth')->group(function() {
                     Route::get('{document_id}/edit','HandleEditDocument')->name('edit');
                 });
             });
+            Route::get('profiles',[AccountabilityProfileController::class,'HandleIndexProfiles'])->name('profiles');
+            Route::name('manage.')->prefix('{profile_id}/manage')->controller(AccountabilityController::class)->group(function(){
+                Route::get('','HandleIndexAccountability')->name('index');
+                Route::post('','HandleStoreAccountability')->name('store');
+                Route::put('','HandleUpdateAccountability')->name('update');
+                Route::get('{id}/edit','HandleEditAccountability')->name('edit');
+                Route::get('create','HandleCreateAccountability')->name('create');
+                Route::name('detail.')->prefix('{id}/detail')->group(function(){
+                    Route::post('status','HandleUpdateStatus')->name('status');
+                    Route::get('','HandleDetailAccountability')->name('index');
+                    Route::get('create','HandleCreateDocument')->name('create');
+                    Route::post('store','HandleStoreDocument')->name('store');
+                    Route::post('update','HandleUpdateDocument')->name('update');
+                    Route::delete('{document_id}/delete','HandleDeleteDocument')->name('delete');
+                    Route::get('{document_id}/edit','HandleEditDocument')->name('edit');
+                });
+            });
+
         });
     });
 

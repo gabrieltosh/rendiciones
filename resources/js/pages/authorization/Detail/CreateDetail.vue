@@ -16,7 +16,7 @@
                                 <div class="col-sm-6 text-right q-gutter-sm">
                                     <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
                                         router.visit(
-                                            route('panel.accountability.manage.detail.index', [page.props.profile.id, page.props.accountability.id])
+                                            route('panel.accountability.authorization.detail.index', page.props.accountability.id)
                                         )
                                         " flat />
                                     <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
@@ -388,7 +388,7 @@ const form = ref({
 function HandleStoreForm() {
     router.post(
         route(
-            "panel.accountability.manage.detail.store", [page.props.profile.id, page.props.accountability.id]
+            "panel.accountability.authorization.detail.store", [page.props.accountability.id]
         ),
         form.value,
         {

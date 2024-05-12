@@ -620,6 +620,7 @@ const options = ref({
     users: page.props.users,
 });
 const filter = ref("");
+const filter2 = ref("");
 const form = ref(page.props.user);
 let step = ref(1);
 

@@ -181,8 +181,5 @@ function HandleDeleteUser($id) {
         .onCancel(() => {})
         .onDismiss(() => {});
 }
+
 </script>
-<style lang="scss">
-
-
-</style>

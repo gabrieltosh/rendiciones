@@ -8,10 +8,7 @@
                     :filter="table.filter" separator="horizontal" :grid="grid" flat bordered
                     :table-header-class="{ 'table-header-theme': true }">
                     <template v-slot:top>
-                        <h5 class="title-form">Lista de Rendiciones</h5>
-                        <q-space />
-                        <q-btn color="primary" label="Crear Rendición" size="11px" no-caps
-                            @click="HandleCreateAccountability()" />
+                        <h5 class="title-form">Lista de Rendiciones a Autorizar</h5>
                         <q-space />
                         <q-input outlined dense color="primary" placeholder="Buscar..." v-model="table.filter"
                             class="input-theme">
@@ -50,15 +47,6 @@
                                         " icon="eva-edit-2-outline">
                                         <q-tooltip class="bg-secondary" :offset="[10, 10]">
                                             Editar de Rendición
-                                        </q-tooltip>
-                                    </q-btn>
-                                    <q-btn size="sm" color="red" dense @click="
-                                        HandleDeleteAccountability(
-                                            props.row.id
-                                        )
-                                        " icon="eva-trash-2-outline">
-                                        <q-tooltip class="bg-red" :offset="[10, 10]">
-                                            Eliminar Rendición
                                         </q-tooltip>
                                     </q-btn>
                                 </div>
@@ -117,10 +105,18 @@
                                     <q-list dense>
                                         <q-item class="text-right">
                                             <q-item-section>
+                                                <q-item-label class="title-grid">Realizado por</q-item-label>
+                                                <q-item-label class="text-grid">{{
+                                                    props.row.user.name
+                                                    }}</q-item-label>
+                                            </q-item-section>
+                                        </q-item>
+                                        <q-item class="text-right">
+                                            <q-item-section>
                                                 <q-item-label class="title-grid">Empleado</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.employee_name
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-right">
@@ -128,7 +124,7 @@
                                                 <q-item-label class="title-grid">Cuenta</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.account_name
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-right">
@@ -136,7 +132,7 @@
                                                 <q-item-label class="title-grid">Monto</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.total
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-right">
@@ -144,7 +140,7 @@
                                                 <q-item-label class="title-grid">Fecha Inicio</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.start_date
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-right">
@@ -152,14 +148,14 @@
                                                 <q-item-label class="title-grid">Fecha Final</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.end_date
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-right" v-if="props.row.status">
                                             <q-item-section>
                                                 <q-item-label class="title-grid">Estado</q-item-label>
                                                 <q-item-label class="text-grid"><q-badge
-                                                        :color="props.row.status == 'Pendiente' ? 'orange' : props.row.status == 'Rechazado' ? 'red' : props.row.status == 'Anulado' ? 'grey' : 'green'"
+                                                        :color="props.row.status == 'Pendiente' ? 'orange' : props.row.status == 'Rechazado' ? 'red' : 'green'"
                                                         :label="props.row.status" /></q-item-label>
                                             </q-item-section>
                                         </q-item>
@@ -176,22 +172,13 @@
                                             Detalle de Rendición
                                         </q-tooltip>
                                     </q-btn>
-                                    <q-btn v-if="props.row.status==null || props.row.status=='Rechazado'" size="sm" color="secondary" @click="
+                                    <q-btn size="sm" color="secondary" @click="
                                         HandleEditAccountability(
                                             props.row.id
                                         )
                                         " icon="eva-edit-2-outline">
                                         <q-tooltip class="bg-secondary" :offset="[10, 10]">
                                             Editar de Rendición
-                                        </q-tooltip>
-                                    </q-btn>
-                                    <q-btn v-if="props.row.status==null || props.row.status=='Rechazado'" size="sm" color="red" @click="
-                                        HandleDeleteAccountability(
-                                            props.row.id
-                                        )
-                                        " icon="eva-trash-2-outline">
-                                        <q-tooltip class="bg-red" :offset="[10, 10]">
-                                            Eliminar Rendición
                                         </q-tooltip>
                                     </q-btn>
                                 </q-card-actions>
@@ -273,45 +260,14 @@ const table = ref({
     ],
 });
 
-function HandleCreateAccountability() {
-    router.visit(
-        route("panel.accountability.manage.create", page.props.profile.id)
-    );
-}
 function HandleEditAccountability(id) {
     router.visit(
-        route("panel.accountability.manage.edit", [page.props.profile.id, id])
+        route("panel.accountability.authorization.edit", id)
     );
-}
-function HandleDeleteAccountability($id) {
-    $q.dialog({
-        title: "Confirmar",
-        message: "¿Esta seguro de eliminar el Usuario?",
-        cancel: true,
-        persistent: true,
-    })
-        .onOk(() => {
-            router.delete(route("panel.accountability.delete", $id), {
-                onSuccess: () => {
-                    data.value = page.props.data;
-                    message.value = page.props.flash.message;
-                    type.value = page.props.flash.type;
-                    $q.notify({
-                        type: type.value,
-                        message: message.value,
-                    });
-                },
-            });
-        })
-        .onCancel(() => { })
-        .onDismiss(() => { });
 }
 function HandleDetailAccountability(id) {
     router.visit(
-        route("panel.accountability.manage.detail.index", [
-            page.props.profile.id,
-            id,
-        ])
+        route("panel.accountability.authorization.detail.index",id)
     );
 }
 </script>

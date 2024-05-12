@@ -3,39 +3,25 @@
     <Head :title="title" />
     <Layout>
         <div class="q-px-sm q-py-md">
-            <q-banner class="card-form q-mb-sm bg-orange text-white " dense v-if="page.props.accountability.status == 'Pendiente'">
-                <p class="text-banner q-ma-none">
-                    La rendición está pendiente de autorización
-                </p>
-            </q-banner>
-            <q-banner class="card-form q-mb-sm bg-grey text-white " dense v-if="page.props.accountability.status == 'Anulado'">
-                <p class="text-banner q-ma-none">
-                    La rendición de fondos fue anulada debido al siguiente motivo: <strong>{{page.props.accountability.comments}}</strong>
-                </p>
-            </q-banner>
-            <q-banner class="card-form q-mb-sm bg-red text-white " dense v-if="page.props.accountability.status == 'Rechazado'">
-                <p class="text-banner q-ma-none">
-                    La rendición de fondos fue rechazada debido al siguiente motivo: <strong>{{page.props.accountability.comments}}</strong>
-                </p>
-            </q-banner>
-            <q-banner class="card-form q-mb-sm bg-green text-white " dense v-if="page.props.accountability.status == 'Autorizado'">
-                <p class="text-banner q-ma-none">
-                    La rendición fue aprobada y exportada
-                </p>
-            </q-banner>
             <q-card class="card-form q-pa-md">
                 <div class="row">
                     <div class="col-6">
                         <h5 class="title-form">
                             {{ page.props.accountability.description }}&nbsp;&nbsp;&nbsp;
                             <q-badge v-if="page.props.accountability.status"
-                                :color="page.props.accountability.status == 'Pendiente' ? 'orange' : page.props.accountability.status == 'Rechazado' ? 'red' : page.props.accountability.status == 'Anulado' ? 'grey' : 'green'"
+                                :color="page.props.accountability.status == 'Pendiente' ? 'orange' : page.props.accountability.status == 'Rechazado' ? 'red' : 'green'"
                                 :label="page.props.accountability.status" />
                         </h5>
                     </div>
                     <div class="col-6 text-right">
-                        <q-btn v-if="page.props.accountability.status=='Rechazado' || page.props.accountability.status==null" icon="eva-checkmark-circle-outline" color="positive" label="Enviar a Aut." size="11px"
-                            no-caps @click="HandleUpdateStatus('Pendiente')" />
+                        <q-btn flat color="secondary" label="Cancelar" size="11px" no-caps
+                            @click="router.visit(route('panel.accountability.authorization.index'))" class="q-mr-sm" />
+                        <q-btn color="secondary" label="Anular" size="11px" no-caps
+                            @click="HandleCancelStatus('Anulado')" class="q-mr-sm" />
+                        <q-btn color="negative" label="Rechazar" size="11px" no-caps
+                            @click="HandleRejectStatus('Rechazado')" class="q-mr-sm" />
+                        <q-btn color="primary" label="Autorizar" size="11px" no-caps
+                            @click="HandleAuthorizeStatus('Autorizado')" class="q-mr-sm" />
                     </div>
                 </div>
                 <div class="row q-col-gutter-md">
@@ -96,7 +82,7 @@
                     <template v-slot:top>
                         <h5 class="title-form">Detalle de Rendicion</h5>
                         <q-space />
-                        <q-btn v-if="page.props.accountability.status=='Rechazado' || page.props.accountability.status==null" icon="eva-plus" color="primary" label="Añadir Documento" size="11px" no-caps
+                        <q-btn icon="eva-plus" color="primary" label="Añadir Documento" size="11px" no-caps
                             @click="HandleCreateDocument()" />
                         <q-space />
                         <q-input outlined dense color="primary" placeholder="Buscar..." v-model="table.filter"
@@ -122,7 +108,7 @@
                                 <div class="text-center q-gutter-xs">
                                     <q-btn size="sm" color="primary" dense @click="props.expand = !props.expand"
                                         :icon="props.expand ? 'remove' : 'add'" />
-                                    <q-btn v-if="page.props.accountability.status=='Rechazado' || page.props.accountability.status==null" size="sm" color="secondary" dense @click="
+                                    <q-btn size="sm" color="secondary" dense @click="
                                         HandleEditAccountability(
                                             props.row.id
                                         )
@@ -131,7 +117,7 @@
                                             Editar de usuario
                                         </q-tooltip>
                                     </q-btn>
-                                    <q-btn v-if="page.props.accountability.status=='Rechazado' || page.props.accountability.status==null" size="sm" color="red" dense @click="
+                                    <q-btn size="sm" color="red" dense @click="
                                         HandleDeleteAccountability(
                                             props.row.id
                                         )
@@ -277,7 +263,7 @@
                                                 <q-item-label class="title-grid">Cuenta</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.account
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -285,7 +271,7 @@
                                                 <q-item-label class="title-grid">Nombre Cuenta</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.account_name
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -293,7 +279,7 @@
                                                 <q-item-label class="title-grid">Fecha</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.date
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -301,7 +287,7 @@
                                                 <q-item-label class="title-grid">Nº de Factura</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.document_number
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -309,7 +295,7 @@
                                                 <q-item-label class="title-grid">Nº Autorización</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.authorization_number
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -317,7 +303,7 @@
                                                 <q-item-label class="title-grid">CUF</q-item-label>
                                                 <q-item-label class="text-grid" lines="1">{{
                                                     props.row.cuf ? props.row.cuf : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -325,7 +311,7 @@
                                                 <q-item-label class="title-grid">Codigo Control</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.control_code ? props.row.control_code : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -333,7 +319,7 @@
                                                 <q-item-label class="title-grid">Razón Social</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.business_name ? props.row.business_name : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -341,7 +327,7 @@
                                                 <q-item-label class="title-grid">NIT</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.nit ? props.row.nit : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -349,7 +335,7 @@
                                                 <q-item-label class="title-grid">Importe</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.amount ? props.row.amount : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -357,7 +343,7 @@
                                                 <q-item-label class="title-grid">Descuento</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.discount ? props.row.discount : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -365,7 +351,7 @@
                                                 <q-item-label class="title-grid">Gift Card</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.gift_card ? props.row.gift_card : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -373,7 +359,7 @@
                                                 <q-item-label class="title-grid">Tasa Cero</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.rate_zero ? props.row.rate_zero : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -381,7 +367,7 @@
                                                 <q-item-label class="title-grid">Excento</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.excento ? props.row.excento : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -389,7 +375,7 @@
                                                 <q-item-label class="title-grid">Tasas</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.rate ? props.row.rate : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -397,7 +383,7 @@
                                                 <q-item-label class="title-grid">Proyecto</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.project_code ? props.row.project_code : '-'
-                                                    }}</q-item-label>
+                                                }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -455,7 +441,7 @@
                                             Detalle de Rendición
                                         </q-tooltip>
                                     </q-btn>
-                                    <q-btn v-if="page.props.accountability.status=='Rechazado' || page.props.accountability.status==null" size="sm" color="secondary" @click="
+                                    <q-btn size="sm" color="secondary" @click="
                                         HandleEditDocument(
                                             props.row.id
                                         )
@@ -464,7 +450,7 @@
                                             Editar de Rendición
                                         </q-tooltip>
                                     </q-btn>
-                                    <q-btn v-if="page.props.accountability.status=='Rechazado' || page.props.accountability.status==null" size="sm" color="red" @click="
+                                    <q-btn size="sm" color="red" @click="
                                         HandleDeleteDocument(
                                             props.row.id
                                         )
@@ -614,15 +600,14 @@ const table = ref({
 
 function HandleCreateDocument() {
     router.visit(
-        route("panel.accountability.manage.detail.create", [
-            page.props.profile.id,
+        route("panel.accountability.authorization.detail.create", [
             page.props.accountability.id,
         ])
     );
 }
 function HandleEditDocument(id) {
     router.visit(
-        route("panel.accountability.manage.detail.edit", [page.props.profile.id, page.props.accountability.id, id])
+        route("panel.accountability.authorization.detail.edit", [page.props.accountability.id, id])
     );
 }
 function HandleDeleteDocument(id) {
@@ -633,7 +618,7 @@ function HandleDeleteDocument(id) {
         persistent: true,
     })
         .onOk(() => {
-            router.delete(route("panel.accountability.manage.detail.delete", [page.props.profile.id, page.props.accountability.id, id]), {
+            router.delete(route("panel.accountability.authorization.detail.delete", [page.props.accountability.id, id]), {
                 onSuccess: () => {
                     data.value = page.props.data;
                     message.value = page.props.flash.message;
@@ -657,7 +642,7 @@ function HandleUpdateStatus(status) {
         persistent: true,
     })
         .onOk(() => {
-            router.post(route("panel.accountability.manage.detail.status", [page.props.profile.id, page.props.accountability.id]), {
+            router.post(route("panel.accountability.authorization.detail.status", [page.props.accountability.id]), {
                 status: status
             },
                 {
@@ -678,4 +663,94 @@ function HandleUpdateStatus(status) {
         .onDismiss(() => { });
 }
 
+function HandleCancelStatus(status) {
+    $q.dialog({
+        title: "Confirmar",
+        message: "Por favor, escriba el motivo y confirme la anulación",
+        cancel: true,
+        persistent: true,
+        prompt: {
+          model: '',
+          isValid: val => val.length > 5,
+          type: 'text' // optional
+        },
+    })
+        .onOk(data => {
+            router.post(route("panel.accountability.authorization.detail.status", page.props.accountability.id),{
+                status:status,
+                comments:data
+            } ,{
+                onSuccess: () => {
+                    data.value = page.props.data;
+                    message.value = page.props.flash.message;
+                    type.value = page.props.flash.type;
+                    $q.notify({
+                        type: type.value,
+                        message: message.value,
+                    });
+                    data.value = page.props.documents
+                },
+            });
+        })
+        .onCancel(() => { })
+        .onDismiss(() => { });
+}
+function HandleRejectStatus(status) {
+    $q.dialog({
+        title: "Confirmar",
+        message: "Por favor, escriba el motivo y confirme el rechazo",
+        cancel: true,
+        persistent: true,
+        prompt: {
+          model: '',
+          isValid: val => val.length > 5,
+          type: 'text' // optional
+        },
+    })
+        .onOk(data => {
+            router.post(route("panel.accountability.authorization.detail.status", page.props.accountability.id),{
+                status:status,
+                comments:data
+            } ,{
+                onSuccess: () => {
+                    data.value = page.props.data;
+                    message.value = page.props.flash.message;
+                    type.value = page.props.flash.type;
+                    $q.notify({
+                        type: type.value,
+                        message: message.value,
+                    });
+                    data.value = page.props.documents
+                },
+            });
+        })
+        .onCancel(() => { })
+        .onDismiss(() => { });
+}
+function HandleAuthorizeStatus(status) {
+    $q.dialog({
+        title: "Confirmar",
+        message: "Por favor, confirme la autorización",
+        cancel: true,
+        persistent: true,
+    })
+        .onOk(() => {
+            router.post(route("panel.accountability.authorization.detail.export", page.props.accountability.id),{
+                status:status,
+                comments:null
+            } ,{
+                onSuccess: () => {
+                    data.value = page.props.data;
+                    message.value = page.props.flash.message;
+                    type.value = page.props.flash.type;
+                    $q.notify({
+                        type: type.value,
+                        message: message.value,
+                    });
+                },
+            });
+        })
+        .onCancel(() => { })
+        .onDismiss(() => { });
+}
 </script>

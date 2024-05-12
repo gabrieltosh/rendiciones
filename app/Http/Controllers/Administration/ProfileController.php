@@ -18,67 +18,178 @@ use App\Models\Document;
 use App\Models\Employee;
 use App\Models\DocumentDetail;
 use App\Models\Management;
+use Throwable;
+use Illuminate\Support\Facades\Http;
 class ProfileController extends Controller
 {
     public function HandleGetAccounts(){
-        $accounts = DB::connection('sap')
-            ->table('OACT as T1')
-            ->select(
-                DB::raw("CONCAT(T1.AcctCode,'-',T1.AcctName) as label"),
-                'T1.AcctName',
-                'T1.AcctCode',
-                'T1.FatherNum',
-                'T1.Levels'
-            )
-            ->whereIn('T1.Levels', range(1, 10))
-            ->orderBy('T1.Levels')
-            ->orderBy('T1.FatherNum')
-            ->get();
+        $params_sap = Management::where('group', 'accountability')->get();
+        $service_layer=$params_sap->where('name', 'service_layer')->first()->value;
+        try {
+            $login = Http::withoutVerifying()
+                ->baseUrl($service_layer . '/b1s/v1/')
+                ->post('Login', [
+                    'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
+                    'UserName' => $params_sap->where('name', 'user')->first()->value,
+                    'Password' => $params_sap->where('name', 'password')->first()->value
+                ]);
+            if ($login->successful()) {
+                $session = $login["SessionId"];
+                $response = Http::baseUrl($service_layer . '/b1s/v1/')
+                    ->withoutVerifying()
+                    ->withHeaders([
+                        'Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9',
+                        'Prefer'=>'odata.maxpagesize=100000'
+                    ])->get('ChartOfAccounts?$orderby=AccountLevel asc,FatherAccountKey asc&$select=Name,Code,FatherAccountKey,AccountLevel');
+                if ($response->successful()) {
+                    $distribution = $response->collect('value');
+                    $format_data = $distribution->map(function ($item) {
+                        return [
+                            'label' => $item['Code'] . '-' . $item['Name'],
+                            'AcctName'=>$item['Name'],
+                            'AcctCode' => $item['Code'],
+                            'FatherNum' => $item['FatherAccountKey'],
+                            'Levels' => $item['AccountLevel'],
+                        ];
+                    });
 
-        $accountsByCode = [];
-        foreach ($accounts as $account) {
-            $accountsByCode[$account->AcctCode] = $account;
-        }
+                    $accounts = $format_data->map(function ($item) {
+                        return (object) $item;
+                    });
 
-        foreach ($accounts as $account) {
-            if ($account->FatherNum && isset($accountsByCode[$account->FatherNum])) {
-                $parent = $accountsByCode[$account->FatherNum];
-                if (!isset($parent->children)) {
-                    $parent->children = [];
+                    $accountsByCode = $accounts->keyBy('AcctCode');
+
+                    $accounts->each(function ($account) use ($accountsByCode) {
+                        if ($account->FatherNum && isset($accountsByCode[$account->FatherNum])) {
+                            $parent = $accountsByCode[$account->FatherNum];
+                            $parent->children = $parent->children ?? collect();
+                            $parent->children->push($account);
+                        }
+                    });
+
+                    $level1Accounts = $accounts->filter(function ($account) {
+                        return $account->Levels == 1;
+                    });
+                    Http::withoutVerifying()->baseUrl($service_layer . '/b1s/v1/')->post('Logout');
+                    return $level1Accounts->values()->all();
+                } else {
+                    Session::flash('message', $response->json()['error']['message']['value']);
+                    Session::flash('type', 'negative');
                 }
-                $parent->children[] = $account;
+            } else {
+                Session::flash('message', $login->json()['error']['message']['value']);
+                Session::flash('type', 'negative');
             }
+        } catch (Throwable $e) {
+            Session::flash('message', $e->getMessage());
+            Session::flash('type', 'negative');
         }
+        // $accounts = DB::connection('sap')
+        //     ->table('OACT as T1')
+        //     ->select(
+        //         DB::raw("CONCAT(T1.AcctCode,'-',T1.AcctName) as label"),
+        //         'T1.AcctName',
+        //         'T1.AcctCode',
+        //         'T1.FatherNum',
+        //         'T1.Levels'
+        //     )
+        //     ->whereIn('T1.Levels', range(1, 10))
+        //     ->orderBy('T1.Levels')
+        //     ->orderBy('T1.FatherNum')
+        //     ->get();
 
-        $level1Accounts = array_filter($accountsByCode, function ($account) {
-            return $account->Levels == 1;
-        });
+        // $accountsByCode = [];
+        // foreach ($accounts as $account) {
+        //     $accountsByCode[$account->AcctCode] = $account;
+        // }
 
-        $accounts_result=[];
+        // foreach ($accounts as $account) {
+        //     if ($account->FatherNum && isset($accountsByCode[$account->FatherNum])) {
+        //         $parent = $accountsByCode[$account->FatherNum];
+        //         if (!isset($parent->children)) {
+        //             $parent->children = [];
+        //         }
+        //         $parent->children[] = $account;
+        //     }
+        // }
 
-        foreach ($level1Accounts as $key => $value) {
-            array_push($accounts_result, $value);
-        }
+        // $level1Accounts = array_filter($accountsByCode, function ($account) {
+        //     return $account->Levels == 1;
+        // });
 
-        return $accounts_result;
+        // $accounts_result=[];
+
+        // foreach ($level1Accounts as $key => $value) {
+        //     array_push($accounts_result, $value);
+        // }
+
+        // return $accounts_result;
     }
 
     public function HandleGetAccountFormat($data){
-        $accounts=[];
-        foreach ($data as $value) {
-            $account=explode('-',$value);
-            array_push($accounts,$account[0]);
+        $params_sap = Management::where('group', 'accountability')->get();
+        $service_layer=$params_sap->where('name', 'service_layer')->first()->value;
+        try {
+            $login = Http::withoutVerifying()
+                ->baseUrl($service_layer . '/b1s/v1/')
+                ->post('Login', [
+                    'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
+                    'UserName' => $params_sap->where('name', 'user')->first()->value,
+                    'Password' => $params_sap->where('name', 'password')->first()->value
+                ]);
+            if ($login->successful()) {
+                $session = $login["SessionId"];
+                $accounts=collect();
+                $filter='';
+                foreach ($data as $key => $value) {
+                    $account=explode('-',$value);
+                    if($key == 0)
+                        $filter.= "Code eq '$account[0]'";
+                    else
+                        $filter.= " or Code eq '$account[0]'";
+                }
+                $response = Http::baseUrl($service_layer . '/b1s/v1/')
+                            ->withoutVerifying()
+                            ->withHeaders([
+                                'Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9',
+                                'Prefer'=>'odata.maxpagesize=100000'
+                            ])->get('ChartOfAccounts?$select=Code,Name,FormatCode&$filter='.$filter);
+                if ($response->successful()) {
+                    Http::withoutVerifying()->baseUrl($service_layer . '/b1s/v1/')->post('Logout');
+                    return $response->collect('value');
+                } else {
+                    Session::flash('message', $response->json()['error']['message']['value']);
+                    Session::flash('type', 'negative');
+                }
+            } else {
+                Session::flash('message', $login->json()['error']['message']['value']);
+                Session::flash('type', 'negative');
+            }
+        } catch (Throwable $e) {
+            if ($e->getCode() === 7) {
+                Session::flash('message', $e->getMessage());
+                Session::flash('type', 'negative');
+            } else {
+                Session::flash('message', $e->getMessage());
+                Session::flash('type', 'negative');
+            }
         }
-        $data_format = DB::connection('sap')
-                ->table('OACT as T1')
-                ->select(
-                    'T1.AcctName',
-                    'T1.AcctCode',
-                    'T1.FormatCode'
-                )
-                ->whereIn('T1.AcctCode', $accounts)
-                ->get();
-        return $data_format;
+
+        // $accounts=[];
+        // foreach ($data as $value) {
+        //     $account=explode('-',$value);
+        //     array_push($accounts,$account[0]);
+        // }
+        // $data_format = DB::connection('sap')
+        //         ->table('OACT as T1')
+        //         ->select(
+        //             'T1.AcctName',
+        //             'T1.AcctCode',
+        //             'T1.FormatCode'
+        //         )
+        //         ->whereIn('T1.AcctCode', $accounts)
+        //         ->get();
+        // return $data_format;
     }
     public function HandleGetEmployeeFormat($data){
         $card_codes=[];
@@ -105,17 +216,23 @@ class ProfileController extends Controller
         foreach ($this->HandleGetAccountFormat($request->detail) as $account){
             DetailAccounts::create([
                 'profile_id'=>$profile->id,
-                'account_code'=>$account->AcctCode,
-                'format_code'=>$account->FormatCode,
-                'account_name'=>$account->AcctName,
+                // 'account_code'=>$account->AcctCode,
+                // 'format_code'=>$account->FormatCode,
+                // 'account_name'=>$account->AcctName,
+                'account_code'=>$account['Code'],
+                'format_code'=>$account['FormatCode'],
+                'account_name'=>$account['Name'],
             ]);
         }
         foreach ($this->HandleGetAccountFormat($request->general) as $account){
             GeneralAccounts::create([
                 'profile_id'=>$profile->id,
-                'account_code'=>$account->AcctCode,
-                'format_code'=>$account->FormatCode,
-                'account_name'=>$account->AcctName,
+                // 'account_code'=>$account->AcctCode,
+                // 'format_code'=>$account->FormatCode,
+                // 'account_name'=>$account->AcctName,
+                'account_code'=>$account['Code'],
+                'format_code'=>$account['FormatCode'],
+                'account_name'=>$account['Name'],
             ]);
         }
         foreach($this->HandleGetEmployeeFormat($request->employees) as $employee){
@@ -133,6 +250,17 @@ class ProfileController extends Controller
                 'ice'=>$document['ice'],
                 'tasas'=>$document['tasas'],
                 'exento'=>$document['exento'],
+                'ice_status'=>$document['ice_status'],
+                'tasas_status'=>$document['tasas_status'],
+                'exento_status'=>$document['exento_status'],
+                'authorization_number_status'=>$document['authorization_number_status'],
+                'cuf_status'=>$document['cuf_status'],
+                'control_code_status'=>$document['control_code_status'],
+                'business_name_status'=>$document['business_name_status'],
+                'nit_status'=>$document['nit_status'],
+                'discount_status'=>$document['discount_status'],
+                'gift_card_status'=>$document['gift_card_status'],
+                'rate_zero_status'=>$document['rate_zero_status'],
                 'profile_id'=>$profile->id,
             ]);
             foreach ($document['detail'] as $item) {
@@ -247,6 +375,17 @@ class ProfileController extends Controller
                     'ice'=>$document['ice'],
                     'tasas'=>$document['tasas'],
                     'exento'=>$document['exento'],
+                    'ice_status'=>$document['ice_status'],
+                    'tasas_status'=>$document['tasas_status'],
+                    'exento_status'=>$document['exento_status'],
+                    'authorization_number_status'=>$document['authorization_number_status'],
+                    'cuf_status'=>$document['cuf_status'],
+                    'control_code_status'=>$document['control_code_status'],
+                    'business_name_status'=>$document['business_name_status'],
+                    'nit_status'=>$document['nit_status'],
+                    'discount_status'=>$document['discount_status'],
+                    'gift_card_status'=>$document['gift_card_status'],
+                    'rate_zero_status'=>$document['rate_zero_status'],
                     'profile_id'=>$request->id,
                 ]);
                 foreach ($document['detail'] as $item) {
@@ -273,6 +412,17 @@ class ProfileController extends Controller
                         'ice'=>$document['ice'],
                         'tasas'=>$document['tasas'],
                         'exento'=>$document['exento'],
+                        'ice_status'=>$document['ice_status'],
+                        'tasas_status'=>$document['tasas_status'],
+                        'exento_status'=>$document['exento_status'],
+                        'authorization_number_status'=>$document['authorization_number_status'],
+                        'cuf_status'=>$document['cuf_status'],
+                        'control_code_status'=>$document['control_code_status'],
+                        'business_name_status'=>$document['business_name_status'],
+                        'nit_status'=>$document['nit_status'],
+                        'discount_status'=>$document['discount_status'],
+                        'gift_card_status'=>$document['gift_card_status'],
+                        'rate_zero_status'=>$document['rate_zero_status'],
                     ])->save();
                     foreach ($document['detail'] as $item) {
                         if(!isset($item['id'])){
@@ -322,6 +472,17 @@ class ProfileController extends Controller
                     'ice',
                     'tasas',
                     'exento',
+                    'ice_status',
+                    'tasas_status',
+                    'exento_status',
+                    'authorization_number_status',
+                    'cuf_status',
+                    'control_code_status',
+                    'business_name_status',
+                    'nit_status',
+                    'discount_status',
+                    'gift_card_status',
+                    'rate_zero_status',
                     DB::raw("0 as for_delete"),
                 )->orderBy('id','asc');
             },
@@ -400,6 +561,7 @@ class ProfileController extends Controller
     }
     public function HandleCreateProfile()
     {
+        //return $this->HandleGetAccounts();
         Session::put('title', 'Crear Perfil');
         $field_name_emp=Management::where('name','employee_enablement_field')->first();
         $field_value_emp=Management::where('name','employee_enablement_field_value')->first();

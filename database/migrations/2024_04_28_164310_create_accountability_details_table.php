@@ -19,11 +19,11 @@ return new class extends Migration
             $table->date('date'); //fecha
             $table->unsignedBigInteger('document_id'); //tipo de documento
             $table->string('document_number'); //numero de documento
-            $table->string('authorization_number'); //numero de autorización
+            $table->string('authorization_number')->nullable(); //numero de autorización
             $table->string('cuf')->nullable(); //codigo de control
             $table->string('control_code')->nullable(); //codigo de control
-            $table->string('business_name'); //razon social
-            $table->string('nit'); //NIT
+            $table->string('business_name')->nullable(); //razon social
+            $table->string('nit')->nullable(); //NIT
             $table->string('concept'); //concepto
             $table->decimal('amount',8,2); //importe
             $table->decimal('discount',8,2)->nullable()->default(0); //descuento

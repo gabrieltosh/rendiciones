@@ -1,9 +1,6 @@
 <template>
     <q-layout view="lHh Lpr fFf" class="backgroup-theme">
-        <q-header
-            class="q-ma-sm header-theme"
-            height-hint="110"
-        >
+        <q-header class="q-ma-sm header-theme" height-hint="110">
             <q-toolbar>
                 <q-btn
                     dense
@@ -92,7 +89,13 @@
                                 Administración
                             </q-item-section>
                         </template>
-                        <q-item class="cursor-pointer q-ml-sm" @click="router.visit(route('panel.management.index'))" clickable>
+                        <q-item
+                            class="cursor-pointer q-ml-sm"
+                            @click="
+                                router.visit(route('panel.management.index'))
+                            "
+                            clickable
+                        >
                             <q-item-section avatar>
                                 <q-avatar
                                     class="submenu-icon-inactive"
@@ -106,7 +109,11 @@
                                 >
                             </q-item-section>
                         </q-item>
-                        <q-item class="cursor-pointer q-ml-sm" @click="HandleVisitUser()" clickable>
+                        <q-item
+                            class="cursor-pointer q-ml-sm"
+                            @click="HandleVisitUser()"
+                            clickable
+                        >
                             <q-item-section avatar>
                                 <q-avatar
                                     class="submenu-icon-inactive"
@@ -120,7 +127,11 @@
                                 >
                             </q-item-section>
                         </q-item>
-                        <q-item class="cursor-pointer q-ml-sm" clickable @click="router.visit(route('panel.profile.index'))">
+                        <q-item
+                            class="cursor-pointer q-ml-sm"
+                            clickable
+                            @click="router.visit(route('panel.profile.index'))"
+                        >
                             <q-item-section avatar>
                                 <q-avatar
                                     class="submenu-icon-inactive"
@@ -140,7 +151,9 @@
                         class="cursor-pointer q-mx-md q-mb-md"
                         :active="active"
                         active-class="menu-inactive"
-                        @click="router.visit(route('panel.accountability.profiles'))"
+                        @click="
+                            router.visit(route('panel.accountability.profiles'))
+                        "
                     >
                         <q-item-section avatar>
                             <q-avatar
@@ -156,6 +169,29 @@
                             >
                         </q-item-section>
                     </q-item>
+                    <q-item
+                        clickable
+                        class="cursor-pointer q-mx-md q-mb-md"
+                        :active="active"
+                        active-class="menu-inactive"
+                        @click="
+                            router.visit(route('panel.accountability.authorization.index'))
+                        "
+                    >
+                        <q-item-section avatar>
+                            <q-avatar
+                                square
+                                class="icon-theme"
+                                icon="eva-checkmark-square-outline"
+                            >
+                            </q-avatar>
+                        </q-item-section>
+                        <q-item-section>
+                            <q-item-label class="text-menu"
+                                >Autorizaciones</q-item-label
+                            >
+                        </q-item-section>
+                    </q-item>
                 </q-list>
             </q-scroll-area>
         </q-drawer>
@@ -166,9 +202,7 @@
         <q-footer class="footer-theme">
             <div class="column">
                 <div class="col">
-                    <div
-                        class="text-center q-pa-xs"
-                    >
+                    <div class="text-center q-pa-xs">
                         Copyright © {{ new Date().getFullYear() }}
                         <strong>TOMATE FÁCIL</strong>, Todos los derechos
                         reservados.
@@ -217,13 +251,17 @@ function HandleLogout() {
         .onCancel(() => {})
         .onDismiss(() => {});
 }
-function HandleVisitUser(){
-    router.visit(route("panel.user.index"))
+function HandleVisitUser() {
+    router.visit(route("panel.user.index"));
 }
 </script>
 <style lang="scss">
 * {
     font-family: "Poppins", sans-serif;
+}
+.text-banner {
+    font-size: 0.75rem;
+    font-weight: 500;
 }
 .text-profile {
     color: black;
@@ -244,15 +282,15 @@ function HandleVisitUser(){
     border-radius: 15px;
     box-shadow: rgba(0, 0, 0, 0.1) 0rem 0.25rem 0.375rem -0.0625rem,
         rgba(0, 0, 0, 0.06) 0rem 0.125rem 0.25rem -0.0625rem;
-    border-radius: 0.5rem ;
+    border-radius: 0.5rem;
 }
 .footer-theme {
-    font-size: 12px ;
+    font-size: 12px;
     font-family: Arial, Helvetica, sans-serif;
     color: #ffffff;
     box-shadow: rgba(0, 0, 0, 0.1) 0rem 0.25rem 0.375rem -0.0625rem,
         rgba(0, 0, 0, 0.06) 0rem 0.125rem 0.25rem -0.0625rem;
-    background-color: #21283c ;
+    background-color: #21283c;
 }
 .backgroup-theme {
     background-color: #f0f2f5;
@@ -274,8 +312,8 @@ body.screen--sm {
     }
 }
 .q-toolbar {
-    box-shadow: 0px 2px 7px #2553b91a ;
-    border-radius: 0.5rem ;
+    box-shadow: 0px 2px 7px #2553b91a;
+    border-radius: 0.5rem;
 }
 
 ::-webkit-scrollbar {
@@ -303,7 +341,7 @@ body.screen--sm {
     background: #c1c1c1;
 }
 .body--dark {
-    .q-stepper__step-inner{
+    .q-stepper__step-inner {
         background-color: #1b2033;
     }
     .backgroup-theme {
@@ -337,7 +375,7 @@ body.screen--sm {
         box-shadow: rgba(0, 0, 0, 0.14) 0rem 0.125rem 0.125rem 0rem,
             rgba(0, 0, 0, 0.2) 0rem 0.1875rem 0.0625rem -0.125rem,
             rgba(0, 0, 0, 0.12) 0rem 0.0625rem 0.3125rem 0rem;
-        background-color: #21283c ;
+        background-color: #21283c;
     }
     .table-theme {
         color: white;
@@ -373,20 +411,20 @@ body.screen--sm {
 
 .input-theme.q-field--auto-height.q-field--dense .q-field__control,
 .q-field--auto-height.q-field--dense .q-field__native {
-    min-height: 25px ;
+    min-height: 25px;
 }
 
 .input-theme.q-field--dense .q-field__control,
 .q-field--dense .q-field__marginal {
-    height: 25px ;
+    height: 25px;
 }
 
 .input-theme.q-field {
-    font-size: 12px ;
+    font-size: 12px;
 }
 
 .input-theme-area.q-field {
-    font-size: 12px ;
+    font-size: 12px;
 }
 
 .input-theme {
@@ -394,61 +432,61 @@ body.screen--sm {
     .q-field__prefix,
     .q-field__suffix,
     .q-field__input {
-        padding: 0 ;
+        padding: 0;
     }
     .q-field--outlined .q-field__control {
-        border-radius: 0.5rem ;
+        border-radius: 0.5rem;
     }
 }
-.text-grid{
+.text-grid {
     font-size: 12px;
     white-space: normal;
 }
-.title-grid{
+.title-grid {
     font-weight: bold;
-    color: #344767 ;
+    color: #344767;
     font-size: 11.5px;
 }
-.card-grid{
-    border-radius: 1rem ;
+.card-grid {
+    border-radius: 1rem;
 }
 //TABLE
 .table-theme {
-    box-shadow: 0 20px 27px 10px rgba(0, 0, 0, 0) ;
+    box-shadow: 0 20px 27px 10px rgba(0, 0, 0, 0);
     border-radius: 1rem;
-    color: #344767 ;
+    color: #344767;
     .q-table__top {
-        padding: 8px 20px ;
+        padding: 8px 20px;
     }
     .q-table th {
         font-weight: bold;
-        color: #344767 ;
+        color: #344767;
         font-size: 11.5px;
     }
     .q-table tbody td {
         font-size: 11.5px;
         white-space: normal;
     }
-    .q-field{
+    .q-field {
         font-size: 12px;
     }
 }
 
 .table-header-theme {
-    color: #344767 ;
+    color: #344767;
 }
 
 //Other
 
 .card-form {
-    border-radius: 1rem ;
+    border-radius: 1rem;
     box-shadow: rgba(0, 0, 0, 0.1) 0rem 0.25rem 0.375rem -0.0625rem,
         rgba(0, 0, 0, 0.06) 0rem 0.125rem 0.25rem -0.0625rem;
 }
 .title-form {
     color: #344767;
     font-style: normal;
-    font-weight: 500 ;
+    font-weight: 500;
     margin-bottom: 0rem;
     margin-top: 0;
     font-size: 0.9rem;
@@ -456,14 +494,14 @@ body.screen--sm {
 .title-tree {
     color: #344767;
     font-style: normal;
-    font-weight: 500 ;
+    font-weight: 500;
     margin-bottom: 0rem;
     margin-top: 0;
     font-size: 0.8rem;
 }
 
 .q-btn--rectangle {
-    border-radius: 0.5rem ;
+    border-radius: 0.5rem;
 }
 .form-label {
     color: #344767;
@@ -507,7 +545,7 @@ body.screen--sm {
     line-height: 18px;
     letter-spacing: 0.1px;
 }
-.q-stepper__step-inner{
+.q-stepper__step-inner {
     background-color: #f0f2f5;
 }
 </style>

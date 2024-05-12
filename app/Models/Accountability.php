@@ -24,6 +24,7 @@ class Accountability extends Model
         'start_date',
         'status',
         'end_date',
+        'comments'
     ];
     public function createdAt(): Attribute
     {
@@ -32,5 +33,11 @@ class Accountability extends Model
                 return Carbon::parse($value)->setTimezone('America/La_Paz')->format('Y-m-d g:i A');
             }
         );
+    }
+    public function profile(){
+        return $this->belongsTo(Profile::class,'profile_id','id');
+    }
+    public function user(){
+        return $this->belongsTo(User::class,'user_id','id');
     }
 }

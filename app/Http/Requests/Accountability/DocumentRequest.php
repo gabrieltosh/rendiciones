@@ -27,10 +27,10 @@ class DocumentRequest extends FormRequest
             'document_id'=>'required',
             'concept'=>'required',
             'document_number'=>'required',
-            'authorization_number'=>'required',
+            //'authorization_number'=>'required',
             //'control_code'=>'required',
-            'business_name'=>'required',
-            'nit'=>'required',
+            //'business_name'=>'required',
+            //'nit'=>'required',
             'amount'=>'required'
         ];
     }

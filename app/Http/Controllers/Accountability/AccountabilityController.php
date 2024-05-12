@@ -2,72 +2,36 @@
 
 namespace App\Http\Controllers\Accountability;
 
-use App\Http\Controllers\Controller;
-use App\Models\AccountabilityDetail;
-use App\Models\DetailAccounts;
-use App\Models\Employee;
-use App\Models\GeneralAccounts;
-use App\Models\Supplier;
-use Illuminate\Http\Request;
-use App\Models\Document;
-use Session;
-use Inertia\Inertia;
-use App\Models\Profile;
-use App\Models\Accountability;
-use DB;
 use App\Http\Requests\Accountability\AccountabilityRequest;
 use App\Http\Requests\Accountability\DocumentRequest;
+use App\Http\Controllers\Controller;
+use App\Models\AccountabilityDetail;
+use App\Models\GeneralAccounts;
+use App\Models\DetailAccounts;
+use App\Models\Accountability;
+use App\Models\Management;
+use Illuminate\Http\Request;
+use App\Models\Supplier;
+use App\Models\Employee;
+use App\Models\Document;
+use App\Models\Profile;
+use Inertia\Inertia;
 use Redirect;
+use Session;
 use Auth;
+use DB;
 
 class AccountabilityController extends Controller
 {
-    public function HandleFormatLine($document_line){
-        $journal=[];
-        $detail_lines=[];
-        $total=0;
-        $exento_percentage = $document_line->document->exento/100;
-        $amount = $document_line->amount - ($document_line->amount * $exento_percentage);
-        $operation=$document_line->document->type_calculation=='Grossing Up'?1:-1;
-
-        foreach($document_line->document->detail as $detail){
-            $percentage= $detail->percentage/100;
-            $total_percentage=$amount*$percentage;
-            $total+=$document_line->amount+($operation*$total_percentage);
-            $detail_lines[]=[
-                'AccountCode'=>$detail->account,
-                'Debit'=>$document_line->document->type_calculation=='Grossing Up'?0:$total_percentage,
-                'Credit'=>$document_line->document->type_calculation=='Grossing Up'?$total_percentage:0,
-                'DueDate'=>$document_line->date,
-                'ShortName'=>$detail->account,
-                'LineMemo'=>$document_line->concept,
-                'ReferenceDate1'=>$document_line->date,
-            ];
-        }
-        $journal[]=[
-            'AccountCode'=>$document_line->account,
-            'Debit'=>$total,
-            'DueDate'=>$document_line->date,
-            'ShortName'=>$document_line->account,
-            'LineMemo'=>$document_line->concept,
-            'ReferenceDate1'=>$document_line->date,
-            'ProjectCode'=>$document_line->distribution_rule_one,
-            'CostingCode2'=>$document_line->distribution_rule_second,
-            'CostingCode3'=>$document_line->distribution_rule_three,
-            'CostingCode4'=>$document_line->distribution_rule_four,
-            'CostingCode5'=>$document_line->distribution_rule_five,
-        ];
-
-        return array_merge($journal,$detail_lines);
+    public function HandleUpdateStatus($profile_id,$accountability_id, Request $request){
+        Accountability::findOrFail($accountability_id)->fill([
+            'status'=>$request->status
+        ])->save();
+        Session::flash('message', "Documento enviado correctamente");
+        Session::flash('type', 'positive');
+        return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
     }
-    public function HandleExportSAP(){
-        $JournalEntryLines=array();
-        $documents=AccountabilityDetail::with('document.detail')->where('accountability_id',1)->orderBy('id','asc')->get();
-        foreach ($documents as $document) {
-            $JournalEntryLines=array_merge($JournalEntryLines,$this->HandleFormatLine($document));
-        }
-        return $JournalEntryLines;
-    }
+
     public function HandleUpdateDocument(DocumentRequest $request, $profile_id, $accountability_id)
     {
         $account = DetailAccounts::where('account_code', $request->account)->first();
@@ -112,7 +76,7 @@ class AccountabilityController extends Controller
             'account_code',
             'account_name'
         )->where('profile_id', $profile->id)->get();
-        $documents = Document::select('name', 'id')->where('profile_id', $profile->id)->get();
+        $documents = Document::where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
         $data = AccountabilityDetail::where('id', $document_id)->first();
         return Inertia::render(
@@ -179,7 +143,7 @@ class AccountabilityController extends Controller
             'account_code',
             'account_name'
         )->where('profile_id', $profile->id)->get();
-        $documents = Document::select('name', 'id')->where('profile_id', $profile->id)->get();
+        $documents = Document::where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
         return Inertia::render(
             'accountability/Detail/CreateDetail',
@@ -245,6 +209,7 @@ class AccountabilityController extends Controller
                         'T1.PrcName'
                     )
                     ->where('T1.DimCode', $i)
+                    ->where('T1.Locked', 'N')
                     ->get();
         }
         return $data;

@@ -28,20 +28,34 @@ class ManagementSeeder extends Seeder
                 'type'=>'password',
                 'value'=>'Novanexa.24'
             ],
+            [
+                'group'=>'accountability',
+                'name'=>'service_layer',
+                'label'=>'URL Service Layer SAP',
+                'type'=>'text',
+                'value'=>'https://181.114.125.190:55555'
+            ],
+            [
+                'group'=>'accountability',
+                'name'=>'bd_sap',
+                'label'=>'Nombre BD SAP',
+                'type'=>'text',
+                'value'=>'RENDICIONES'
+            ],
             //OCRD Empleados Habilitados
             [
                 'group'=>'employee',
                 'name'=>'employee_enablement_field',
                 'label'=>'Habilitación Usuario',
                 'type'=>'text',
-                'value'=>'U_emp'
+                'value'=>'U_User_Rend'
             ],
             [
                 'group'=>'employee',
                 'name'=>'employee_enablement_field_value',
                 'label'=>'Habilitación Usuario Valor',
                 'type'=>'text',
-                'value'=>'SI'
+                'value'=>'1'
             ],
             //Detalle Rendición
             [
@@ -49,21 +63,21 @@ class ManagementSeeder extends Seeder
                 'name'=>'date',
                 'label'=>'Fecha Factura',
                 'type'=>'text',
-                'value'=>'U_FECHAFAC'
+                'value'=>'U_FechaDeFactura'
             ],
             [
                 'group'=>'accountability_detail',
                 'name'=>'document_number',
                 'label'=>'Numero Factura/Documento',
                 'type'=>'text',
-                'value'=>'U_NumDoc'
+                'value'=>'U_NumeroDeFactura'
             ],
             [
                 'group'=>'accountability_detail',
                 'name'=>'authorization_number',
                 'label'=>'Nº Autorización',
                 'type'=>'text',
-                'value'=>'U_AUTO'
+                'value'=>'U_Autorizacion'
             ],
             [
                 'group'=>'accountability_detail',
@@ -77,14 +91,14 @@ class ManagementSeeder extends Seeder
                 'name'=>'control_code',
                 'label'=>'Codigo Control',
                 'type'=>'text',
-                'value'=>'U_CodCtrl'
+                'value'=>'U_CodigoDeControl'
             ],
             [
                 'group'=>'accountability_detail',
                 'name'=>'business_name',
                 'label'=>'Razón Social',
                 'type'=>'text',
-                'value'=>'U_RSocial'
+                'value'=>'U_RazonSocial'
             ],
             [
                 'group'=>'accountability_detail',
@@ -98,14 +112,14 @@ class ManagementSeeder extends Seeder
                 'name'=>'amount',
                 'label'=>'Monto',
                 'type'=>'text',
-                'value'=>'U_Monto'
+                'value'=>'U_Importe'
             ],
             [
                 'group'=>'accountability_detail',
                 'name'=>'discount',
                 'label'=>'Descuento',
                 'type'=>'text',
-                'value'=>'U_Dsc'
+                'value'=>'U_Descuento'
             ],
             [
                 'group'=>'accountability_detail',
@@ -126,14 +140,14 @@ class ManagementSeeder extends Seeder
                 'name'=>'gift_card',
                 'label'=>'Gif Card',
                 'type'=>'text',
-                'value'=>'U_gifcard'
+                'value'=>'U_GiftCard'
             ],
             [
                 'group'=>'accountability_detail',
                 'name'=>'rate_zero',
                 'label'=>'Tasa Cero',
                 'type'=>'text',
-                'value'=>'U_RateZ'
+                'value'=>'U_TasaCero'
             ],
             [
                 'group'=>'accountability_detail',

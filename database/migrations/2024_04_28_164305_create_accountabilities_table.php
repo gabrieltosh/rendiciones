@@ -24,7 +24,8 @@ return new class extends Migration
             $table->string('preliminary')->nullable();
             $table->date('start_date');
             $table->date('end_date');
-            $table->enum('status',['Pendiente','Rechazado','Autorizado'])->nullable();
+            $table->text('comments')->nullable();
+            $table->enum('status',['Pendiente','Rechazado','Autorizado','Anulado'])->nullable();
             $table->foreign('profile_id')->references('id')->on('profiles');
             $table->foreign('user_id')->references('id')->on('users');
             $table->timestamps();

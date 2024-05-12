@@ -11,16 +11,21 @@
                         <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <h5 class="title-form">Información General</h5>
+                                    <h5 class="title-form">
+                                        Información General
+                                    </h5>
                                 </div>
                                 <div class="col-sm-6 text-right q-gutter-sm">
                                     <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
                                         router.visit(
-                                            route('panel.accountability.manage.detail.index', [page.props.profile.id, page.props.accountability.id])
+                                            route(
+                                                'panel.accountability.authorization.detail.index',
+                                                page.props.accountability.id
+                                            )
                                         )
                                         " flat />
                                     <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
-                                        label="Continuar" v-if="Object.keys(document).length > 0" />
+                                        label="Continuar" />
                                 </div>
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
@@ -89,9 +94,7 @@
                         </q-card>
                     </q-step>
                     <q-step :name="2" title="Libro Compras" icon="eva-file-text-outline" :done="step > 1"
-                        :error="Object.keys(errors).length > 0 ? true : false"
-                        :disable="Object.keys(document).length == 0"
-                        >
+                        :error="Object.keys(errors).length > 0 ? true : false">
                         <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
                             <div class="row">
                                 <div class="col-sm-6">
@@ -100,7 +103,14 @@
                                 <div class="col-sm-6 text-right q-gutter-sm">
                                     <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
                                         router.visit(
-                                            route('panel.accountability.manage.detail.index', [page.props.profile.id, page.props.accountability.id])
+                                            route(
+                                                'panel.accountability.manage.detail.index',
+                                                [
+                                                    page.props.profile.id,
+                                                    page.props
+                                                        .accountability.id,
+                                                ]
+                                            )
                                         )
                                         " flat />
                                     <q-btn flat color="primary" @click="$refs.stepper.previous()" label="Atras" no-caps
@@ -125,7 +135,8 @@
                                         </ul>
                                     </div>
                                 </div>
-                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4" v-if="document.authorization_number_status">
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4"
+                                    v-if="document.authorization_number_status">
                                     <div class="form-label" for="device_name">
                                         Nº Autorización
                                     </div>
@@ -250,9 +261,7 @@
                         </q-card>
                     </q-step>
                     <q-step :name="3" title="Contable" icon="eva-pantone-outline"
-                        :error="Object.keys(errors).length > 0 ? true : false"
-                        :disable="Object.keys(document).length == 0"
-                        >
+                        :error="Object.keys(errors).length > 0 ? true : false">
                         <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
                             <div class="row">
                                 <div class="col-sm-6">
@@ -261,13 +270,20 @@
                                 <div class="col-sm-6 text-right q-gutter-sm">
                                     <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
                                         router.visit(
-                                            route('panel.accountability.manage.detail.index', [page.props.profile.id, page.props.accountability.id])
+                                            route(
+                                                'panel.accountability.manage.detail.index',
+                                                [
+                                                    page.props.profile.id,
+                                                    page.props
+                                                        .accountability.id,
+                                                ]
+                                            )
                                         )
                                         " flat />
                                     <q-btn flat color="primary" @click="$refs.stepper.previous()" label="Atras" no-caps
                                         size="12px" />
-                                    <q-btn color="primary" label="Crear" size="12px" no-caps
-                                        @click="HandleStoreForm()" />
+                                    <q-btn color="primary" label="Actualizar" size="12px" no-caps
+                                        @click="HandleUpdateForm()" />
                                 </div>
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
@@ -277,7 +293,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.projects"
                                         v-model="form.project_code" option-value="PrjCode" option-label="PrjCode"
-                                        emit-value map-options clearable/>
+                                        emit-value map-options />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -285,7 +301,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[1]"
                                         v-model="form.distribution_rule_one" option-value="PrcCode" option-label="Name"
-                                        emit-value map-options clearable/>
+                                        emit-value map-options />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -293,7 +309,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[2]"
                                         v-model="form.distribution_rule_second" option-value="PrcCode"
-                                        option-label="Name" emit-value map-options clearable/>
+                                        option-label="Name" emit-value map-options />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -301,7 +317,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[3]"
                                         v-model="form.distribution_rule_three" option-value="PrcCode"
-                                        option-label="Name" emit-value map-options clearable/>
+                                        option-label="Name" emit-value map-options />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -309,7 +325,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[4]"
                                         v-model="form.distribution_rule_four" option-value="PrcCode" option-label="Name"
-                                        emit-value map-options clearable/>
+                                        emit-value map-options />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -317,12 +333,11 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[5]"
                                         v-model="form.distribution_rule_five" option-value="PrcCode" option-label="Name"
-                                        emit-value map-options clearable />
+                                        emit-value map-options />
                                 </div>
                             </div>
                         </q-card>
                     </q-step>
-
                 </q-stepper>
             </div>
         </div>
@@ -330,7 +345,7 @@
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
@@ -352,44 +367,17 @@ const options = ref({
     distribution: page.props.distribution,
     projects: page.props.projects,
 });
-const loading = ref({
-    card: false,
-});
 
 let step = ref(1);
 
-const form = ref({
-    account: null,
-    account_name: null,
-    date: null,
-    document_id: null,
-    document_number: null,
-    authorization_number: null,
-    cuf: null,
-    control_code: null,
-    supplier_code: null,
-    business_name: null,
-    nit: null,
-    concept: null,
-    amount: null,
-    discount: null,
-    excento: null,
-    rate: null,
-    gift_card: null,
-    rate_zero: null,
-    ice: null,
-    project_code: null,
-    distribution_rule_one: null,
-    distribution_rule_second: null,
-    distribution_rule_three: null,
-    distribution_rule_four: null,
-    distribution_rule_five: null,
-});
-function HandleStoreForm() {
+const form = ref(page.props.data);
+
+function HandleUpdateForm() {
     router.post(
-        route(
-            "panel.accountability.manage.detail.store", [page.props.profile.id, page.props.accountability.id]
-        ),
+        route("panel.accountability.authorization.detail.update", [
+            page.props.profile.id,
+            page.props.accountability.id,
+        ]),
         form.value,
         {
             onSuccess: () => {
@@ -432,12 +420,12 @@ function HandleFilterSuppliers(val, update) {
     });
 }
 onMounted(() => {
-    form.value.distribution_rule_one = page.props.auth.user.distribution_rule_one
-    form.value.distribution_rule_second = page.props.auth.user.distribution_rule_second
-    form.value.distribution_rule_three = page.props.auth.user.distribution_rule_three
-    form.value.distribution_rule_four = page.props.auth.user.distribution_rule_four
-    form.value.distribution_rule_five = page.props.auth.user.distribution_rule_five
-})
+    options.value.accounts = page.props.accounts;
+    options.value.documents = page.props.documents;
+    form.value.document_id = parseInt(form.value.document_id);
+    document.value = options.value.documents.find(e => e.id == form.value.document_id);
+
+});
 
 function HandleFindDocument() {
     document.value = options.value.documents.find(e => e.id == form.value.document_id);
