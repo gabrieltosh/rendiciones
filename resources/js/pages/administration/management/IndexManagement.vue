@@ -71,7 +71,7 @@
                         :name="2"
                         title="Campos Rendición"
                         icon="settings"
-                        :done="step > 2"
+                        :done="step > 1"
                     >
                         <q-card
                             class="q-px-lg q-py-md q-ma-sm card-form q-mt-md"
@@ -148,6 +148,60 @@
                                         flat
                                     />
                                     <q-btn
+                                        @click="$refs.stepper.next()"
+                                        color="primary"
+                                        no-caps
+                                        size="12px"
+                                        label="Continuar"
+                                    />
+                                </div>
+                            </div>
+                            <div class="row q-col-gutter-md q-mt-xs">
+                                <div
+                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
+                                    v-for="item in data.employee"
+                                >
+                                    <div class="form-label" for="device_name">
+                                        {{item.label}} <span class="text-red">*</span>
+                                    </div>
+                                    <q-input
+                                        v-model="item.value"
+                                        dense
+                                        outlined
+                                        :type="item.type"
+                                        class="input-theme"
+                                    />
+                                </div>
+                            </div>
+                        </q-card>
+                    </q-step>
+                    <q-step
+                        :name="4"
+                        title="Proveedores"
+                        icon="settings"
+                        :done="step > 3"
+                    >
+                        <q-card
+                            class="q-px-lg q-py-md q-ma-sm card-form q-mt-md"
+                        >
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <h5 class="title-form">Proveedores</h5>
+                                </div>
+                                <div class="col-sm-6 text-right q-gutter-sm">
+                                    <q-btn
+                                        color="secondary"
+                                        label="Cancelar"
+                                        size="12px"
+                                        no-caps
+                                        @click="
+                                            router.visit(
+                                                route('panel.user.index')
+                                            )
+                                        "
+                                        flat
+                                    />
+                                    <q-btn
                                         @click="HandleStoreForm()"
                                         color="primary"
                                         no-caps
@@ -159,7 +213,7 @@
                             <div class="row q-col-gutter-md q-mt-xs">
                                 <div
                                     class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                    v-for="item in data.employee"
+                                    v-for="item in data.suppliers"
                                 >
                                     <div class="form-label" for="device_name">
                                         {{item.label}} <span class="text-red">*</span>
@@ -199,6 +253,7 @@ let data=ref({
     accountability:page.props.accountability,
     accountability_detail:page.props.accountability_detail,
     employee:page.props.employee,
+    suppliers:page.props.suppliers,
 })
 let step = ref(1);
 
@@ -212,6 +267,7 @@ function HandleStoreForm() {
             accountability: data.value.accountability,
             accountability_detail: data.value.accountability_detail,
             employee: data.value.employee,
+            suppliers:data.value.suppliers
         }
     , {
         onSuccess: () => {
@@ -224,6 +280,7 @@ function HandleStoreForm() {
             data.value.accountability=page.props.accountability
             data.value.accountability_detail=page.props.accountability_detail
             data.value.employee=page.props.employee
+            data.value.suppliers=page.props.suppliers
         },
     });
 }

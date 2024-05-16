@@ -11,7 +11,6 @@ use App\Models\DetailAccounts;
 use App\Models\Accountability;
 use App\Models\Management;
 use Illuminate\Http\Request;
-use App\Models\Supplier;
 use App\Models\Employee;
 use App\Models\Document;
 use App\Models\Profile;
@@ -69,6 +68,7 @@ class AccountabilityController extends Controller
     }
     public function HandleEditDocument($profile_id, $accountability_id, $document_id)
     {
+        $params=Management::where('group','supplier')->get();
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $accounts = DetailAccounts::select(
@@ -77,7 +77,6 @@ class AccountabilityController extends Controller
             'account_name'
         )->where('profile_id', $profile->id)->get();
         $documents = Document::where('profile_id', $profile->id)->get();
-        $suppliers = Supplier::get();
         $data = AccountabilityDetail::where('id', $document_id)->first();
         return Inertia::render(
             'accountability/Detail/EditDetail',
@@ -86,7 +85,7 @@ class AccountabilityController extends Controller
                 'accountability' => $accountability,
                 'accounts' => $accounts,
                 'documents' => $documents,
-                'suppliers' => $suppliers,
+                'suppliers'=>$this->HandleGetSuppliers($params),
                 'data' => $data,
                 'distribution'=>$this->HandleGetDistributions(),
                 'projects'=>$this->HandleGetProjects(),
@@ -134,8 +133,28 @@ class AccountabilityController extends Controller
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
     }
+
+    public function HandleGetSuppliers($params){
+        $sap_suppliers= DB::connection('sap')
+            ->table('OCRD')
+            ->select(
+                $params->where('name','business_name')->first()->value.' as business_name' ,
+                $params->where('name','nit')->first()->value.' as nit'
+            )
+            ->get()->toArray();
+        $bd_suppliers=AccountabilityDetail::select(
+                                                'business_name',
+                                                'nit'
+                                            )
+                                            ->groupBy('business_name','nit')
+                                            ->get()
+                                            ->toArray();
+        return array_merge($sap_suppliers,$bd_suppliers);
+    }
+
     public function HandleCreateDocument($profile_id, $accountability_id)
     {
+        $params=Management::where('group','supplier')->get();
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $accounts = DetailAccounts::select(
@@ -143,8 +162,8 @@ class AccountabilityController extends Controller
             'account_code',
             'account_name'
         )->where('profile_id', $profile->id)->get();
+        //return $this->HandleGetSuppliers($params);
         $documents = Document::where('profile_id', $profile->id)->get();
-        $suppliers = Supplier::get();
         return Inertia::render(
             'accountability/Detail/CreateDetail',
             [
@@ -152,9 +171,9 @@ class AccountabilityController extends Controller
                 'accountability' => $accountability,
                 'accounts' => $accounts,
                 'documents' => $documents,
-                'suppliers' => $suppliers,
                 'distribution'=>$this->HandleGetDistributions(),
                 'projects'=>$this->HandleGetProjects(),
+                'suppliers'=>$this->HandleGetSuppliers($params)
             ]
         );
     }

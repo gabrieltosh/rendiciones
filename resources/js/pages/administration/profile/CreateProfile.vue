@@ -279,8 +279,10 @@
                                                 <th colspan="1" align="left">
                                                     Tipo Documento
                                                     <span class="text-red">*</span>
-                                                    <q-input v-model="item.type_document_sap
-                                                        " dense class="input-theme" />
+                                                    <q-select class="input-theme" dense :options="options.document_types
+                                                        " v-model="item.type_document_sap" option-value="FldValue"
+                                                        option-label="Descr" emit-value map-options clearable/>
+
                                                     <div v-if="errors['documents.' + index + '.type_document_sap']"
                                                         class="container-error">
                                                         <ul v-for="(
@@ -564,6 +566,7 @@ let options = ref({
     type: page.props.type,
     accounts_document: page.props.accounts_document,
     accounts_filter: [],
+    document_types: page.props.document_types
 });
 const loading = ref({
     card: false,

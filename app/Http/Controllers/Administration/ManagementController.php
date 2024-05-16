@@ -23,6 +23,7 @@ class ManagementController extends Controller
         $this->HandleUpdateData($request->accountability);
         $this->HandleUpdateData($request->accountability_detail);
         $this->HandleUpdateData($request->employee);
+        $this->HandleUpdateData($request->suppliers);
         Session::flash('message', "Configuración actualizadas correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.management.index');
@@ -34,10 +35,13 @@ class ManagementController extends Controller
                                     ->get();
         $employee=Management::where('group','employee')
                                     ->get();
+        $suppliers=Management::where('group','supplier')
+                                    ->get();
         return Inertia::render('administration/management/IndexManagement',[
             'accountability'=>$accountability,
             'accountability_detail'=>$accountability_detail,
             'employee'=>$employee,
+            'suppliers'=>$suppliers
         ]);
     }
 }

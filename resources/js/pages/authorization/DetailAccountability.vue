@@ -17,11 +17,16 @@
                         <q-btn flat color="secondary" label="Cancelar" size="11px" no-caps
                             @click="router.visit(route('panel.accountability.authorization.index'))" class="q-mr-sm" />
                         <q-btn color="secondary" label="Anular" size="11px" no-caps
-                            @click="HandleCancelStatus('Anulado')" class="q-mr-sm" />
+                            @click="HandleCancelStatus('Anulado')" class="q-mr-sm"
+                            v-if="page.props.accountability.status != 'Autorizado'" />
                         <q-btn color="negative" label="Rechazar" size="11px" no-caps
-                            @click="HandleRejectStatus('Rechazado')" class="q-mr-sm" />
+                            @click="HandleRejectStatus('Rechazado')" class="q-mr-sm"
+                            v-if="page.props.accountability.status != 'Autorizado'" />
                         <q-btn color="primary" label="Autorizar" size="11px" no-caps
-                            @click="HandleAuthorizeStatus('Autorizado')" class="q-mr-sm" />
+                            @click="HandleAuthorizeStatus('Autorizado')" class="q-mr-sm"
+                            v-if="page.props.accountability.status != 'Autorizado'" />
+                        <q-btn color="primary" label="Imprimir" size="11px" no-caps @click="HandleGetReport()"
+                            class="q-mr-sm" v-if="page.props.accountability.status == 'Autorizado'" />
                     </div>
                 </div>
                 <div class="row q-col-gutter-md">
@@ -83,7 +88,7 @@
                         <h5 class="title-form">Detalle de Rendicion</h5>
                         <q-space />
                         <q-btn icon="eva-plus" color="primary" label="Añadir Documento" size="11px" no-caps
-                            @click="HandleCreateDocument()" />
+                            @click="HandleCreateDocument()" v-if="page.props.accountability.status != 'Autorizado'" />
                         <q-space />
                         <q-input outlined dense color="primary" placeholder="Buscar..." v-model="table.filter"
                             class="input-theme">
@@ -104,7 +109,7 @@
                     </template>
                     <template v-slot:body="props">
                         <q-tr :props="props">
-                            <q-td style="width: 110px !important">
+                            <q-td style="width: 150px !important">
                                 <div class="text-center q-gutter-xs">
                                     <q-btn size="sm" color="primary" dense @click="props.expand = !props.expand"
                                         :icon="props.expand ? 'remove' : 'add'" />
@@ -112,7 +117,8 @@
                                         HandleEditAccountability(
                                             props.row.id
                                         )
-                                        " icon="eva-edit-2-outline">
+                                        " icon="eva-edit-2-outline"
+                                        v-if="page.props.accountability.status != 'Autorizado'">
                                         <q-tooltip class="bg-secondary" :offset="[10, 10]">
                                             Editar de usuario
                                         </q-tooltip>
@@ -121,7 +127,8 @@
                                         HandleDeleteAccountability(
                                             props.row.id
                                         )
-                                        " icon="eva-trash-2-outline">
+                                        " icon="eva-trash-2-outline"
+                                        v-if="page.props.accountability.status != 'Autorizado'">
                                         <q-tooltip class="bg-red" :offset="[10, 10]">
                                             Eliminar usuario
                                         </q-tooltip>
@@ -246,7 +253,7 @@
                         </q-tr>
                     </template>
                     <template v-slot:item="props">
-                        <div class="q-pa-xs col-xs-12 col-sm-6 col-md-3">
+                        <div class="q-px-xs col-xs-12 col-sm-6 col-md-3">
                             <q-card class="card-grid shadow-0" bordered>
                                 <div class="col-12 q-mt-sm">
                                     <q-list dense>
@@ -255,7 +262,7 @@
                                                 <q-item-label class="title-grid">Concepto</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.concept
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -263,7 +270,7 @@
                                                 <q-item-label class="title-grid">Cuenta</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.account
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -271,7 +278,7 @@
                                                 <q-item-label class="title-grid">Nombre Cuenta</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.account_name
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -279,7 +286,7 @@
                                                 <q-item-label class="title-grid">Fecha</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.date
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -287,7 +294,7 @@
                                                 <q-item-label class="title-grid">Nº de Factura</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.document_number
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -295,7 +302,7 @@
                                                 <q-item-label class="title-grid">Nº Autorización</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.authorization_number
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -303,7 +310,7 @@
                                                 <q-item-label class="title-grid">CUF</q-item-label>
                                                 <q-item-label class="text-grid" lines="1">{{
                                                     props.row.cuf ? props.row.cuf : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -311,7 +318,7 @@
                                                 <q-item-label class="title-grid">Codigo Control</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.control_code ? props.row.control_code : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -319,7 +326,7 @@
                                                 <q-item-label class="title-grid">Razón Social</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.business_name ? props.row.business_name : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -327,7 +334,7 @@
                                                 <q-item-label class="title-grid">NIT</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.nit ? props.row.nit : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left">
@@ -335,7 +342,7 @@
                                                 <q-item-label class="title-grid">Importe</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.amount ? props.row.amount : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -343,7 +350,7 @@
                                                 <q-item-label class="title-grid">Descuento</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.discount ? props.row.discount : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -351,7 +358,7 @@
                                                 <q-item-label class="title-grid">Gift Card</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.gift_card ? props.row.gift_card : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -359,7 +366,7 @@
                                                 <q-item-label class="title-grid">Tasa Cero</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.rate_zero ? props.row.rate_zero : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -367,7 +374,7 @@
                                                 <q-item-label class="title-grid">Excento</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.excento ? props.row.excento : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -375,7 +382,7 @@
                                                 <q-item-label class="title-grid">Tasas</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.rate ? props.row.rate : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -383,7 +390,7 @@
                                                 <q-item-label class="title-grid">Proyecto</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.project_code ? props.row.project_code : '-'
-                                                }}</q-item-label>
+                                                    }}</q-item-label>
                                             </q-item-section>
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
@@ -445,7 +452,8 @@
                                         HandleEditDocument(
                                             props.row.id
                                         )
-                                        " icon="eva-edit-2-outline">
+                                        " icon="eva-edit-2-outline"
+                                        v-if="page.props.accountability.status != 'Autorizado'">
                                         <q-tooltip class="bg-secondary" :offset="[10, 10]">
                                             Editar de Rendición
                                         </q-tooltip>
@@ -454,7 +462,8 @@
                                         HandleDeleteDocument(
                                             props.row.id
                                         )
-                                        " icon="eva-trash-2-outline">
+                                        " icon="eva-trash-2-outline"
+                                        v-if="page.props.accountability.status != 'Autorizado'">
                                         <q-tooltip class="bg-red" :offset="[10, 10]">
                                             Eliminar Rendición
                                         </q-tooltip>
@@ -473,7 +482,7 @@ import Layout from "@/layouts/MainLayout.vue";
 import { ref, watch } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
-import { useQuasar } from "quasar";
+import { useQuasar,openURL  } from "quasar";
 defineProps({
     title: String,
     data: Object,
@@ -620,7 +629,7 @@ function HandleDeleteDocument(id) {
         .onOk(() => {
             router.delete(route("panel.accountability.authorization.detail.delete", [page.props.accountability.id, id]), {
                 onSuccess: () => {
-                    data.value = page.props.data;
+                    data.value = page.props.documents;
                     message.value = page.props.flash.message;
                     type.value = page.props.flash.type;
                     $q.notify({
@@ -634,35 +643,6 @@ function HandleDeleteDocument(id) {
         .onCancel(() => { })
         .onDismiss(() => { });
 }
-function HandleUpdateStatus(status) {
-    $q.dialog({
-        title: "Confirmar",
-        message: "¿Esta seguro de enviar el documento a autorización?",
-        cancel: true,
-        persistent: true,
-    })
-        .onOk(() => {
-            router.post(route("panel.accountability.authorization.detail.status", [page.props.accountability.id]), {
-                status: status
-            },
-                {
-                    onSuccess: () => {
-                        data.value = page.props.data;
-                        message.value = page.props.flash.message;
-                        type.value = page.props.flash.type;
-                        $q.notify({
-                            type: type.value,
-                            message: message.value,
-                        });
-                        data.value = page.props.documents
-                    },
-                }
-            )
-        })
-        .onCancel(() => { })
-        .onDismiss(() => { });
-}
-
 function HandleCancelStatus(status) {
     $q.dialog({
         title: "Confirmar",
@@ -670,18 +650,18 @@ function HandleCancelStatus(status) {
         cancel: true,
         persistent: true,
         prompt: {
-          model: '',
-          isValid: val => val.length > 5,
-          type: 'text' // optional
+            model: '',
+            isValid: val => val.length > 5,
+            type: 'text' // optional
         },
     })
         .onOk(data => {
-            router.post(route("panel.accountability.authorization.detail.status", page.props.accountability.id),{
-                status:status,
-                comments:data
-            } ,{
+            router.post(route("panel.accountability.authorization.detail.status", page.props.accountability.id), {
+                status: status,
+                comments: data
+            }, {
                 onSuccess: () => {
-                    data.value = page.props.data;
+                    data.value = page.props.documents;
                     message.value = page.props.flash.message;
                     type.value = page.props.flash.type;
                     $q.notify({
@@ -702,18 +682,18 @@ function HandleRejectStatus(status) {
         cancel: true,
         persistent: true,
         prompt: {
-          model: '',
-          isValid: val => val.length > 5,
-          type: 'text' // optional
+            model: '',
+            isValid: val => val.length > 5,
+            type: 'text' // optional
         },
     })
         .onOk(data => {
-            router.post(route("panel.accountability.authorization.detail.status", page.props.accountability.id),{
-                status:status,
-                comments:data
-            } ,{
+            router.post(route("panel.accountability.authorization.detail.status", page.props.accountability.id), {
+                status: status,
+                comments: data
+            }, {
                 onSuccess: () => {
-                    data.value = page.props.data;
+                    data.value = page.props.documents;
                     message.value = page.props.flash.message;
                     type.value = page.props.flash.type;
                     $q.notify({
@@ -735,12 +715,12 @@ function HandleAuthorizeStatus(status) {
         persistent: true,
     })
         .onOk(() => {
-            router.post(route("panel.accountability.authorization.detail.export", page.props.accountability.id),{
-                status:status,
-                comments:null
-            } ,{
+            router.post(route("panel.accountability.authorization.detail.export", page.props.accountability.id), {
+                status: status,
+                comments: null
+            }, {
                 onSuccess: () => {
-                    data.value = page.props.data;
+                    data.value = page.props.documents;
                     message.value = page.props.flash.message;
                     type.value = page.props.flash.type;
                     $q.notify({
@@ -752,5 +732,10 @@ function HandleAuthorizeStatus(status) {
         })
         .onCancel(() => { })
         .onDismiss(() => { });
+}
+function HandleGetReport() {
+    openURL(
+        route("panel.accountability.authorization.report", page.props.accountability.id)
+    );
 }
 </script>

@@ -177,7 +177,7 @@
                                     <div class="form-label" for="device_name">
                                         Razón Social
                                     </div>
-                                    <q-input v-model="form.business_name" dense outlined class="input-theme" />
+                                    <q-input v-model="form.business_name" dense outlined class="input-theme" @update:model-value="HandleChangeBusinessName()"/>
                                     <div v-if="errors.business_name" class="container-error">
                                         <ul v-for="(
                                                 error, index
@@ -190,7 +190,7 @@
                                     <div class="form-label" for="device_name">
                                         NIT
                                     </div>
-                                    <q-input v-model="form.nit" dense outlined class="input-theme" />
+                                    <q-input v-model="form.nit" dense outlined class="input-theme" @update:model-value="HandleChangeNIT()"/>
                                     <div v-if="errors.nit" class="container-error">
                                         <ul v-for="(
                                                 error, index
@@ -363,7 +363,7 @@ let document = ref({})
 const options = ref({
     accounts: null,
     documents: page.props.documents,
-    suppliers: [],
+    suppliers: page.props.suppliers,
     distribution: page.props.distribution,
     projects: page.props.projects,
 });
@@ -371,6 +371,17 @@ const options = ref({
 let step = ref(1);
 
 const form = ref(page.props.data);
+
+function HandleChangeNIT(){
+    let result=null
+    result=options.value.suppliers.find(e=>e.nit==form.value.nit)
+    form.value.business_name=result?result.business_name:form.value.business_name
+}
+function HandleChangeBusinessName(){
+    let result=null
+    result=options.value.suppliers.find(e=>e.business_name==form.value.business_name)
+    form.value.nit=result?result.nit:form.value.nit
+}
 
 function HandleUpdateForm() {
     router.post(

@@ -21,8 +21,7 @@ use App\Http\Controllers\Authorization\AccountabilityController as AuthAccountab
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::get('test', [AccountabilityController::class, 'HandleExportSAP'])->name('test');
-
+Route::get('test',[PanelController::class,'test']);
 
 Route::middleware('guest')->group(function() {
 
@@ -30,6 +29,7 @@ Route::middleware('guest')->group(function() {
 
     Route::post('login', [AuthController::class, 'HandleLoginAuth'])->name('login.store');
 });
+
 
 Route::middleware('auth')->group(function() {
 
@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function() {
                 Route::get('','HandleIndexAccountability')->name('index');
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
                 Route::put('','HandleUpdateAccountability')->name('update');
+                Route::get('{id}/report','HandleGetReport')->name('report');
                 Route::name('detail.')->prefix('{id}/detail')->group(function(){
                     Route::post('status','HandleUpdateStatus')->name('status');
                     Route::post('export','HandleExportSAP')->name('export');

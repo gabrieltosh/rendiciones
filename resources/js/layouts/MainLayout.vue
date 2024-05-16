@@ -74,6 +74,7 @@
                         default-opened
                         class="cursor-pointer q-mx-md q-mb-md"
                         header-class="menu-active"
+                        v-if="page.props.auth.user.type=='Administrador'"
                     >
                         <template v-slot:header>
                             <q-item-section avatar>

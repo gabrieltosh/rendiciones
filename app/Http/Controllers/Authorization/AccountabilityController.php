@@ -24,9 +24,93 @@ use Illuminate\Support\Facades\Http;
 use Auth;
 use Throwable ;
 use App\Models\Management;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AccountabilityController extends Controller
 {
+    public function HandleFormatLineReport($document_line, $management)
+    {
+        $journal = [];
+        $detail_lines = [];
+        $total = 0;
+        $exento_percentage = $document_line->document->exento / 100;
+        $rate_percentage = $document_line->document->tasas / 100;
+        $ice_percentage = $document_line->document->ice / 100;
+        $total_excento = $document_line->exento_status ? $document_line->exento : $document_line->amount * $exento_percentage;
+        $total_ice = $document_line->ice_status ? $document_line->ice : $document_line->amount * $ice_percentage;
+        $total_tasas = $document_line->tasas_status ? $document_line->tasas : $document_line->amount * $rate_percentage;
+        $amount = $document_line->amount - $total_excento - $total_tasas - $total_ice;
+        $operation = $document_line->document->type_calculation == 'Grossing Up' ? 1 : -1;
+
+        foreach ($document_line->document->detail as $detail) {
+            $percentage = $detail->percentage / 100;
+            $total_percentage = $amount * $percentage;
+            $total += ($operation * $total_percentage);
+            $detail_lines[] = [
+                'AccountCode' => $detail->account,
+                'Debit' => $document_line->document->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
+                'Credit' => $document_line->document->type_calculation == 'Grossing Up' ? $total_percentage : 0,
+                'AccountName' => $detail->account_name,
+            ];
+        }
+        $total += $document_line->amount;
+        $journal[] = [
+            'AccountCode' => $document_line->account,
+            'Debit' => $total,
+            'Credit' => 0,
+            'AccountName' => $document_line->account_name,
+        ];
+
+        return array_merge($journal, $detail_lines);
+    }
+    public function HandleGetReport($accountability_id){
+        $journal_entry_lines = array();
+        $management = Management::where('group', 'accountability_detail')->get();
+        $accountability = Accountability::where('id', $accountability_id)->first();
+        $documents = AccountabilityDetail::with('document.detail')->where('accountability_id', $accountability_id)->orderBy('id', 'asc')->get();
+        $exchange=DB::connection('sap')
+                    ->table('ORTT as T1')
+                    ->select('Rate')
+                    ->where('Currency','USD')
+                    ->where('RateDate',$accountability->end_date)
+                    ->toSql();
+        foreach ($documents as $document) {
+            foreach ($document->document->detail as $key => $value) {
+                $value->account_name=DB::connection('sap')
+                                    ->table('OACT as T1')
+                                    ->select('T1.AcctCode','T1.AcctName')
+                                    ->where('T1.AcctCode',$value->account)
+                                    ->first()->AcctName;
+            }
+        }
+        foreach ($documents as $document) {
+            $journal_entry_lines = array_merge($journal_entry_lines, $this->HandleFormatLineReport($document, $management));
+        }
+
+        $total_debit = 0;
+        $total_credit = 0;
+        foreach ($journal_entry_lines as $line) {
+            $total_debit += (float) $line['Debit'];
+            $total_credit += (float) $line['Credit'];
+        }
+        $debit = $total_debit - $total_credit;
+        $last_line[] = [
+            'AccountCode' => $accountability->account_code,
+            'AccountName' => $accountability->account_name,
+            'Debit' => 0,
+            'Credit' => $debit,
+            'ShortName' => $accountability->employee_code,
+            'LineMemo' => $accountability->description,
+        ];
+        $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
+
+        $pdf = Pdf::loadView('pdf.accountability',[
+            'accountability'=>$accountability,
+            'documents'=>$journal_entry_lines,
+            'exchange'=>isset($exchange->Rate)?$exchange->Rate:0
+        ]);
+        return $pdf->stream();
+    }
     public function HandleFormatLine($document_line, $management)
     {
         $journal = [];
@@ -64,6 +148,7 @@ class AccountabilityController extends Controller
                 $management->where('name', 'rate')->first()->value => $document_line->rate,
                 $management->where('name', 'gift_card')->first()->value => $document_line->gift_card,
                 $management->where('name', 'ice')->first()->value => $document_line->ice,
+                $management->where('name', 'document_type')->first()->value => $document_line->document->type_document_sap
             ];
         }
         $total += $document_line->amount;
@@ -91,7 +176,8 @@ class AccountabilityController extends Controller
             $management->where('name', 'excento')->first()->value => $document_line->excento,
             $management->where('name', 'rate')->first()->value => $document_line->rate,
             $management->where('name', 'gift_card')->first()->value => $document_line->gift_card,
-            $management->where('name', 'ice')->first()->value => $document_line->ice
+            $management->where('name', 'ice')->first()->value => $document_line->ice,
+            $management->where('name', 'document_type')->first()->value => $document_line->document->type_document_sap
         ];
 
         return array_merge($journal, $detail_lines);
@@ -187,10 +273,16 @@ class AccountabilityController extends Controller
             ->where('status', 'Pendiente')
             ->whereIn('user_id', $users)
             ->get();
+
+        $authorized = Accountability::with('user', 'profile')
+            ->where('status', 'Autorizado')
+            ->whereIn('user_id', $users)
+            ->get();
         return Inertia::render(
             'authorization/IndexAccountability',
             [
-                'data' => $accountabilities
+                'data' => $accountabilities,
+                'authorized'=>$authorized,
             ]
         );
     }
@@ -198,7 +290,7 @@ class AccountabilityController extends Controller
     {
         Session::put('title', 'Crear Rendición');
         $accountability = Accountability::with('user')->where('id', $accountability_id)->first();
-        $profile = Profile::where('id', $accountability->id)->first();
+        $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = GeneralAccounts::select(
             DB::raw("CONCAT(account_code,'-',account_name) as label"),
             'account_code',
@@ -335,6 +427,7 @@ class AccountabilityController extends Controller
     }
     public function HandleCreateDocument($accountability_id)
     {
+        $params=Management::where('group','supplier')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = DetailAccounts::select(
@@ -351,15 +444,32 @@ class AccountabilityController extends Controller
                 'accountability' => $accountability,
                 'accounts' => $accounts,
                 'documents' => $documents,
-                'suppliers' => $suppliers,
+                'suppliers'=>$this->HandleGetSuppliers($params),
                 'distribution' => $this->HandleGetDistributions(),
                 'projects' => $this->HandleGetProjects(),
             ]
         );
     }
-
+    public function HandleGetSuppliers($params){
+        $sap_suppliers= DB::connection('sap')
+            ->table('OCRD')
+            ->select(
+                $params->where('name','business_name')->first()->value.' as business_name' ,
+                $params->where('name','nit')->first()->value.' as nit'
+            )
+            ->get()->toArray();
+        $bd_suppliers=AccountabilityDetail::select(
+                                                'business_name',
+                                                'nit'
+                                            )
+                                            ->groupBy('business_name','nit')
+                                            ->get()
+                                            ->toArray();
+        return array_merge($sap_suppliers,$bd_suppliers);
+    }
     public function HandleEditDocument($accountability_id, $document_id)
     {
+        $params=Management::where('group','supplier')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = DetailAccounts::select(
@@ -377,7 +487,7 @@ class AccountabilityController extends Controller
                 'accountability' => $accountability,
                 'accounts' => $accounts,
                 'documents' => $documents,
-                'suppliers' => $suppliers,
+                'suppliers'=>$this->HandleGetSuppliers($params),
                 'data' => $data,
                 'distribution' => $this->HandleGetDistributions(),
                 'projects' => $this->HandleGetProjects(),

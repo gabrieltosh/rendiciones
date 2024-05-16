@@ -42,6 +42,13 @@ class ManagementSeeder extends Seeder
                 'type'=>'text',
                 'value'=>'RENDICIONES'
             ],
+            [
+                'group'=>'accountability',
+                'name'=>'service_layer_enable',
+                'label'=>'Usar unicamente SAP Service Layer',
+                'type'=>'text',
+                'value'=>'SI'
+            ],
             //OCRD Empleados Habilitados
             [
                 'group'=>'employee',
@@ -155,6 +162,28 @@ class ManagementSeeder extends Seeder
                 'label'=>'ICE',
                 'type'=>'text',
                 'value'=>'U_ICE'
+            ],
+            [
+                'group'=>'accountability_detail',
+                'name'=>'document_type',
+                'label'=>'Tipo de Documento',
+                'type'=>'text',
+                'value'=>'U_TipoDeDocumento'
+            ],
+            // Proveedores
+            [
+                'group'=>'supplier',
+                'name'=>'business_name',
+                'label'=>'Razón Social',
+                'type'=>'text',
+                'value'=>'CardFName'
+            ],
+            [
+                'group'=>'supplier',
+                'name'=>'nit',
+                'label'=>'NIT',
+                'type'=>'text',
+                'value'=>'LicTradNum'
             ],
         ]);
     }

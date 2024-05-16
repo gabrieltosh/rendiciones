@@ -1,7 +1,6 @@
 <template>
-    <Head>
-        <title>Welcome to laravel + quasar</title>
-    </Head>
+    <Head :title="title" />
+
     <Layout>
         <q-page class="column flex-center">
             <div>
@@ -15,6 +14,10 @@ import Layout from "../layouts/MainLayout.vue";
 import { ref, watch } from "vue";
 import { Head } from "@inertiajs/vue3";
 import { Dark } from "quasar";
+
+defineProps({
+    title: String,
+});
 
 const count = ref(0);
 const min = -5;

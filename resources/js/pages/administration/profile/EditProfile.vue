@@ -88,10 +88,10 @@
                                     <h5 class="title-tree text-center">
                                         Lista de Cuentas Contables
                                     </h5>
-                                    <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter"
+                                    <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter2" clearable
                                         class="input-theme"></q-input>
                                     <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
-                                        v-model:ticked="form.general" :filter="filter"
+                                        v-model:ticked="form.general" :filter="filter2"
                                         :filter-method="HandleFilterAccounts">
                                         <template v-slot:default-header="prop">
                                             <div class="tree-label">
@@ -146,7 +146,7 @@
                                         Lista de Cuentas Contables
                                     </h5>
                                     <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter"
-                                        class="input-theme"></q-input>
+                                        class="input-theme" clearable></q-input>
                                     <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
                                         v-model:ticked="form.detail" :filter="filter"
                                         :filter-method="HandleFilterAccounts">
@@ -290,8 +290,9 @@
                                                 <th colspan="1" align="left">
                                                     Tipo Documento
                                                     <span class="text-red">*</span>
-                                                    <q-input v-model="item.type_document_sap
-                                                        " dense class="input-theme" />
+                                                    <q-select class="input-theme" dense :options="options.document_types
+                                                        " v-model="item.type_document_sap" option-value="FldValue"
+                                                        option-label="Descr" emit-value map-options clearable/>
                                                     <div v-if="
                                                         errors[
                                                         'documents.' +
@@ -648,11 +649,13 @@ let options = ref({
     type: page.props.type,
     accounts_document: page.props.accounts_document,
     accounts_filter: page.props.accounts_document,
+    document_types: page.props.document_types
 });
 const loading = ref({
     card: false,
 });
 let filter = ref("");
+let filter2 = ref("");
 let filter_emp = ref("");
 
 const form = ref(page.props.profile);

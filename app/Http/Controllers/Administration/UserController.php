@@ -202,67 +202,69 @@ class UserController extends Controller
     public function HandleGetDistributions()
     {
         $params_sap = Management::where('group', 'accountability')->get();
-        $service_layer=$params_sap->where('name', 'service_layer')->first()->value;
-        try {
-            $login = Http::withoutVerifying()
-                ->baseUrl($service_layer . '/b1s/v1/')
-                ->post('Login', [
-                    'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
-                    'UserName' => $params_sap->where('name', 'user')->first()->value,
-                    'Password' => $params_sap->where('name', 'password')->first()->value
-                ]);
-            if ($login->successful()) {
-                $session = $login["SessionId"];
-                $response = Http::baseUrl($service_layer . '/b1s/v1/')
-                    ->withoutVerifying()
-                    ->withHeaders([
-                        'Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9',
-                    ])->get('DistributionRules?$select=FactorCode,FactorDescription,InWhichDimension');
-                if ($response->successful()) {
-                    $distribution = $response->collect('value');
-                    $format_data = $distribution->map(function ($item) {
-                        return [
-                            'DimCode'=>$item['InWhichDimension'],
-                            'PrcCode' => $item['FactorCode'],
-                            'PrcName' => $item['FactorDescription'],
-                            'Name' => $item['FactorCode'] . '-' . $item['FactorDescription'],
-                        ];
-                    });
-                    Http::withoutVerifying()->baseUrl($service_layer . '/b1s/v1/')->post('Logout');
-                    return $format_data->groupBy('DimCode')->toArray();
+        if ($params_sap->where('name', 'service_layer_enable')->first()->value == 'SI') {
+            $service_layer = $params_sap->where('name', 'service_layer')->first()->value;
+            try {
+                $login = Http::withoutVerifying()
+                    ->baseUrl($service_layer . '/b1s/v1/')
+                    ->post('Login', [
+                        'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
+                        'UserName' => $params_sap->where('name', 'user')->first()->value,
+                        'Password' => $params_sap->where('name', 'password')->first()->value
+                    ]);
+                if ($login->successful()) {
+                    $session = $login["SessionId"];
+                    $response = Http::baseUrl($service_layer . '/b1s/v1/')
+                        ->withoutVerifying()
+                        ->withHeaders([
+                            'Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9',
+                        ])->get('DistributionRules?$select=FactorCode,FactorDescription,InWhichDimension');
+                    if ($response->successful()) {
+                        $distribution = $response->collect('value');
+                        $format_data = $distribution->map(function ($item) {
+                            return [
+                                'DimCode' => $item['InWhichDimension'],
+                                'PrcCode' => $item['FactorCode'],
+                                'PrcName' => $item['FactorDescription'],
+                                'Name' => $item['FactorCode'] . '-' . $item['FactorDescription'],
+                            ];
+                        });
+                        Http::withoutVerifying()->baseUrl($service_layer . '/b1s/v1/')->post('Logout');
+                        return $format_data->groupBy('DimCode')->toArray();
+                    } else {
+                        Session::flash('message', $response->json()['error']['message']['value']);
+                        Session::flash('type', 'negative');
+                    }
                 } else {
-                    Session::flash('message', $response->json()['error']['message']['value']);
+                    Session::flash('message', $login->json()['error']['message']['value']);
                     Session::flash('type', 'negative');
                 }
-            } else {
-                Session::flash('message', $login->json()['error']['message']['value']);
-                Session::flash('type', 'negative');
+            } catch (Throwable $e) {
+                if ($e->getCode() === 7) {
+                    Session::flash('message', $e->getMessage());
+                    Session::flash('type', 'negative');
+                } else {
+                    Session::flash('message', $e->getMessage());
+                    Session::flash('type', 'negative');
+                }
             }
-        } catch (Throwable $e) {
-            if ($e->getCode() === 7) {
-                Session::flash('message', $e->getMessage());
-                Session::flash('type', 'negative');
-            } else {
-                Session::flash('message', $e->getMessage());
-                Session::flash('type', 'negative');
+        } else {
+            $data = array();
+            for ($i = 1; $i <= 5; $i++) {
+                $data[$i] =
+
+                    DB::connection('sap')
+                        ->table('OPRC as T1')
+                        ->select(
+                            DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
+                            'T1.PrcCode',
+                            'T1.PrcName'
+                        )
+                        ->where('T1.DimCode', $i)
+                        ->where('T1.Locked', 'N')
+                        ->get();
             }
+            return $data;
         }
-
-        // $data = array();
-        // for ($i = 1; $i <= 5; $i++) {
-        //     $data[$i] =
-
-        //         DB::connection('sap')
-        //             ->table('OPRC as T1')
-        //             ->select(
-        //                 DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
-        //                 'T1.PrcCode',
-        //                 'T1.PrcName'
-        //             )
-        //             ->where('T1.DimCode', $i)
-        //             ->where('T1.Locked', 'N')
-        //             ->get();
-        // }
-        // return $data;
     }
 }
