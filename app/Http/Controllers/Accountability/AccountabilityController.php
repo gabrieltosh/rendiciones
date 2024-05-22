@@ -19,9 +19,20 @@ use Redirect;
 use Session;
 use Auth;
 use DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AccountabilityController extends Controller
 {
+    public function HandleGetReportAccountability($profile_id,$accountability_id){
+        $data=Accountability::with('profile','user','detail.document')
+                    ->where('id',$accountability_id)
+                    ->first();
+        $pdf = Pdf::loadView('pdf.accountability_detail',[
+            'data'=>$data
+        ]);
+        $pdf->setPaper('letter', 'portrait');
+        return $pdf->stream();
+    }
     public function HandleUpdateStatus($profile_id,$accountability_id, Request $request){
         Accountability::findOrFail($accountability_id)->fill([
             'status'=>$request->status

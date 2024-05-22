@@ -614,7 +614,7 @@ function HandleStoreForm() {
     page.props.errors = {};
     $q.dialog({
         title: "Confirmar",
-        message: "¿Esta seguro de eliminar el Usuario?",
+        message: "¿Esta seguro de crear el perfil?",
         cancel: true,
         persistent: true,
     })

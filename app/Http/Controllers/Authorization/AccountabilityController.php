@@ -28,6 +28,16 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class AccountabilityController extends Controller
 {
+    public function HandleGetReportAccountability($accountability_id){
+        $data=Accountability::with('profile','user','detail.document')
+                    ->where('id',$accountability_id)
+                    ->first();
+        $pdf = Pdf::loadView('pdf.accountability_detail',[
+            'data'=>$data
+        ]);
+        $pdf->setPaper('letter', 'portrait');
+        return $pdf->stream();
+    }
     public function HandleFormatLineReport($document_line, $management)
     {
         $journal = [];
@@ -73,7 +83,7 @@ class AccountabilityController extends Controller
                     ->select('Rate')
                     ->where('Currency','USD')
                     ->where('RateDate',$accountability->end_date)
-                    ->toSql();
+                    ->first();
         foreach ($documents as $document) {
             foreach ($document->document->detail as $key => $value) {
                 $value->account_name=DB::connection('sap')
@@ -134,21 +144,7 @@ class AccountabilityController extends Controller
                 'Debit' => $document_line->document->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
                 'Credit' => $document_line->document->type_calculation == 'Grossing Up' ? $total_percentage : 0,
                 'ShortName' => $detail->account,
-                'LineMemo' => $document_line->concept,
-                $management->where('name', 'date')->first()->value => $document_line->date,
-                $management->where('name', 'document_number')->first()->value => $document_line->document_number,
-                $management->where('name', 'authorization_number')->first()->value => $document_line->authorization_number,
-                $management->where('name', 'cuf')->first()->value => $document_line->cuf,
-                $management->where('name', 'control_code')->first()->value => $document_line->control_code,
-                $management->where('name', 'business_name')->first()->value => $document_line->business_name,
-                $management->where('name', 'nit')->first()->value => $document_line->nit,
-                $management->where('name', 'amount')->first()->value => $document_line->amount,
-                $management->where('name', 'discount')->first()->value => $document_line->discount,
-                $management->where('name', 'excento')->first()->value => $document_line->excento,
-                $management->where('name', 'rate')->first()->value => $document_line->rate,
-                $management->where('name', 'gift_card')->first()->value => $document_line->gift_card,
-                $management->where('name', 'ice')->first()->value => $document_line->ice,
-                $management->where('name', 'document_type')->first()->value => $document_line->document->type_document_sap
+                'LineMemo' => $document_line->concept
             ];
         }
         $total += $document_line->amount;

@@ -106,7 +106,13 @@ return [
             'encrypt' => env('DB_ENCRYPT_SAP', 'yes'),
             'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE_SAP', 'true'),
         ],
-
+        'hana' => [
+            'driver' => env('DB_HANA_DRIVER'),
+            'server' =>env('DB_HANA_SERVERNAME'),
+            'database' =>env('DB_HANA_DATABASE'),
+            'username' =>env('DB_HANA_USERNAME'),
+            'password' =>env('DB_HANA_PASSWORD'),
+        ],
     ],
 
     /*

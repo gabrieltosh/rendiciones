@@ -88,7 +88,7 @@
                     </tr>
                     <tr style="font-size: 11px;">
                         <td>
-                            {{$exchange}}
+                            {{number_format($exchange,2)}}
                         </td>
                     </tr>
                 </table>
@@ -149,8 +149,8 @@
         @php
             $total_debit+=$document['Debit'];
             $total_credit+=$document['Credit'];
-            $total_debit_usd+=$document['Debit']*$exchange;
-            $total_credit_usd+=$document['Credit']*$exchange;
+            $total_debit_usd+=$exchange!=0?$document['Debit']/$exchange:0;
+            $total_credit_usd+=$exchange!=0?$document['Credit']/$exchange:0;
         @endphp
         <tr>
             <td align="left" style="width: 20%; font-size: 10px; padding: 5px;">
@@ -166,10 +166,10 @@
                 {{number_format($document['Credit'],2) }}
             </td>
             <td align="right" style="width: 20%; font-size: 10px; padding: 5px;">
-                {{number_format($document['Debit']*$exchange,2) }}
+                {{number_format($exchange!=0?$document['Debit']/$exchange:0,2) }}
             </td>
             <td align="right" style="width: 20%; font-size: 10px; padding: 5px;">
-                {{number_format($document['Credit']*$exchange,2) }}
+                {{number_format($exchange!=0?$document['Credit']/$exchange:0,2) }}
             </td>
         </tr>
         @endforeach

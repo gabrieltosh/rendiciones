@@ -1,252 +1,125 @@
 <template>
+
     <Head :title="title" />
     <Layout>
         <div class="row justify-center q-px-md q-py-lg">
             <div class="col-xs-12 col-sm-12 col-md-9">
-                <q-stepper
-                    v-model="step"
-                    header-nav
-                    ref="stepper"
-                    color="primary"
-                    animated
-                    flat
-                    alternative-labels
-                    class="backgroup-theme"
-                >
-                    <q-step
-                        :name="1"
-                        title="Datos Usuario"
-                        icon="settings"
-                        :done="step > 1"
-                        :error="Object.keys(errors).length > 0 ? true : false"
-                    >
-                        <q-card
-                            class="q-px-lg q-py-md q-ma-sm card-form q-mt-md"
-                        >
+                <q-stepper v-model="step" header-nav ref="stepper" color="primary" animated flat alternative-labels
+                    class="backgroup-theme">
+                    <q-step :name="1" title="Datos Usuario" icon="settings" :done="step > 1"
+                        :error="Object.keys(errors).length > 0 ? true : false">
+                        <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
                             <div class="row">
                                 <div class="col-sm-6">
                                     <h5 class="title-form">Crear Usuario</h5>
                                 </div>
                                 <div class="col-sm-6 text-right q-gutter-sm">
-                                    <q-btn
-                                        color="secondary"
-                                        label="Cancelar"
-                                        size="12px"
-                                        no-caps
-                                        @click="
-                                            router.visit(
-                                                route('panel.user.index')
-                                            )
-                                        "
-                                        flat
-                                    />
-                                    <q-btn
-                                        @click="$refs.stepper.next()"
-                                        color="primary"
-                                        no-caps
-                                        size="12px"
-                                        label="Continuar"
-                                    />
+                                    <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
+                                        router.visit(
+                                            route('panel.user.index')
+                                        )
+                                        " flat />
+                                    <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps size="12px"
+                                        label="Continuar" />
+                                    <q-btn color="primary" label="Actualizar" size="12px" no-caps
+                                        @click="HandleUpdateForm()" />
                                 </div>
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Nombres <span class="text-red">*</span>
                                     </div>
-                                    <q-input
-                                        v-model="form.name"
-                                        dense
-                                        outlined
-                                        class="input-theme"
-                                    />
-                                    <div
-                                        v-if="errors.name"
-                                        class="container-error"
-                                    >
-                                        <ul
-                                            v-for="(
+                                    <q-input v-model="form.name" dense outlined class="input-theme" />
+                                    <div v-if="errors.name" class="container-error">
+                                        <ul v-for="(
                                                 error, index
-                                            ) in errors.name"
-                                            :key="index"
-                                            class="message-error"
-                                        >
+                                            ) in errors.name" :key="index" class="message-error">
                                             <li>{{ error }}</li>
                                         </ul>
                                     </div>
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Username <span class="text-red">*</span>
                                     </div>
-                                    <q-input
-                                        v-model="form.username"
-                                        dense
-                                        outlined
-                                        class="input-theme"
-                                    />
-                                    <div
-                                        v-if="errors.username"
-                                        class="container-error"
-                                    >
-                                        <ul
-                                            v-for="(
+                                    <q-input v-model="form.username" dense outlined class="input-theme" />
+                                    <div v-if="errors.username" class="container-error">
+                                        <ul v-for="(
                                                 error, index
-                                            ) in errors.username"
-                                            :key="index"
-                                            class="message-error"
-                                        >
+                                            ) in errors.username" :key="index" class="message-error">
                                             <li>{{ error }}</li>
                                         </ul>
                                     </div>
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Correo Electronico
                                         <span class="text-red">*</span>
                                     </div>
-                                    <q-input
-                                        v-model="form.email"
-                                        dense
-                                        outlined
-                                        class="input-theme"
-                                        type="email"
-                                    />
-                                    <div
-                                        v-if="errors.email"
-                                        class="container-error"
-                                    >
-                                        <ul
-                                            v-for="(
+                                    <q-input v-model="form.email" dense outlined class="input-theme" type="email" />
+                                    <div v-if="errors.email" class="container-error">
+                                        <ul v-for="(
                                                 error, index
-                                            ) in errors.email"
-                                            :key="index"
-                                            class="message-error"
-                                        >
+                                            ) in errors.email" :key="index" class="message-error">
                                             <li>{{ error }}</li>
                                         </ul>
                                     </div>
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Contraseña
                                     </div>
-                                    <q-input
-                                        v-model="form.password"
-                                        dense
-                                        outlined
-                                        class="input-theme"
-                                        type="password"
-                                    />
-                                    <div
-                                        v-if="errors.password"
-                                        class="container-error"
-                                    >
-                                        <ul
-                                            v-for="(
+                                    <q-input v-model="form.password" dense outlined class="input-theme"
+                                        type="password" />
+                                    <div v-if="errors.password" class="container-error">
+                                        <ul v-for="(
                                                 error, index
-                                            ) in errors.password"
-                                            :key="index"
-                                            class="message-error"
-                                        >
+                                            ) in errors.password" :key="index" class="message-error">
                                             <li>{{ error }}</li>
                                         </ul>
                                     </div>
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Tipo <span class="text-red">*</span>
                                     </div>
-                                    <q-select
-                                        v-model="form.type"
-                                        :options="['Administrador', 'Usuario']"
-                                        dense
-                                        outlined
-                                        class="input-theme"
-                                        type="password"
-                                    />
-                                    <div
-                                        v-if="errors.type"
-                                        class="container-error"
-                                    >
-                                        <ul
-                                            v-for="(
+                                    <q-select v-model="form.type" :options="['Administrador', 'Usuario']" dense outlined
+                                        class="input-theme" type="password" />
+                                    <div v-if="errors.type" class="container-error">
+                                        <ul v-for="(
                                                 error, index
-                                            ) in errors.type"
-                                            :key="index"
-                                            class="message-error"
-                                        >
+                                            ) in errors.type" :key="index" class="message-error">
                                             <li>{{ error }}</li>
                                         </ul>
                                     </div>
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Estado <span class="text-red">*</span>
                                     </div>
-                                    <q-select
-                                        v-model="form.status"
-                                        :options="[
-                                            'Activo',
-                                            'PreActivo',
-                                            'Bloqueado',
-                                        ]"
-                                        dense
-                                        outlined
-                                        class="input-theme"
-                                        type="password"
-                                    />
-                                    <div
-                                        v-if="errors.status"
-                                        class="container-error"
-                                    >
-                                        <ul
-                                            v-for="(
+                                    <q-select v-model="form.status" :options="[
+                                        'Activo',
+                                        'PreActivo',
+                                        'Bloqueado',
+                                    ]" dense outlined class="input-theme" type="password" />
+                                    <div v-if="errors.status" class="container-error">
+                                        <ul v-for="(
                                                 error, index
-                                            ) in errors.status"
-                                            :key="index"
-                                            class="message-error"
-                                        >
+                                            ) in errors.status" :key="index" class="message-error">
                                             <li>{{ error }}</li>
                                         </ul>
                                     </div>
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Codigo Empleado
                                     </div>
-                                    <q-input
-                                        v-model="form.card_code"
-                                        dense
-                                        outlined
-                                        class="input-theme"
-                                        clearable
-                                    />
-                                    <div
-                                        v-if="errors.card_code"
-                                        class="container-error"
-                                    >
-                                        <ul
-                                            v-for="(
+                                    <q-input v-model="form.card_code" dense outlined class="input-theme" clearable />
+                                    <div v-if="errors.card_code" class="container-error">
+                                        <ul v-for="(
                                                 error, index
-                                            ) in errors.card_code"
-                                            :key="index"
-                                            class="message-error"
-                                        >
+                                            ) in errors.card_code" :key="index" class="message-error">
                                             <li>{{ error }}</li>
                                         </ul>
                                     </div>
@@ -254,15 +127,8 @@
                             </div>
                         </q-card>
                     </q-step>
-                    <q-step
-                        :name="2"
-                        title="Perfiles"
-                        icon="eva-person-outline"
-                        :done="step > 2"
-                    >
-                        <q-card
-                            class="q-px-lg q-py-md q-ma-sm card-form q-mt-md"
-                        >
+                    <q-step :name="2" title="Perfiles" icon="eva-person-outline" :done="step > 2">
+                        <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
                             <div class="row">
                                 <div class="col-12">
                                     <div class="row q-ma-sm">
@@ -271,41 +137,21 @@
                                                 Asignación de Perfiles
                                             </h5>
                                         </div>
-                                        <div
-                                            class="col-sm-6 text-right q-gutter-sm"
-                                        >
-                                            <q-btn
-                                                color="secondary"
-                                                label="Cancelar"
-                                                size="12px"
-                                                no-caps
-                                                @click="
-                                                    router.visit(
-                                                        route(
-                                                            'panel.user.index'
-                                                        )
+                                        <div class="col-sm-6 text-right q-gutter-sm">
+                                            <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
+                                                router.visit(
+                                                    route(
+                                                        'panel.user.index'
                                                     )
-                                                "
-                                                flat
-                                            />
-                                            <q-btn
-                                                flat
-                                                color="primary"
-                                                @click="
-                                                    $refs.stepper.previous()
-                                                "
-                                                label="Atras"
-                                                no-caps
-                                                size="12px"
-                                                class="q-ml-sm"
-                                            />
-                                            <q-btn
-                                                @click="$refs.stepper.next()"
-                                                color="primary"
-                                                no-caps
-                                                size="12px"
-                                                label="Continuar"
-                                            />
+                                                )
+                                                " flat />
+                                            <q-btn flat color="primary" @click="
+                                                $refs.stepper.previous()
+                                                " label="Atras" no-caps size="12px" class="q-ml-sm" />
+                                            <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
+                                                label="Continuar" outline />
+                                            <q-btn color="primary" label="Actualizar" size="12px" no-caps
+                                                @click="HandleUpdateForm()" />
                                         </div>
                                     </div>
                                     <q-separator />
@@ -314,22 +160,11 @@
                                     <h5 class="title-tree text-center">
                                         Lista de Perfiles
                                     </h5>
-                                    <q-input
-                                        outlined
-                                        dense
-                                        color="primary"
-                                        placeholder="Buscar..."
-                                        v-model="filter"
-                                        class="input-theme"
-                                    ></q-input>
-                                    <q-tree
-                                        :nodes="options.profiles"
-                                        node-key="label"
-                                        tick-strategy="leaf"
-                                        v-model:ticked="form.profiles"
-                                        :filter="filter"
-                                        :filter-method="HandleFilterAccounts"
-                                    >
+                                    <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter"
+                                        class="input-theme"></q-input>
+                                    <q-tree :nodes="options.profiles" node-key="label" tick-strategy="leaf"
+                                        v-model:ticked="form.profiles" :filter="filter"
+                                        :filter-method="HandleFilterAccounts">
                                         <template v-slot:default-header="prop">
                                             <div class="tree-label">
                                                 {{ prop.node.label }}
@@ -343,11 +178,7 @@
                                         Perfiles Seleccionados
                                     </h5>
                                     <ul class="q-ma-none">
-                                        <div
-                                            v-for="tick in form.profiles"
-                                            :key="`ticked-${tick}`"
-                                            class="tree-label"
-                                        >
+                                        <div v-for="tick in form.profiles" :key="`ticked-${tick}`" class="tree-label">
                                             <li>{{ tick }}</li>
                                         </div>
                                     </ul>
@@ -355,15 +186,8 @@
                             </div>
                         </q-card>
                     </q-step>
-                    <q-step
-                        :name="3"
-                        title="Autorización"
-                        icon="eva-person-outline"
-                        :done="step > 3"
-                    >
-                        <q-card
-                            class="q-px-lg q-py-md q-ma-sm card-form q-mt-md"
-                        >
+                    <q-step :name="3" title="Autorización" icon="eva-person-outline" :done="step > 3">
+                        <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
                             <div class="row">
                                 <div class="col-12">
                                     <div class="row q-ma-sm">
@@ -372,41 +196,21 @@
                                                 Asignación de Autorizadores
                                             </h5>
                                         </div>
-                                        <div
-                                            class="col-sm-6 text-right q-gutter-sm"
-                                        >
-                                            <q-btn
-                                                color="secondary"
-                                                label="Cancelar"
-                                                size="12px"
-                                                no-caps
-                                                @click="
-                                                    router.visit(
-                                                        route(
-                                                            'panel.user.index'
-                                                        )
+                                        <div class="col-sm-6 text-right q-gutter-sm">
+                                            <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
+                                                router.visit(
+                                                    route(
+                                                        'panel.user.index'
                                                     )
-                                                "
-                                                flat
-                                            />
-                                            <q-btn
-                                                flat
-                                                color="primary"
-                                                @click="
-                                                    $refs.stepper.previous()
-                                                "
-                                                label="Atras"
-                                                no-caps
-                                                size="12px"
-                                                class="q-ml-sm"
-                                            />
-                                            <q-btn
-                                                @click="$refs.stepper.next()"
-                                                color="primary"
-                                                no-caps
-                                                size="12px"
-                                                label="Continuar"
-                                            />
+                                                )
+                                                " flat />
+                                            <q-btn flat color="primary" @click="
+                                                $refs.stepper.previous()
+                                                " label="Atras" no-caps size="12px" class="q-ml-sm" />
+                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps
+                                                size="12px" label="Continuar" />
+                                            <q-btn color="primary" label="Actualizar" size="12px" no-caps
+                                                @click="HandleUpdateForm()" />
                                         </div>
                                     </div>
                                     <q-separator />
@@ -415,22 +219,11 @@
                                     <h5 class="title-tree text-center">
                                         Lista de Usuarios
                                     </h5>
-                                    <q-input
-                                        outlined
-                                        dense
-                                        color="primary"
-                                        placeholder="Buscar..."
-                                        v-model="filter2"
-                                        class="input-theme"
-                                    ></q-input>
-                                    <q-tree
-                                        :nodes="options.users"
-                                        node-key="label"
-                                        tick-strategy="leaf"
-                                        v-model:ticked="form.users"
-                                        :filter="filter2"
-                                        :filter-method="HandleFilterAccounts"
-                                    >
+                                    <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter2"
+                                        class="input-theme"></q-input>
+                                    <q-tree :nodes="options.users" node-key="label" tick-strategy="leaf"
+                                        v-model:ticked="form.users" :filter="filter2"
+                                        :filter-method="HandleFilterAccounts">
                                         <template v-slot:default-header="prop">
                                             <div class="tree-label">
                                                 {{ prop.node.label }}
@@ -444,11 +237,7 @@
                                         Usuario Seleccionados
                                     </h5>
                                     <ul class="q-ma-none">
-                                        <div
-                                            v-for="tick in form.users"
-                                            :key="`ticked-${tick}`"
-                                            class="tree-label"
-                                        >
+                                        <div v-for="tick in form.users" :key="`ticked-${tick}`" class="tree-label">
                                             <li>{{ tick }}</li>
                                         </div>
                                     </ul>
@@ -456,11 +245,7 @@
                             </div>
                         </q-card>
                     </q-step>
-                    <q-step
-                        :name="4"
-                        title="Normas Reparto"
-                        icon="eva-file-text-outline"
-                    >
+                    <q-step :name="4" title="Normas Reparto" icon="eva-file-text-outline">
                         <q-card class="q-pa-lg card-form q-mt-md">
                             <div class="row">
                                 <div class="col-sm-6">
@@ -469,126 +254,57 @@
                                     </h5>
                                 </div>
                                 <div class="col-sm-6 text-right q-gutter-sm">
-                                    <q-btn
-                                        color="secondary"
-                                        label="Cancelar"
-                                        size="12px"
-                                        no-caps
-                                        @click="
-                                            router.visit(
-                                                route('panel.user.index')
-                                            )
-                                        "
-                                        flat
-                                    />
-                                    <q-btn
-                                        flat
-                                        color="primary"
-                                        @click="$refs.stepper.previous()"
-                                        label="Atras"
-                                        no-caps
-                                        size="12px"
-                                        class="q-ml-sm"
-                                    />
-                                    <q-btn
-                                        color="primary"
-                                        label="Actualizar"
-                                        size="12px"
-                                        no-caps
-                                        @click="HandleUpdateForm()"
-                                    />
+                                    <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
+                                        router.visit(
+                                            route('panel.user.index')
+                                        )
+                                        " flat />
+                                    <q-btn flat color="primary" @click="$refs.stepper.previous()" label="Atras" no-caps
+                                        size="12px" class="q-ml-sm" />
+                                    <q-btn color="primary" label="Actualizar" size="12px" no-caps
+                                        @click="HandleUpdateForm()" />
                                 </div>
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Norma Reparto 1
                                     </div>
-                                    <q-select
-                                        class="input-theme"
-                                        dense
-                                        outlined
-                                        :options="options.distribution[1]"
-                                        v-model="form.distribution_rule_one"
-                                        option-value="PrcCode"
-                                        option-label="Name"
-                                        emit-value
-                                        clearable
-                                        map-options />
+                                    <q-select class="input-theme" dense outlined :options="options.distribution[1]"
+                                        v-model="form.distribution_rule_one" option-value="PrcCode" option-label="Name"
+                                        emit-value clearable map-options />
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Norma Reparto 2
                                     </div>
-                                    <q-select
-                                        class="input-theme"
-                                        dense
-                                        outlined
-                                        :options="options.distribution[2]"
-                                        v-model="form.distribution_rule_second"
-                                        option-value="PrcCode"
-                                        option-label="Name"
-                                        clearable
-                                        emit-value
-                                        map-options />
+                                    <q-select class="input-theme" dense outlined :options="options.distribution[2]"
+                                        v-model="form.distribution_rule_second" option-value="PrcCode"
+                                        option-label="Name" clearable emit-value map-options />
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Norma Reparto 3
                                     </div>
-                                    <q-select
-                                        class="input-theme"
-                                        dense
-                                        outlined
-                                        :options="options.distribution[3]"
-                                        v-model="form.distribution_rule_three"
-                                        option-value="PrcCode"
-                                        option-label="Name"
-                                        clearable
-                                        emit-value
-                                        map-options />
+                                    <q-select class="input-theme" dense outlined :options="options.distribution[3]"
+                                        v-model="form.distribution_rule_three" option-value="PrcCode"
+                                        option-label="Name" clearable emit-value map-options />
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Norma Reparto 4
                                     </div>
-                                    <q-select
-                                        class="input-theme"
-                                        dense
-                                        outlined
-                                        :options="options.distribution[4]"
-                                        v-model="form.distribution_rule_four"
-                                        option-value="PrcCode"
-                                        option-label="Name"
-                                        clearable
-                                        emit-value
-                                        map-options />
+                                    <q-select class="input-theme" dense outlined :options="options.distribution[4]"
+                                        v-model="form.distribution_rule_four" option-value="PrcCode" option-label="Name"
+                                        clearable emit-value map-options />
                                 </div>
-                                <div
-                                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                >
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Norma Reparto 5
                                     </div>
-                                    <q-select
-                                        class="input-theme"
-                                        dense
-                                        outlined
-                                        :options="options.distribution[5]"
-                                        v-model="form.distribution_rule_five"
-                                        option-value="PrcCode"
-                                        option-label="Name"
-                                        clearable
-                                        emit-value
-                                        map-options />
+                                    <q-select class="input-theme" dense outlined :options="options.distribution[5]"
+                                        v-model="form.distribution_rule_five" option-value="PrcCode" option-label="Name"
+                                        clearable emit-value map-options />
                                 </div>
                             </div>
                         </q-card>

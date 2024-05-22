@@ -1,11 +1,14 @@
 <template>
     <Head :title="title" />
-
     <Layout>
         <q-page class="column flex-center">
-            <div>
-                <q-toggle label="Dark Mode" v-model="darkMode" />
-            </div>
+            <q-img
+                src="/images/RendicionFacil.png"
+                :ratio="16/9"
+                spinner-color="primary"
+                spinner-size="82px"
+                fit="contain"
+            />
         </q-page>
     </Layout>
 </template>

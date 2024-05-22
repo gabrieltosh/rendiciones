@@ -1,0 +1,9 @@
+{
+    "poppins": {
+        "normal": "\/var\/www\/rendiciones\/storage\/fonts\/poppins_normal_9a83efb5d5951c1fcfe6e51b05ee3b63",
+        "italic": "\/var\/www\/rendiciones\/storage\/fonts\/poppins_italic_a723ad21adfcf46d8a8f73c109e4fc44",
+        "bold": "\/var\/www\/rendiciones\/storage\/fonts\/poppins_bold_171804562624540859681e54b7ed986c",
+        "300": "poppins_300_cc7e113463a0425ff8f97f19b973847c",
+        "200": "\/var\/www\/rendiciones\/storage\/fonts\/poppins_200_b2ecafaf3568585ec5f443e9d7a7387b"
+    }
+}

@@ -19,8 +19,10 @@
                                             route('panel.profile.index')
                                         )
                                         " flat />
-                                    <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
+                                    <q-btn @click="$refs.stepper.next()" color="primary" outline no-caps size="12px"
                                         label="Continuar" />
+                                    <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
+                                                label="Actualizar" />
                                 </div>
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
@@ -78,8 +80,10 @@
                                             <q-btn flat color="primary" @click="
                                                 $refs.stepper.previous()
                                                 " label="Atras" no-caps size="12px" />
-                                            <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
+                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps size="12px"
                                                 label="Continuar" />
+                                            <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
+                                                label="Actualizar" />
                                         </div>
                                     </div>
                                     <q-separator />
@@ -135,8 +139,10 @@
                                             <q-btn flat color="primary" @click="
                                                 $refs.stepper.previous()
                                                 " label="Atras" no-caps size="12px" class="q-ml-sm" />
-                                            <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
+                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps size="12px"
                                                 label="Continuar" />
+                                            <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
+                                                label="Actualizar" />
                                         </div>
                                     </div>
                                     <q-separator />
@@ -192,8 +198,10 @@
                                             <q-btn flat color="primary" @click="
                                                 $refs.stepper.previous()
                                                 " label="Atras" no-caps size="12px" />
-                                            <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
+                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps size="12px"
                                                 label="Continuar" />
+                                            <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
+                                                label="Actualizar" />
                                         </div>
                                     </div>
                                     <q-separator />

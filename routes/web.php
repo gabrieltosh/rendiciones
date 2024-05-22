@@ -32,8 +32,6 @@ Route::middleware('guest')->group(function() {
 
 
 Route::middleware('auth')->group(function() {
-
-    Route::get('');
     Route::get('/',[PanelController::class,'HandleIndexDashboard'])->middleware('verified')->name('home');
     Route::post('logout', [AuthController::class, 'HandleLogoutAuth'])->name('auth.logout');
 
@@ -80,7 +78,7 @@ Route::middleware('auth')->group(function() {
                 Route::get('','HandleIndexAccountability')->name('index');
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
                 Route::put('','HandleUpdateAccountability')->name('update');
-                Route::get('{id}/report','HandleGetReport')->name('report');
+                Route::get('{id}/report','HandleGetReportAccountability')->name('report');
                 Route::name('detail.')->prefix('{id}/detail')->group(function(){
                     Route::post('status','HandleUpdateStatus')->name('status');
                     Route::post('export','HandleExportSAP')->name('export');
@@ -99,6 +97,7 @@ Route::middleware('auth')->group(function() {
                 Route::put('','HandleUpdateAccountability')->name('update');
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
                 Route::get('create','HandleCreateAccountability')->name('create');
+                Route::get('{id}/report','HandleGetReportAccountability')->name('report');
                 Route::name('detail.')->prefix('{id}/detail')->group(function(){
                     Route::post('status','HandleUpdateStatus')->name('status');
                     Route::get('','HandleDetailAccountability')->name('index');

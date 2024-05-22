@@ -36,7 +36,8 @@
                     <div class="col-6 text-right">
                         <q-btn v-if="page.props.accountability.status=='Rechazado' || page.props.accountability.status==null" icon="eva-checkmark-circle-outline" color="positive" label="Enviar a Aut." size="11px"
                             no-caps @click="HandleUpdateStatus('Pendiente')" />
-                        <q-btn color="primary" label="Imprimir" size="11px" no-caps></q-btn>
+                        <q-btn color="primary" label="Imprimir" size="11px"
+                            no-caps @click="HandleReportAccountability()" />
                     </div>
                 </div>
                 <div class="row q-col-gutter-md">
@@ -488,7 +489,7 @@ import Layout from "@/layouts/MainLayout.vue";
 import { ref, watch } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
-import { useQuasar } from "quasar";
+import { useQuasar,openURL } from "quasar";
 defineProps({
     title: String,
     data: Object,
@@ -678,5 +679,9 @@ function HandleUpdateStatus(status) {
         .onCancel(() => { })
         .onDismiss(() => { });
 }
-
+function HandleReportAccountability(){
+    openURL(
+        route("panel.accountability.manage.report", [page.props.profile.id, page.props.accountability.id])
+    );
+}
 </script>

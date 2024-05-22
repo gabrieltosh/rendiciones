@@ -1,5 +1,4 @@
 <template>
-
     <Head :title="title" />
     <Layout>
         <div class="row justify-center q-px-md q-py-lg">
@@ -28,8 +27,10 @@
                                             )
                                         )
                                         " flat />
-                                    <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
+                                    <q-btn @click="$refs.stepper.next()" color="primary" outline no-caps size="12px"
                                         label="Continuar" />
+                                    <q-btn color="primary" label="Actualizar" size="12px" no-caps
+                                        @click="HandleUpdateForm()" />
                                 </div>
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
@@ -119,8 +120,10 @@
                                         " flat />
                                     <q-btn flat color="primary" @click="$refs.stepper.previous()" label="Atras" no-caps
                                         size="12px" />
-                                    <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
+                                    <q-btn @click="$refs.stepper.next()" color="primary" outline no-caps size="12px"
                                         label="Continuar" />
+                                    <q-btn color="primary" label="Actualizar" size="12px" no-caps
+                                        @click="HandleUpdateForm()" />
                                 </div>
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
@@ -181,7 +184,8 @@
                                     <div class="form-label" for="device_name">
                                         Razón Social
                                     </div>
-                                    <q-input v-model="form.business_name" dense outlined class="input-theme" @update:model-value="HandleChangeBusinessName()"/>
+                                    <q-input v-model="form.business_name" dense outlined class="input-theme"
+                                        @update:model-value="HandleChangeBusinessName()" />
                                     <div v-if="errors.business_name" class="container-error">
                                         <ul v-for="(
                                                 error, index
@@ -194,7 +198,8 @@
                                     <div class="form-label" for="device_name">
                                         NIT
                                     </div>
-                                    <q-input v-model="form.nit" dense outlined class="input-theme" @update:model-value="HandleChangeNIT()"/>
+                                    <q-input v-model="form.nit" dense outlined class="input-theme"
+                                        @update:model-value="HandleChangeNIT()" />
                                     <div v-if="errors.nit" class="container-error">
                                         <ul v-for="(
                                                 error, index
@@ -376,15 +381,15 @@ let step = ref(1);
 
 const form = ref(page.props.data);
 
-function HandleChangeNIT(){
-    let result=null
-    result=options.value.suppliers.find(e=>e.nit==form.value.nit)
-    form.value.business_name=result?result.business_name:form.value.business_name
+function HandleChangeNIT() {
+    let result = null
+    result = options.value.suppliers.find(e => e.nit == form.value.nit)
+    form.value.business_name = result ? result.business_name : form.value.business_name
 }
-function HandleChangeBusinessName(){
-    let result=null
-    result=options.value.suppliers.find(e=>e.business_name==form.value.business_name)
-    form.value.nit=result?result.nit:form.value.nit
+function HandleChangeBusinessName() {
+    let result = null
+    result = options.value.suppliers.find(e => e.business_name == form.value.business_name)
+    form.value.nit = result ? result.nit : form.value.nit
 }
 function HandleUpdateForm() {
     router.post(
