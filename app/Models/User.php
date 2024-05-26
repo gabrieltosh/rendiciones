@@ -59,4 +59,7 @@ class User extends Authenticatable
             }
         );
     }
+    public function user_authorization(){
+        return $this->hasMany(UserAuthorization::class,'user_id','id');
+    }
 }

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Administration;
 use App\Http\Controllers\Controller;
 use App\Models\Profile;
 use App\Models\UserProfile;
-use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\UserAuthorization;
 use App\Http\Requests\Administration\UserRequest;
@@ -13,12 +12,11 @@ use Session;
 use Redirect;
 use Illuminate\Database\QueryException;
 use Inertia\Inertia;
-use Auth;
-use Throwable;
-use Illuminate\Support\Facades\Http;
 use DB;
 use App\Models\Management;
-
+use App\Helpers\Hana;
+use Config;
+use Hash;
 class UserController extends Controller
 {
     public function HandleStoreUser(UserRequest $request)
@@ -117,7 +115,8 @@ class UserController extends Controller
             'distribution_rule_three' => $request->distribution_rule_three,
             'distribution_rule_four' => $request->distribution_rule_four,
             'distribution_rule_five' => $request->distribution_rule_five,
-            'status' => $request->status
+            'status' => $request->status,
+            'password'=>Hash::make($request->password)
         ])->save();
         return Redirect::route('panel.user.index');
     }
@@ -202,57 +201,24 @@ class UserController extends Controller
     public function HandleGetDistributions()
     {
         $params_sap = Management::where('group', 'accountability')->get();
-        if ($params_sap->where('name', 'service_layer_enable')->first()->value == 'SI') {
-            $service_layer = $params_sap->where('name', 'service_layer')->first()->value;
-            try {
-                $login = Http::withoutVerifying()
-                    ->baseUrl($service_layer . '/b1s/v1/')
-                    ->post('Login', [
-                        'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
-                        'UserName' => $params_sap->where('name', 'user')->first()->value,
-                        'Password' => $params_sap->where('name', 'password')->first()->value
-                    ]);
-                if ($login->successful()) {
-                    $session = $login["SessionId"];
-                    $response = Http::baseUrl($service_layer . '/b1s/v1/')
-                        ->withoutVerifying()
-                        ->withHeaders([
-                            'Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9',
-                        ])->get('DistributionRules?$select=FactorCode,FactorDescription,InWhichDimension');
-                    if ($response->successful()) {
-                        $distribution = $response->collect('value');
-                        $format_data = $distribution->map(function ($item) {
-                            return [
-                                'DimCode' => $item['InWhichDimension'],
-                                'PrcCode' => $item['FactorCode'],
-                                'PrcName' => $item['FactorDescription'],
-                                'Name' => $item['FactorCode'] . '-' . $item['FactorDescription'],
-                            ];
-                        });
-                        Http::withoutVerifying()->baseUrl($service_layer . '/b1s/v1/')->post('Logout');
-                        return $format_data->groupBy('DimCode')->toArray();
-                    } else {
-                        Session::flash('message', $response->json()['error']['message']['value']);
-                        Session::flash('type', 'negative');
-                    }
-                } else {
-                    Session::flash('message', $login->json()['error']['message']['value']);
-                    Session::flash('type', 'negative');
-                }
-            } catch (Throwable $e) {
-                if ($e->getCode() === 7) {
-                    Session::flash('message', $e->getMessage());
-                    Session::flash('type', 'negative');
-                } else {
-                    Session::flash('message', $e->getMessage());
-                    Session::flash('type', 'negative');
-                }
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $data = array();
+            $db=Config::get('database.connections.hana.database');
+            for ($i = 1; $i <= 5; $i++) {
+                $sql=
+<<<SQL
+                select CONCAT(CONCAT(T1."PrcCode",'-'),T1."PrcName") as "Name", T1."PrcName",T1."PrcCode"
+                from $db.OPRC as T1
+                where T1."DimCode" = $i
+                and T1."Locked" = 'N'
+SQL;
+                $data[$i] = Hana::query($sql);
             }
+            return $data;
         } else {
             $data = array();
             for ($i = 1; $i <= 5; $i++) {
                 $data[$i] =
-
                     DB::connection('sap')
                         ->table('OPRC as T1')
                         ->select(

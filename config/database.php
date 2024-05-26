@@ -107,11 +107,12 @@ return [
             'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE_SAP', 'true'),
         ],
         'hana' => [
-            'driver' => env('DB_HANA_DRIVER'),
-            'server' =>env('DB_HANA_SERVERNAME'),
-            'database' =>env('DB_HANA_DATABASE'),
-            'username' =>env('DB_HANA_USERNAME'),
-            'password' =>env('DB_HANA_PASSWORD'),
+            'driver' => env('DB_CONNECTION_SAP'),
+            'server' =>env('DB_HOST_SAP'),
+            'database' =>env('DB_DATABASE_SAP'),
+            'username' =>env('DB_USERNAME_SAP'),
+            'password' =>env('DB_PASSWORD_SAP'),
+            'port' =>env('DB_PORT_SAP'),
         ],
     ],
 

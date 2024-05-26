@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Administration;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Supplier;
 use Inertia\Inertia;
 use Session;
 use Redirect;
-use Auth;
 use App\Http\Requests\Administration\SupplierRequest;
 use Illuminate\Database\QueryException;
 class SupplierController extends Controller

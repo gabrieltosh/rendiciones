@@ -104,24 +104,24 @@
     <table width="100%">
         <tr>
             <td align="left" style="width: 15%">
-                <img src="{{ public_path('images/novanexa.jpg') }}" width="80">
+                <img src="{{ storage_path('app/public/images/'.$company['logo']) }}" width="80">
             </td>
             <td align="left" style="width:55%">
                 <table>
                     <tr style="font-size: 11px;">
                         <td>
-                            <strong>NOVANEXA SRL</strong>
+                            <strong>{{$company['company_name']}}</strong>
                         </td>
                     </tr>
                     <tr style="font-size: 11px;">
                         <td>
-                            <strong>La Paz - Bolivia</strong>
+                            <strong>{{$company['company_location']}}</strong>
                         </td>
                     </tr>
                     <tr style="font-size: 11px;">
                         <td>
                             <strong>
-                                NIT: 1231241221
+                                NIT: {{$company['nit']}}
                             </strong>
                         </td>
                     </tr>

@@ -283,7 +283,7 @@ function HandleEditAccountability(id) {
         route("panel.accountability.manage.edit", [page.props.profile.id, id])
     );
 }
-function HandleDeleteAccountability($id) {
+function HandleDeleteAccountability(id) {
     $q.dialog({
         title: "Confirmar",
         message: "¿Esta seguro de eliminar el Usuario?",
@@ -291,7 +291,7 @@ function HandleDeleteAccountability($id) {
         persistent: true,
     })
         .onOk(() => {
-            router.delete(route("panel.accountability.delete", $id), {
+            router.delete(route("panel.accountability.manage.delete", [page.props.profile.id, id]), {
                 onSuccess: () => {
                     data.value = page.props.data;
                     message.value = page.props.flash.message;

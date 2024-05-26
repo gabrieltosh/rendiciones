@@ -38,8 +38,8 @@
                                 </div>
                                 <div class="col-sm-6 text-right q-gutter-sm">
                                     <q-btn flat color="primary" @click="
-                                                $refs.stepper.previous()
-                                                " label="Atras" no-caps size="12px" />
+                                        $refs.stepper.previous()
+                                        " label="Atras" no-caps size="12px" />
                                     <q-btn @click="$refs.stepper.next()" color="primary" outline no-caps size="12px"
                                         label="Continuar" />
                                     <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
@@ -66,8 +66,8 @@
                                 </div>
                                 <div class="col-sm-6 text-right q-gutter-sm">
                                     <q-btn flat color="primary" @click="
-                                                $refs.stepper.previous()
-                                                " label="Atras" no-caps size="12px" />
+                                        $refs.stepper.previous()
+                                        " label="Atras" no-caps size="12px" />
                                     <q-btn @click="$refs.stepper.next()" color="primary" outline no-caps size="12px"
                                         label="Continuar" />
                                     <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
@@ -93,8 +93,8 @@
                                 </div>
                                 <div class="col-sm-6 text-right q-gutter-sm">
                                     <q-btn flat color="primary" @click="
-                                                $refs.stepper.previous()
-                                                " label="Atras" no-caps size="12px" />
+                                        $refs.stepper.previous()
+                                        " label="Atras" no-caps size="12px" />
                                     <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
                                         label="Actualizar" />
                                 </div>
@@ -110,6 +110,45 @@
                             </div>
                         </q-card>
                     </q-step>
+                    <q-step :name="5" title="Datos Empresa" icon="settings" :done="step > 4">
+                        <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <h5 class="title-form">Datos Empresariales</h5>
+                                </div>
+                                <div class="col-sm-6 text-right q-gutter-sm">
+                                    <q-btn flat color="primary" @click="
+                                        $refs.stepper.previous()
+                                        " label="Atras" no-caps size="12px" />
+                                    <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
+                                        label="Actualizar" />
+                                </div>
+                            </div>
+                            <div class="row q-col-gutter-md q-mt-xs">
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6" v-for="item in data.company">
+                                    <div class="form-label" for="device_name">
+                                        {{ item.label }} <span class="text-red">*</span>
+                                    </div>
+                                    <q-input v-model="item.value" dense outlined :type="item.type"
+                                        class="input-theme" />
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                                    <div class="form-label" for="device_name">
+                                        Logo Empresa <span class="text-red">*</span>
+                                    </div>
+                                    <q-file v-model="img" dense outlined accept=".jpg, image/*" class="input-theme"
+                                        @rejected="onRejected" />
+                                    <div class="text-center q-mt-md">
+                                        <q-img
+                                        :src="data.url"
+                                        fit="contain"
+                                        width="180px"
+                                    />
+                                    </div>
+                                </div>
+                            </div>
+                        </q-card>
+                    </q-step>
                 </q-stepper>
             </div>
         </div>
@@ -118,7 +157,7 @@
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import { ref } from "vue";
-import { Head, usePage, router } from "@inertiajs/vue3";
+import { Head, usePage, router, useForm } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
 
@@ -135,14 +174,36 @@ let data = ref({
     accountability_detail: page.props.accountability_detail,
     employee: page.props.employee,
     suppliers: page.props.suppliers,
+    company: page.props.company,
+    url: page.props.url,
 })
 let step = ref(1);
-
+const img = ref(null)
 const filter = ref("");
 const loading = ref({
     card: false,
 });
+function onRejected(rejectedEntries) {
+    $q.notify({
+        type: 'negative',
+        message: 'Es necesario que seleccione una archivo tipo imagen'
+    })
+}
 function HandleStoreForm() {
+    const formData = new FormData();
+    formData.append('image', img.value);
+    if (img.value) {
+        router.post(route("panel.management.logo"), formData, {
+            forceFormData: true,
+            onSuccess: () => {
+                HanldeStoreData()
+            }
+        })
+    } else {
+        HanldeStoreData()
+    }
+}
+function HanldeStoreData() {
     router.post(route("panel.management.update"),
         {
             accountability: data.value.accountability,
@@ -162,8 +223,9 @@ function HandleStoreForm() {
                 data.value.accountability_detail = page.props.accountability_detail
                 data.value.employee = page.props.employee
                 data.value.suppliers = page.props.suppliers
+                data.value.company = page.props.company
+                data.value.url = page.props.url
             },
         });
 }
-
 </script>

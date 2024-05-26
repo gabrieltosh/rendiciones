@@ -88,10 +88,11 @@
                                         Lista de Cuentas Contables
                                     </h5>
                                     <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter"
-                                        class="input-theme"></q-input>
+                                        class="input-theme">
+                                    </q-input>
                                     <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
                                         v-model:ticked="form.general" :filter="filter"
-                                        :filter-method="HandleFilterAccounts">
+                                        :filter-method="HandleFilterAccounts" :default-expand-all="expand.header">
                                         <template v-slot:default-header="prop">
                                             <div class="tree-label">
                                                 {{ prop.node.label }}
@@ -148,7 +149,7 @@
                                         class="input-theme"></q-input>
                                     <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
                                         v-model:ticked="form.detail" :filter="filter2"
-                                        :filter-method="HandleFilterAccounts">
+                                        :filter-method="HandleFilterAccounts" :default-expand-all="expand.header">
                                         <template v-slot:default-header="prop">
                                             <div class="tree-label">
                                                 {{ prop.node.label }}
@@ -281,7 +282,7 @@
                                                     <span class="text-red">*</span>
                                                     <q-select class="input-theme" dense :options="options.document_types
                                                         " v-model="item.type_document_sap" option-value="FldValue"
-                                                        option-label="Descr" emit-value map-options clearable/>
+                                                        option-label="Descr" emit-value map-options clearable />
 
                                                     <div v-if="errors['documents.' + index + '.type_document_sap']"
                                                         class="container-error">
@@ -574,6 +575,10 @@ const loading = ref({
 let filter = ref("");
 let filter2 = ref("");
 let filter_emp = ref("");
+let expand = ref({
+    header: true,
+    detail: false
+})
 const form = ref({
     name: null,
     type_currency: null,

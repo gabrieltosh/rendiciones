@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function() {
         Route::name('management.')->prefix('management')->controller(ManagementController::class)->group(function(){
             Route::get('','HandleIndexManagement')->name('index');
             Route::post('','HandleUpdateManagement')->name('update');
+            Route::post('logo','HandleStoreImage')->name('logo');
         });
         Route::delete('{id}/user',[UserController::class,'HandleDeleteUser'])->name('user.delete');
         Route::name('user.')->prefix('user')->controller(UserController::class)->group(function(){
@@ -98,6 +99,7 @@ Route::middleware('auth')->group(function() {
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
                 Route::get('create','HandleCreateAccountability')->name('create');
                 Route::get('{id}/report','HandleGetReportAccountability')->name('report');
+                Route::delete('{id}/delete','HandleDeleteAccountability')->name('delete');
                 Route::name('detail.')->prefix('{id}/detail')->group(function(){
                     Route::post('status','HandleUpdateStatus')->name('status');
                     Route::get('','HandleDetailAccountability')->name('index');

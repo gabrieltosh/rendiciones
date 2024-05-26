@@ -35,7 +35,7 @@
                     </div>
                     <div class="col-6 text-right">
                         <q-btn v-if="page.props.accountability.status=='Rechazado' || page.props.accountability.status==null" icon="eva-checkmark-circle-outline" color="positive" label="Enviar a Aut." size="11px"
-                            no-caps @click="HandleUpdateStatus('Pendiente')" />
+                            no-caps @click="HandleUpdateStatus('Pendiente')" class="q-mr-sm"/>
                         <q-btn color="primary" label="Imprimir" size="11px"
                             no-caps @click="HandleReportAccountability()" />
                     </div>

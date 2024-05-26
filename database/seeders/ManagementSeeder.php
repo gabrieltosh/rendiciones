@@ -44,11 +44,25 @@ class ManagementSeeder extends Seeder
             ],
             [
                 'group'=>'accountability',
-                'name'=>'service_layer_enable',
-                'label'=>'Usar unicamente SAP Service Layer',
+                'name'=>'hana_enable',
+                'label'=>'Base de Datos HANA',
+                'type'=>'text',
+                'value'=>'NO'
+            ],
+            [
+                'group'=>'accountability',
+                'name'=>'notification_email',
+                'label'=>'Notificaciones por Correo',
                 'type'=>'text',
                 'value'=>'SI'
-            ],
+            ]
+            /*[
+                'group'=>'accountability',
+                'name'=>'list_separator',
+                'label'=>'Separador de Listas',
+                'type'=>'text',
+                'value'=>'--'
+            ]*/,
             //OCRD Empleados Habilitados
             [
                 'group'=>'employee',
@@ -184,6 +198,35 @@ class ManagementSeeder extends Seeder
                 'label'=>'NIT',
                 'type'=>'text',
                 'value'=>'LicTradNum'
+            ],
+            //Empresa
+            [
+                'group'=>'company',
+                'name'=>'company_name',
+                'label'=>'Nombre de Empresa',
+                'type'=>'text',
+                'value'=>'NOVANEXA SRL'
+            ],
+            [
+                'group'=>'company',
+                'name'=>'company_location',
+                'label'=>'Ubicación',
+                'type'=>'text',
+                'value'=>'LA Paz - Bolivia'
+            ],
+            [
+                'group'=>'company',
+                'name'=>'nit',
+                'label'=>'NIT',
+                'type'=>'text',
+                'value'=>'3123125341'
+            ],
+            [
+                'group'=>'company',
+                'name'=>'logo',
+                'label'=>'Logo Empresarial',
+                'type'=>'file',
+                'value'=>'logo.png'
             ],
         ]);
     }

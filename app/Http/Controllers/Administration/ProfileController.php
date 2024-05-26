@@ -5,11 +5,9 @@ namespace App\Http\Controllers\Administration;
 use App\Http\Controllers\Controller;
 use App\Models\DetailAccounts;
 use App\Models\GeneralAccounts;
-use Illuminate\Http\Request;
 use Session;
 use Redirect;
 use Inertia\Inertia;
-use Auth;
 use Illuminate\Database\QueryException;
 use App\Models\Profile;
 use DB;
@@ -18,75 +16,47 @@ use App\Models\Document;
 use App\Models\Employee;
 use App\Models\DocumentDetail;
 use App\Models\Management;
-use Throwable;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Database\Query\JoinClause;
+use App\Helpers\Hana;
+use Config;
 class ProfileController extends Controller
 {
     public function HandleGetAccounts()
     {
         $params_sap = Management::where('group', 'accountability')->get();
-        if ($params_sap->where('name', 'service_layer_enable')->first()->value == 'SI') {
-            $service_layer = $params_sap->where('name', 'service_layer')->first()->value;
-            try {
-                $login = Http::withoutVerifying()
-                    ->baseUrl($service_layer . '/b1s/v1/')
-                    ->post('Login', [
-                        'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
-                        'UserName' => $params_sap->where('name', 'user')->first()->value,
-                        'Password' => $params_sap->where('name', 'password')->first()->value
-                    ]);
-                if ($login->successful()) {
-                    $session = $login["SessionId"];
-                    $response = Http::baseUrl($service_layer . '/b1s/v1/')
-                        ->withoutVerifying()
-                        ->withHeaders([
-                            'Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9',
-                            'Prefer' => 'odata.maxpagesize=100000'
-                        ])->get('ChartOfAccounts?$orderby=AccountLevel asc,FatherAccountKey asc&$select=Name,Code,FatherAccountKey,AccountLevel');
-                    if ($response->successful()) {
-                        $distribution = $response->collect('value');
-                        $format_data = $distribution->map(function ($item) {
-                            return [
-                                'label' => $item['Code'] . '-' . $item['Name'],
-                                'AcctName' => $item['Name'],
-                                'AcctCode' => $item['Code'],
-                                'FatherNum' => $item['FatherAccountKey'],
-                                'Levels' => $item['AccountLevel'],
-                            ];
-                        });
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $db=Config::get('database.connections.hana.database');
+            $sql=
+<<<SQL
+            select CONCAT(CONCAT(T1."AcctCode",'-'),T1."AcctName") as "label",
+                T1."AcctName",
+                T1."AcctCode",
+                T1."FatherNum",
+                T1."Levels"
+            from $db.OACT as T1
+            where T1."Levels" in (1,2,3,4,5,6,7,8,9,10)
+            order by T1."Levels",T1."FatherNum"
+SQL;
+            $accounts_db = Hana::query($sql);
+            $format_data=collect($accounts_db);
+            $accounts = $format_data->map(function ($item) {
+                return (object) $item;
+            });
 
-                        $accounts = $format_data->map(function ($item) {
-                            return (object) $item;
-                        });
+            $accountsByCode = $accounts->keyBy('AcctCode');
 
-                        $accountsByCode = $accounts->keyBy('AcctCode');
-
-                        $accounts->each(function ($account) use ($accountsByCode) {
-                            if ($account->FatherNum && isset ($accountsByCode[$account->FatherNum])) {
-                                $parent = $accountsByCode[$account->FatherNum];
-                                $parent->children = $parent->children ?? collect();
-                                $parent->children->push($account);
-                            }
-                        });
-
-                        $level1Accounts = $accounts->filter(function ($account) {
-                            return $account->Levels == 1;
-                        });
-                        Http::withoutVerifying()->baseUrl($service_layer . '/b1s/v1/')->post('Logout');
-                        return $level1Accounts->values()->all();
-                    } else {
-                        Session::flash('message', $response->json()['error']['message']['value']);
-                        Session::flash('type', 'negative');
-                    }
-                } else {
-                    Session::flash('message', $login->json()['error']['message']['value']);
-                    Session::flash('type', 'negative');
+            $accounts->each(function ($account) use ($accountsByCode) {
+                if ($account->FatherNum && isset ($accountsByCode[$account->FatherNum])) {
+                    $parent = $accountsByCode[$account->FatherNum];
+                    $parent->children = $parent->children ?? collect();
+                    $parent->children->push($account);
                 }
-            } catch (Throwable $e) {
-                Session::flash('message', $e->getMessage());
-                Session::flash('type', 'negative');
-            }
+            });
+
+            $level1Accounts = $accounts->filter(function ($account) {
+                return $account->Levels == 1;
+            });
+            return $level1Accounts->values()->all();
         } else {
             $accounts = DB::connection('sap')
                 ->table('OACT as T1')
@@ -133,60 +103,29 @@ class ProfileController extends Controller
 
     public function HandleGetAccountFormat($data)
     {
+        $accounts = [];
+        foreach ($data as $value) {
+            $account = explode('-', $value);
+            array_push($accounts, $account[0]);
+        }
         $params_sap = Management::where('group', 'accountability')->get();
-        if ($params_sap->where('name', 'service_layer_enable')->first()->value == 'SI') {
-            $service_layer = $params_sap->where('name', 'service_layer')->first()->value;
-            try {
-                $login = Http::withoutVerifying()
-                    ->baseUrl($service_layer . '/b1s/v1/')
-                    ->post('Login', [
-                        'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
-                        'UserName' => $params_sap->where('name', 'user')->first()->value,
-                        'Password' => $params_sap->where('name', 'password')->first()->value
-                    ]);
-                if ($login->successful()) {
-                    $session = $login["SessionId"];
-                    $accounts = collect();
-                    $filter = '';
-                    foreach ($data as $key => $value) {
-                        $account = explode('-', $value);
-                        if ($key == 0)
-                            $filter .= "Code eq '$account[0]'";
-                        else
-                            $filter .= " or Code eq '$account[0]'";
-                    }
-                    $response = Http::baseUrl($service_layer . '/b1s/v1/')
-                        ->withoutVerifying()
-                        ->withHeaders([
-                            'Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9',
-                            'Prefer' => 'odata.maxpagesize=100000'
-                        ])->get('ChartOfAccounts?$select=Code,Name,FormatCode&$filter=' . $filter);
-                    if ($response->successful()) {
-                        Http::withoutVerifying()->baseUrl($service_layer . '/b1s/v1/')->post('Logout');
-                        return $response->collect('value');
-                    } else {
-                        Session::flash('message', $response->json()['error']['message']['value']);
-                        Session::flash('type', 'negative');
-                    }
-                } else {
-                    Session::flash('message', $login->json()['error']['message']['value']);
-                    Session::flash('type', 'negative');
-                }
-            } catch (Throwable $e) {
-                if ($e->getCode() === 7) {
-                    Session::flash('message', $e->getMessage());
-                    Session::flash('type', 'negative');
-                } else {
-                    Session::flash('message', $e->getMessage());
-                    Session::flash('type', 'negative');
-                }
-            }
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $db=Config::get('database.connections.hana.database');
+            $format_accounts=array_map(function($e){
+                return "'".$e."'";
+            },$accounts);
+            $accounts_string = implode(",",$format_accounts);
+            $sql=
+<<<SQL
+                select
+                    T1."AcctName",
+                    T1."AcctCode",
+                    T1."FormatCode"
+                from $db.OACT as T1
+                where T1."AcctCode" in ($accounts_string)
+SQL;
+            return Hana::query($sql);
         } else {
-            $accounts = [];
-            foreach ($data as $value) {
-                $account = explode('-', $value);
-                array_push($accounts, $account[0]);
-            }
             $data_format = DB::connection('sap')
                 ->table('OACT as T1')
                 ->select(
@@ -206,15 +145,33 @@ class ProfileController extends Controller
             $card_code = explode('-', $value);
             array_push($card_codes, $card_code[0]);
         }
-        $data_format = DB::connection('sap')
-            ->table('OCRD as T1')
-            ->select(
-                'T1.CardCode',
-                'T1.CardName',
-            )
-            ->whereIn('T1.CardCode', $card_codes)
-            ->get();
-        return $data_format;
+        $params_sap = Management::where('group', 'accountability')->get();
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $db=Config::get('database.connections.hana.database');
+            $format_accounts=array_map(function($e){
+                return "'".$e."'";
+            },$card_codes);
+            $card_codes_string = implode(",", $format_accounts);
+            $sql=
+<<<SQL
+                select
+                    T1."CardCode",
+                    T1."CardName"
+                from $db.OCRD as T1
+                where T1."CardCode" in ($card_codes_string)
+SQL;
+            return Hana::query($sql);
+        }else{
+            $data_format = DB::connection('sap')
+                ->table('OCRD as T1')
+                ->select(
+                    'T1.CardCode',
+                    'T1.CardName',
+                )
+                ->whereIn('T1.CardCode', $card_codes)
+                ->get();
+            return $data_format;
+        }
     }
 
     public function HandleStoreProfile(ProfileRequest $request)
@@ -225,29 +182,29 @@ class ProfileController extends Controller
             'type_currency' => $request->type_currency
         ]);
 
-        $sl=$params_sap->where('name', 'service_layer_enable')->first()->value == 'SI';
+        $sl=$params_sap->where('name', 'hana_enable')->first()->value == 'SI';
 
         foreach ($this->HandleGetAccountFormat($request->detail) as $account) {
             DetailAccounts::create([
                 'profile_id'=>$profile->id,
-                'account_code'=>$sl?$account['Code']:$account->AcctCode,
+                'account_code'=>$sl?$account['AcctCode']:$account->AcctCode,
                 'format_code'=>$sl?$account['FormatCode']:$account->FormatCode,
-                'account_name'=>$sl?$account['Name']:$account->AcctName,
+                'account_name'=>$sl?$account['AcctName']:$account->AcctName,
             ]);
         }
         foreach ($this->HandleGetAccountFormat($request->general) as $account) {
             GeneralAccounts::create([
                 'profile_id'=>$profile->id,
-                'account_code'=>$sl?$account['Code']:$account->AcctCode,
+                'account_code'=>$sl?$account['AcctCode']:$account->AcctCode,
                 'format_code'=>$sl?$account['FormatCode']:$account->FormatCode,
-                'account_name'=>$sl?$account['Name']:$account->AcctName,
+                'account_name'=>$sl?$account['AcctName']:$account->AcctName,
             ]);
         }
         foreach ($this->HandleGetEmployeeFormat($request->employees) as $employee) {
             Employee::create([
                 'profile_id' => $profile->id,
-                'card_code' => $employee->CardCode,
-                'card_name' => $employee->CardName
+                'card_code' => $sl?$employee['CardCode']:$employee->CardCode,
+                'card_name' => $sl?$employee['CardName']:$employee->CardName
             ]);
         }
         foreach ($request->documents as $document) {
@@ -295,35 +252,73 @@ class ProfileController extends Controller
     }
     public function HandleGetAccountSAP($accounts)
     {
-        $data = DB::connection('sap')
-            ->table('OACT as T1')
-            ->select(
-                'T1.AcctName',
-                'T1.AcctCode',
-                'T1.FormatCode'
-            )
-            ->whereIn('T1.AcctCode', $accounts)
-            ->get();
-        return $data;
+        $params_sap = Management::where('group', 'accountability')->get();
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $db=Config::get('database.connections.hana.database');
+            $format_accounts=array_map(function($e){
+                return "'".$e."'";
+            },$accounts);
+            $accounts_string = implode(",", $format_accounts);
+            $sql=
+<<<SQL
+                select
+                    T1."AcctName",
+                    T1."AcctCode",
+                    T1."FormatCode"
+                from $db.OACT as T1
+                where T1."AcctCode" in ($accounts_string)
+SQL;
+            return Hana::query($sql);
+        }else{
+            $data = DB::connection('sap')
+                ->table('OACT as T1')
+                ->select(
+                    'T1.AcctName',
+                    'T1.AcctCode',
+                    'T1.FormatCode'
+                )
+                ->whereIn('T1.AcctCode', $accounts)
+                ->get();
+            return $data;
+        }
     }
     public function HandleGetEmpSAP($employess)
     {
-        $data = DB::connection('sap')
-            ->table('OCRD as T1')
-            ->select(
-                'T1.CardCode',
-                'T1.CardName',
-            )
-            ->whereIn('T1.CardCode', $employess)
-            ->get();
-        return $data;
+        $params_sap = Management::where('group', 'accountability')->get();
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $db=Config::get('database.connections.hana.database');
+            $format_employess=array_map(function($e){
+                return "'".$e."'";
+            },$employess);
+            $employess_string = implode(",", $format_employess);
+            $sql=
+<<<SQL
+                select
+                    T1."CardCode",
+                    T1."CardName"
+                from $db.OCRD as T1
+                where T1."CardCode" in ($employess_string)
+SQL;
+            return Hana::query($sql);
+        }else{
+            $data = DB::connection('sap')
+                ->table('OCRD as T1')
+                ->select(
+                    'T1.CardCode',
+                    'T1.CardName',
+                )
+                ->whereIn('T1.CardCode', $employess)
+                ->get();
+            return $data;
+        }
     }
 
     public function HandleUpdateProfile(ProfileRequest $request)
     {
         Session::flash('message', "Usuario actualizado correctamente");
         Session::flash('type', 'positive');
-
+        $params_sap = Management::where('group', 'accountability')->get();
+        $hana=$params_sap->where('name', 'hana_enable')->first()->value == 'SI';
         Profile::findOrFail($request->id)
             ->fill([
                 'name' => $request->name,
@@ -354,28 +349,34 @@ class ProfileController extends Controller
         GeneralAccounts::whereIn('account_code', $to_delete_general)->delete();
         Employee::whereIn('card_code', $to_delete_employee)->delete();
 
-        foreach ($this->HandleGetAccountSAP($to_create_detail) as $account) {
-            DetailAccounts::create([
-                'profile_id' => $request->id,
-                'account_code' => $account->AcctCode,
-                'format_code' => $account->FormatCode,
-                'account_name' => $account->AcctName,
-            ]);
+        if(count($to_create_detail)>0){
+            foreach ($this->HandleGetAccountSAP($to_create_detail) as $account) {
+                DetailAccounts::create([
+                    'profile_id' => $request->id,
+                    'account_code' => $hana?$account['AcctCode']:$account->AcctCode,
+                    'format_code' => $hana?$account['FormatCode']:$account->FormatCode,
+                    'account_name' => $hana?$account['AcctName']:$account->AcctName,
+                ]);
+            }
         }
-        foreach ($this->HandleGetAccountSAP($to_create_general) as $account) {
-            GeneralAccounts::create([
-                'profile_id' => $request->id,
-                'account_code' => $account->AcctCode,
-                'format_code' => $account->FormatCode,
-                'account_name' => $account->AcctName,
-            ]);
+        if(count($to_create_general)>0){
+            foreach ($this->HandleGetAccountSAP($to_create_general) as $account) {
+                GeneralAccounts::create([
+                    'profile_id' => $request->id,
+                    'account_code' => $hana?$account['AcctCode']:$account->AcctCode,
+                    'format_code' => $hana?$account['FormatCode']:$account->FormatCode,
+                    'account_name' => $hana?$account['AcctName']:$account->AcctName,
+                ]);
+            }
         }
-        foreach ($this->HandleGetEmpSAP($to_create_employee) as $employee) {
-            Employee::create([
-                'profile_id' => $request->id,
-                'card_code' => $employee->CardCode,
-                'card_name' => $employee->CardName
-            ]);
+        if(count($to_create_employee)>0){
+            foreach ($this->HandleGetEmpSAP($to_create_employee) as $employee) {
+                Employee::create([
+                    'profile_id' => $request->id,
+                    'card_code' => $hana?$employee['CardCode']:$employee->CardCode,
+                    'card_name' => $hana?$employee['CardName']:$employee->CardName
+                ]);
+            }
         }
         foreach ($request->documents as $document) {
             if (!isset($document['id'])) {
@@ -463,16 +464,7 @@ class ProfileController extends Controller
     public function HandleEditProfile($id)
     {
         Session::put('title', 'Editar Profile');
-        $field_name_emp = Management::where('name', 'employee_enablement_field')->first();
-        $field_value_emp = Management::where('name', 'employee_enablement_field_value')->first();
         $field_document_type = Management::where('name', 'document_type')->first();
-        $currencies = DB::connection('sap')
-            ->table('OCRN as T1')
-            ->select(
-                'T1.CurrCode',
-                'T1.CurrName'
-            )
-            ->get();
         $profile = Profile::where('id', $id)->with([
             'documents' => function ($q) {
                 $q->select(
@@ -521,16 +513,6 @@ class ProfileController extends Controller
             )
             ->where('profile_id', $id)
             ->pluck('label');
-        $accounts = DB::connection('sap')
-            ->table('OACT as T1')
-            ->select(
-                'T1.AcctName',
-                'T1.AcctCode',
-            )
-            ->whereIn('T1.Levels', range(1, 10))
-            ->orderBy('T1.Levels')
-            ->orderBy('T1.FatherNum')
-            ->get();
 
         $profile->employees = DB::table('employees as T1')
             ->select(
@@ -539,21 +521,14 @@ class ProfileController extends Controller
             ->where('profile_id', $id)
             ->pluck('label');
 
-        $employees = DB::connection('sap')
-            ->table('OCRD as T1')
-            ->select(
-                DB::raw("CONCAT(T1.CardCode,'-',T1.CardName) as label")
-            )
-            ->where($field_name_emp->value, $field_value_emp->value)
-            ->get();
         return Inertia::render('administration/profile/EditProfile', [
             'type' => ['IVA', 'IT', 'IUE', 'RC-IVA'],
             'type_calculation' => ['Grossing Up', 'Grossing Down'],
-            'accounts' => $this->HandleGetAccounts(),
-            'currencies' => $currencies,
             'profile' => $profile,
-            'accounts_document' => $accounts,
-            'employees' => $employees,
+            'accounts' => $this->HandleGetAccounts(),
+            'currencies' => $this->HandleGetCurrencies(),
+            'accounts_document' => $this->HandleGetAccountsDocument(),
+            'employees' => $this->HandleGetEmployees(),
             'document_types'=>$this->HandleGetDocumentType($field_document_type->value)
         ]);
     }
@@ -574,60 +549,126 @@ class ProfileController extends Controller
     }
     public function HandleGetDocumentType($field){
         $field_explode=explode('_',$field);
-        return DB::connection('sap')
-                ->table('CUFD as T1')
-                ->join('UFD1 as T2', function (JoinClause $join){
-                    $join->on('T1.TableID','T2.TableID')
-                        ->on('T1.FieldID','T2.FieldID');
-                })
+        $params_sap = Management::where('group', 'accountability')->get();
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $db=Config::get('database.connections.hana.database');
+            $sql=
+<<<SQL
+            select
+                T2."FldValue",
+                T2."Descr"
+            from $db.CUFD as T1
+            inner join $db.UFD1 as T2 on T1."TableID" = T2."TableID"
+            and T1."FieldID" = T2."FieldID"
+            where T1."TableID" = 'JDT1'
+            and T1."AliasID" = '$field_explode[1]'
+SQL;
+            return Hana::query($sql);
+        }else{
+            return DB::connection('sap')
+                    ->table('CUFD as T1')
+                    ->join('UFD1 as T2', function (JoinClause $join){
+                        $join->on('T1.TableID','T2.TableID')
+                            ->on('T1.FieldID','T2.FieldID');
+                    })
+                    ->select(
+                        'T2.FldValue',
+                        'T2.Descr'
+                    )
+                    ->where('T1.AliasID',$field_explode[1])
+                    ->where('T1.TableID','JDT1')
+                    ->get();
+        }
+    }
+    public function HandleGetAccountsDocument(){
+        $params_sap = Management::where('group', 'accountability')->get();
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $db=Config::get('database.connections.hana.database');
+            $sql=
+<<<SQL
+            select
+                T1."AcctName",
+                T1."AcctCode"
+            from $db.OACT as T1
+            where T1."Levels" in (1,2,3,4,5,6,7,8,9,10)
+            order by T1."Levels",T1."FatherNum"
+SQL;
+            $accounts = Hana::query($sql);
+            return $accounts;
+        }else{
+            $accounts = DB::connection('sap')
+                ->table('OACT as T1')
                 ->select(
-                    'T2.FldValue',
-                    'T2.Descr'
+                    'T1.AcctName',
+                    'T1.AcctCode',
                 )
-                ->where('T1.AliasID',$field_explode[1])
-                ->where('T1.TableID','JDT1')
+                ->whereIn('T1.Levels', range(1, 10))
+                ->orderBy('T1.Levels')
+                ->orderBy('T1.FatherNum')
                 ->get();
+            return $accounts;
+        }
+    }
+    public function HandleGetCurrencies(){
+        $params_sap = Management::where('group', 'accountability')->get();
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $db=Config::get('database.connections.hana.database');
+            $sql=
+<<<SQL
+            select
+                T1."CurrCode",
+                T1."CurrName"
+            from $db.OCRN as T1
+SQL;
+            return Hana::query($sql);
+        }else{
+            $currencies = DB::connection('sap')
+                        ->table('OCRN as T1')
+                        ->select(
+                            'T1.CurrCode',
+                            'T1.CurrName'
+                        )
+                        ->get();
+            return $currencies;
+        }
+    }
+    public function HandleGetEmployees(){
+        $params_sap = Management::where('group', 'accountability')->get();
+        $field_name_emp = Management::where('name', 'employee_enablement_field')->first();
+        $field_value_emp = Management::where('name', 'employee_enablement_field_value')->first();
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $db=Config::get('database.connections.hana.database');
+            $sql=
+<<<SQL
+            select
+                CONCAT(CONCAT(T1."CardCode",'-'),T1."CardName") as "label"
+            from $db.OCRD as T1
+            where T1."$field_name_emp->value" = '$field_value_emp->value'
+SQL;
+            return Hana::query($sql);
+        }else{
+            $employees = DB::connection('sap')
+                        ->table('OCRD as T1')
+                        ->select(
+                            DB::raw("CONCAT(T1.CardCode,'-',T1.CardName) as label")
+                        )
+                        ->where($field_name_emp->value, $field_value_emp->value)
+                        ->get();
+            return $employees;
+        }
     }
     public function HandleCreateProfile()
     {
         //return $this->HandleGetAccounts();
         Session::put('title', 'Crear Perfil');
-        $field_name_emp = Management::where('name', 'employee_enablement_field')->first();
-        $field_value_emp = Management::where('name', 'employee_enablement_field_value')->first();
         $field_document_type = Management::where('name', 'document_type')->first();
-        $currencies = DB::connection('sap')
-            ->table('OCRN as T1')
-            ->select(
-                'T1.CurrCode',
-                'T1.CurrName'
-            )
-            ->get();
-        $accounts = DB::connection('sap')
-            ->table('OACT as T1')
-            ->select(
-                'T1.AcctName',
-                'T1.AcctCode',
-            )
-            ->whereIn('T1.Levels', range(1, 10))
-            ->orderBy('T1.Levels')
-            ->orderBy('T1.FatherNum')
-            ->get();
-
-        $employees = DB::connection('sap')
-            ->table('OCRD as T1')
-            ->select(
-                DB::raw("CONCAT(T1.CardCode,'-',T1.CardName) as label")
-            )
-            ->where($field_name_emp->value, $field_value_emp->value)
-            ->get();
-
         return Inertia::render('administration/profile/CreateProfile', [
             'type' => ['IVA', 'IT', 'IUE', 'RC-IVA'],
             'type_calculation' => ['Grossing Up', 'Grossing Down'],
             'accounts' => $this->HandleGetAccounts(),
-            'currencies' => $currencies,
-            'accounts_document' => $accounts,
-            'employees' => $employees,
+            'currencies' => $this->HandleGetCurrencies(),
+            'accounts_document' => $this->HandleGetAccountsDocument(),
+            'employees' => $this->HandleGetEmployees(),
             'document_types'=>$this->HandleGetDocumentType($field_document_type->value)
         ]);
     }
