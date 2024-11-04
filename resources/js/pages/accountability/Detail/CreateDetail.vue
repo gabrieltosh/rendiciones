@@ -90,8 +90,7 @@
                     </q-step>
                     <q-step :name="2" title="Libro Compras" icon="eva-file-text-outline" :done="step > 1"
                         :error="Object.keys(errors).length > 0 ? true : false"
-                        :disable="Object.keys(document).length == 0"
-                        >
+                        :disable="Object.keys(document).length == 0">
                         <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
                             <div class="row">
                                 <div class="col-sm-6">
@@ -125,7 +124,8 @@
                                         </ul>
                                     </div>
                                 </div>
-                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4" v-if="document.authorization_number_status">
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4"
+                                    v-if="document.authorization_number_status">
                                     <div class="form-label" for="device_name">
                                         Nº Autorización
                                     </div>
@@ -166,7 +166,8 @@
                                     <div class="form-label" for="device_name">
                                         Razón Social
                                     </div>
-                                    <q-input v-model="form.business_name" dense outlined class="input-theme" @update:model-value="HandleChangeBusinessName()" />
+                                    <q-input v-model="form.business_name" dense outlined class="input-theme"
+                                        @update:model-value="HandleChangeBusinessName()" />
                                     <div v-if="errors.business_name" class="container-error">
                                         <ul v-for="(
                                                 error, index
@@ -179,7 +180,8 @@
                                     <div class="form-label" for="device_name">
                                         NIT
                                     </div>
-                                    <q-input v-model="form.nit" dense outlined class="input-theme" @update:model-value="HandleChangeNIT()" />
+                                    <q-input v-model="form.nit" dense outlined class="input-theme"
+                                        @update:model-value="HandleChangeNIT()" />
                                     <div v-if="errors.nit" class="container-error">
                                         <ul v-for="(
                                                 error, index
@@ -197,6 +199,19 @@
                                         <ul v-for="(
                                                 error, index
                                             ) in errors.amount" :key="index" class="message-error">
+                                            <li>{{ error }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4" v-for="field,i in form.field" :key="i">
+                                    <div class="form-label" for="device_name">
+                                        {{ field.name }} <span class="text-red">*</span>
+                                    </div>
+                                    <q-input v-model="field.value" dense type="number" outlined class="input-theme" />
+                                    <div v-if="errors['field.' + i + '.value']" class="container-error">
+                                        <ul v-for="(
+                                                error, index
+                                            ) in errors['field.' + i + '.value']" :key="index" class="message-error">
                                             <li>{{ error }}</li>
                                         </ul>
                                     </div>
@@ -251,8 +266,7 @@
                     </q-step>
                     <q-step :name="3" title="Contable" icon="eva-pantone-outline"
                         :error="Object.keys(errors).length > 0 ? true : false"
-                        :disable="Object.keys(document).length == 0"
-                        >
+                        :disable="Object.keys(document).length == 0">
                         <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
                             <div class="row">
                                 <div class="col-sm-6">
@@ -277,7 +291,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.projects"
                                         v-model="form.project_code" option-value="PrjCode" option-label="PrjCode"
-                                        emit-value map-options clearable/>
+                                        emit-value map-options clearable />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -285,7 +299,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[1]"
                                         v-model="form.distribution_rule_one" option-value="PrcCode" option-label="Name"
-                                        emit-value map-options clearable/>
+                                        emit-value map-options clearable />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -293,7 +307,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[2]"
                                         v-model="form.distribution_rule_second" option-value="PrcCode"
-                                        option-label="Name" emit-value map-options clearable/>
+                                        option-label="Name" emit-value map-options clearable />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -301,7 +315,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[3]"
                                         v-model="form.distribution_rule_three" option-value="PrcCode"
-                                        option-label="Name" emit-value map-options clearable/>
+                                        option-label="Name" emit-value map-options clearable />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -309,7 +323,7 @@
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[4]"
                                         v-model="form.distribution_rule_four" option-value="PrcCode" option-label="Name"
-                                        emit-value map-options clearable/>
+                                        emit-value map-options clearable />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -384,16 +398,17 @@ const form = ref({
     distribution_rule_three: null,
     distribution_rule_four: null,
     distribution_rule_five: null,
+    field: []
 });
-function HandleChangeNIT(){
-    let result=null
-    result=options.value.suppliers.find(e=>e.nit==form.value.nit)
-    form.value.business_name=result?result.business_name:form.value.business_name
+function HandleChangeNIT() {
+    let result = null
+    result = options.value.suppliers.find(e => e.nit == form.value.nit)
+    form.value.business_name = result ? result.business_name : form.value.business_name
 }
-function HandleChangeBusinessName(){
-    let result=null
-    result=options.value.suppliers.find(e=>e.business_name==form.value.business_name)
-    form.value.nit=result?result.nit:form.value.nit
+function HandleChangeBusinessName() {
+    let result = null
+    result = options.value.suppliers.find(e => e.business_name == form.value.business_name)
+    form.value.nit = result ? result.nit : form.value.nit
 }
 function HandleStoreForm() {
     router.post(
@@ -436,6 +451,15 @@ onMounted(() => {
 })
 
 function HandleFindDocument() {
-    document.value = options.value.documents.find(e => e.id == form.value.document_id);
+    form.value.field = []
+    document.value = options.value.documents.find(e => e.id == form.value.document_id)
+    document.value.fields.forEach(e => {
+        form.value.field.push({
+            name:e.name,
+            value:null,
+            id:e.id
+        })
+    });
 }
+
 </script>

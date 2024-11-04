@@ -16,6 +16,7 @@ use App\Models\Document;
 use App\Models\Employee;
 use App\Models\DocumentDetail;
 use App\Models\Management;
+use App\Models\DocumentField;
 use Illuminate\Database\Query\JoinClause;
 use App\Helpers\Hana;
 use Config;
@@ -211,7 +212,6 @@ SQL;
             $document_create = Document::create([
                 'name' => $document['name'],
                 'type_document_sap' => $document['type_document_sap'],
-                'type_calculation' => $document['type_calculation'],
                 'ice' => $document['ice'],
                 'tasas' => $document['tasas'],
                 'exento' => $document['exento'],
@@ -232,8 +232,18 @@ SQL;
                 DocumentDetail::create([
                     'document_id' => $document_create->id,
                     'type' => $item['type'],
+                    'type_calculation' => $item['type_calculation'],
                     'percentage' => $item['percentage'],
                     'account' => $item['account'],
+                    'exento'=>$item['exento']
+                ]);
+            }
+            foreach ($document['fields'] as $item) {
+                DocumentField::create([
+                    'document_id'=> $document_create->id,
+                    'account'=>$item['account'],
+                    'name'=>$item['name'],
+                    'type_calculation' => $item['type_calculation'],
                 ]);
             }
         }
@@ -383,7 +393,6 @@ SQL;
                 $document_create = Document::create([
                     'name' => $document['name'],
                     'type_document_sap' => $document['type_document_sap'],
-                    'type_calculation' => $document['type_calculation'],
                     'ice' => $document['ice'],
                     'tasas' => $document['tasas'],
                     'exento' => $document['exento'],
@@ -406,6 +415,16 @@ SQL;
                         'type' => $item['type'],
                         'percentage' => $item['percentage'],
                         'account' => $item['account'],
+                        'exento' => $item['exento'],
+                        'type_calculation'=> $item['type_calculation']
+                    ]);
+                }
+                foreach ($document['fields'] as $item) {
+                    DocumentField::create([
+                        'document_id' => $document_create->id,
+                        'account' => $item['account'],
+                        'name' => $item['name'],
+                        'type_calculation' => $item['type_calculation'],
                     ]);
                 }
             } else {
@@ -415,12 +434,16 @@ SQL;
                             DocumentDetail::findOrFail($item['id'])->delete();
                         }
                     }
+                    foreach ($document['fields'] as $item) {
+                        if (isset($item['id'])) {
+                            DocumentField::findOrFail($item['id'])->delete();
+                        }
+                    }
                     Document::findOrFail($document['id'])->delete();
                 } else {
                     Document::findOrFail($document['id'])->fill([
                         'name' => $document['name'],
                         'type_document_sap' => $document['type_document_sap'],
-                        'type_calculation' => $document['type_calculation'],
                         'ice' => $document['ice'],
                         'tasas' => $document['tasas'],
                         'exento' => $document['exento'],
@@ -443,6 +466,8 @@ SQL;
                                 'type' => $item['type'],
                                 'percentage' => $item['percentage'],
                                 'account' => $item['account'],
+                                'exento' => $item['exento'],
+                                'type_calculation'=> $item['type_calculation']
                             ]);
                         } else {
                             if ((int) $item['for_delete'] == 1) {
@@ -452,6 +477,28 @@ SQL;
                                     'type' => $item['type'],
                                     'percentage' => $item['percentage'],
                                     'account' => $item['account'],
+                                    'exento' => $item['exento'],
+                                    'type_calculation'=> $item['type_calculation']
+                                ])->save();
+                            }
+                        }
+                    }
+                    foreach ($document['fields'] as $item) {
+                        if (!isset($item['id'])) {
+                            DocumentField::create([
+                                'document_id' => $document['id'],
+                                'account' => $item['account'],
+                                'name' => $item['name'],
+                                'type_calculation' => $item['type_calculation'],
+                            ]);
+                        } else {
+                            if ((int) $item['for_delete'] == 1) {
+                                DocumentField::findOrFail($item['id'])->delete();
+                            } else {
+                                DocumentField::findOrFail($item['id'])->fill([
+                                    'account' => $item['account'],
+                                    'name' => $item['name'],
+                                    'type_calculation' => $item['type_calculation'],
                                 ])->save();
                             }
                         }
@@ -471,7 +518,6 @@ SQL;
                     'id',
                     'name',
                     'type_document_sap',
-                    'type_calculation',
                     'profile_id',
                     'ice',
                     'tasas',
@@ -497,6 +543,18 @@ SQL;
                     'type',
                     'percentage',
                     'account',
+                    'type_calculation',
+                    'exento',
+                    DB::raw("0 as for_delete"),
+                )->orderBy('id', 'asc');
+            },
+            'documents.fields' => function ($q) {
+                $q->select(
+                    'id',
+                    'document_id',
+                    'account',
+                    'name',
+                    'type_calculation',
                     DB::raw("0 as for_delete"),
                 )->orderBy('id', 'asc');
             }

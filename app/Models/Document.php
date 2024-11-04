@@ -13,7 +13,7 @@ class Document extends Model
     protected $fillable=[
         'name',
         'type_document_sap',
-        'type_calculation',
+        //'type_calculation',
         'profile_id',
         'ice',
         'tasas',
@@ -32,6 +32,9 @@ class Document extends Model
     ];
     public function detail(){
         return $this->hasMany(DocumentDetail::class,'document_id','id');
+    }
+    public function fields(){
+        return $this->hasMany(DocumentField::class,'document_id','id');
     }
     public function rateZeroStatus(): Attribute
     {

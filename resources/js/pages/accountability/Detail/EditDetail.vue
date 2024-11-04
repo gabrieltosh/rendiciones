@@ -221,6 +221,19 @@
                                         </ul>
                                     </div>
                                 </div>
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4" v-for="field,i in form.field" :key="i">
+                                    <div class="form-label" for="device_name">
+                                        {{ field.name }} <span class="text-red">*</span>
+                                    </div>
+                                    <q-input v-model="field.value" dense type="number" outlined class="input-theme" />
+                                    <div v-if="errors['field.' + i + '.value']" class="container-error">
+                                        <ul v-for="(
+                                                error, index
+                                            ) in errors['field.' + i + '.value']" :key="index" class="message-error">
+                                            <li>{{ error }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4" v-if="document.discount_status">
                                     <div class="form-label" for="device_name">
                                         Descuento
@@ -447,6 +460,14 @@ onMounted(() => {
 });
 
 function HandleFindDocument() {
+    form.value.field = []
     document.value = options.value.documents.find(e => e.id == form.value.document_id);
+    document.value.fields.forEach(e => {
+        form.value.field.push({
+            name:e.name,
+            value:null,
+            id:e.id
+        })
+    });
 }
 </script>

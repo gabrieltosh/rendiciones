@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Document;
 use App\Models\Profile;
+use App\Models\AccountabilityField;
 use Inertia\Inertia;
 use Notification;
 use PhpParser\Node\Expr\BinaryOp\NotIdentical;
@@ -91,6 +92,15 @@ class AccountabilityController extends Controller
             'distribution_rule_four' => $request->distribution_rule_four,
             'distribution_rule_five' => $request->distribution_rule_five,
         ])->save();
+        AccountabilityField::where('accountability_detail_id',$request->id)->delete();
+        foreach ($request->field as $key => $field) {
+            AccountabilityField::create([
+                'value'=>$field['value'],
+                'field_id'=>$field['field_id']??$field['id'],
+                'name'=>$field['name'],
+                'accountability_detail_id'=>$request->id
+            ]);
+        }
         Session::flash('message', "Documento actualizado correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
@@ -106,8 +116,8 @@ class AccountabilityController extends Controller
             'account_code',
             'account_name'
         )->where('profile_id', $profile->id)->get();
-        $documents = Document::where('profile_id', $profile->id)->get();
-        $data = AccountabilityDetail::where('id', $document_id)->first();
+        $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
+        $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
         return Inertia::render(
             'accountability/Detail/EditDetail',
             [
@@ -132,7 +142,7 @@ class AccountabilityController extends Controller
     public function HandleStoreDocument(DocumentRequest $request, $profile_id, $accountability_id)
     {
         $account = DetailAccounts::where('account_code', $request->account)->first();
-        AccountabilityDetail::create([
+        $detail=AccountabilityDetail::create([
             'accountability_id' => $accountability_id,
             'account' => $request->account,
             'account_name' => $account->account_name,
@@ -159,6 +169,14 @@ class AccountabilityController extends Controller
             'distribution_rule_four' => $request->distribution_rule_four,
             'distribution_rule_five' => $request->distribution_rule_five,
         ]);
+        foreach ($request->field as $key => $field) {
+            AccountabilityField::create([
+                'value'=>$field['value'],
+                'field_id'=>$field['id'],
+                'name'=>$field['name'],
+                'accountability_detail_id'=>$detail->id
+            ]);
+        }
         Session::flash('message', "Documento creado correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
@@ -207,7 +225,7 @@ SQL;
             'account_code',
             'account_name'
         )->where('profile_id', $profile->id)->get();
-        $documents = Document::where('profile_id', $profile->id)->get();
+        $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         return Inertia::render(
             'accountability/Detail/CreateDetail',
             [

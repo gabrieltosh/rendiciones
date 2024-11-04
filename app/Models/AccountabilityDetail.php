@@ -45,6 +45,9 @@ class AccountabilityDetail extends Model
             }
         );
     }
+    public function field(){
+        return $this->hasMany(AccountabilityField::class,'accountability_detail_id','id');
+    }
     public function document(){
         return $this->belongsTo(Document::class,'document_id','id');
     }

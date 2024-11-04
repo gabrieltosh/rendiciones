@@ -11,20 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('document_details', function (Blueprint $table) {
+        Schema::create('document_fields', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('document_id');
-            $table->enum('type',['IVA','IT','IUE','RC-IVA','EXENTO','TASA','ICE']);
-            $table->enum('type_calculation',['Grossing Up','Grossing Down']);
-            $table->string('percentage');
             $table->string('account');
+            $table->string('name');
+            $table->enum('type_calculation',['Debito','Credito']);
             $table->foreign('document_id')->references('id')->on('documents');
             $table->timestamps();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('document_details');
+        Schema::dropIfExists('document_fields');
     }
 };

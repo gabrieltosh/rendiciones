@@ -22,7 +22,7 @@
                                     <q-btn @click="$refs.stepper.next()" color="primary" outline no-caps size="12px"
                                         label="Continuar" />
                                     <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
-                                                label="Actualizar" />
+                                        label="Actualizar" />
                                 </div>
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
@@ -58,7 +58,6 @@
                             </div>
                         </q-card>
                     </q-step>
-
                     <q-step :name="2" title="Cuentas Cabecera" icon="assignment" :done="step > 2">
                         <q-card class="q-px-lg q-py-sm q-ma-sm card-form q-mt-md">
                             <div class="row">
@@ -80,8 +79,8 @@
                                             <q-btn flat color="primary" @click="
                                                 $refs.stepper.previous()
                                                 " label="Atras" no-caps size="12px" />
-                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps size="12px"
-                                                label="Continuar" />
+                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps
+                                                size="12px" label="Continuar" />
                                             <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
                                                 label="Actualizar" />
                                         </div>
@@ -92,8 +91,8 @@
                                     <h5 class="title-tree text-center">
                                         Lista de Cuentas Contables
                                     </h5>
-                                    <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter2" clearable
-                                        class="input-theme"></q-input>
+                                    <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter2"
+                                        clearable class="input-theme"></q-input>
                                     <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
                                         v-model:ticked="form.general" :filter="filter2"
                                         :filter-method="HandleFilterAccounts">
@@ -139,8 +138,8 @@
                                             <q-btn flat color="primary" @click="
                                                 $refs.stepper.previous()
                                                 " label="Atras" no-caps size="12px" class="q-ml-sm" />
-                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps size="12px"
-                                                label="Continuar" />
+                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps
+                                                size="12px" label="Continuar" />
                                             <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
                                                 label="Actualizar" />
                                         </div>
@@ -198,8 +197,8 @@
                                             <q-btn flat color="primary" @click="
                                                 $refs.stepper.previous()
                                                 " label="Atras" no-caps size="12px" />
-                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps size="12px"
-                                                label="Continuar" />
+                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps
+                                                size="12px" label="Continuar" />
                                             <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
                                                 label="Actualizar" />
                                         </div>
@@ -272,7 +271,7 @@
                                         </q-menu>
                                         <thead>
                                             <tr>
-                                                <th colspan="2" align="left">
+                                                <th colspan="2" align="left" style="width:50%">
                                                     Nombre Documento
                                                     <span class="text-red">*</span>
                                                     <q-input v-model="item.name" dense class="input-theme">
@@ -295,12 +294,12 @@
                                                         </ul>
                                                     </div>
                                                 </th>
-                                                <th colspan="1" align="left">
+                                                <th colspan="2" align="left" style="width:50%">
                                                     Tipo Documento
                                                     <span class="text-red">*</span>
                                                     <q-select class="input-theme" dense :options="options.document_types
                                                         " v-model="item.type_document_sap" option-value="FldValue"
-                                                        option-label="Descr" emit-value map-options clearable/>
+                                                        option-label="Descr" emit-value map-options clearable />
                                                     <div v-if="
                                                         errors[
                                                         'documents.' +
@@ -319,7 +318,7 @@
                                                         </ul>
                                                     </div>
                                                 </th>
-                                                <th colspan="1" align="left">
+                                                <!-- <th colspan="1" align="left">
                                                     Tipo Calculo
                                                     <span class="text-red">*</span>
                                                     <q-select v-model="item.type_calculation
@@ -342,8 +341,12 @@
                                                             <li>{{ error }}</li>
                                                         </ul>
                                                     </div>
-                                                </th>
+                                                </th> -->
                                             </tr>
+                                        </thead>
+                                    </q-markup-table>
+                                    <q-markup-table separator="cell" flat bordered dense>
+                                        <thead>
                                             <tr>
                                                 <th colspan="4" align="left">
                                                     <div class="row">
@@ -450,17 +453,11 @@
                                                     </div>
                                                 </th>
                                             </tr>
+                                        </thead>
+                                    </q-markup-table>
+                                    <q-markup-table separator="cell" flat bordered dense>
+                                        <thead>
                                             <tr>
-                                                <th colspan="2" align="left">
-                                                    <div v-if="!item.exento_status">
-                                                        Exento
-                                                        <span class="text-red">*</span>
-                                                        <q-input v-model="item.exento" dense class="input-theme"
-                                                            type="number">
-                                                        </q-input>
-                                                    </div>
-
-                                                </th>
                                                 <th colspan="1" align="left">
                                                     <div v-if="!item.tasas_status">
                                                         Tasas
@@ -479,6 +476,18 @@
                                                     </div>
                                                 </th>
                                             </tr>
+                                        </thead>
+                                    </q-markup-table>
+                                    <q-markup-table separator="cell" flat bordered dense>
+                                        <thead>
+                                            <tr style="
+                                                    color: white;
+                                                    background-color: #344767;
+                                                ">
+                                                <th colspan="6" class="text-center" style="width:100%">
+                                                    Prorrateo Asiento
+                                                </th>
+                                            </tr>
                                             <tr style="
                                                     color: #344767;
                                                     background-color: #f0f2f5;
@@ -493,120 +502,187 @@
                                                 <th class="text-center" style="width: 30%">
                                                     Tipo
                                                 </th>
+                                                <th class="text-center" style="width: 18%">
+                                                    Calculo
+                                                </th>
                                                 <th class="text-center" style="width: 30%">
                                                     Cuenta
                                                 </th>
                                                 <th class="text-center" style="width: 30%">
                                                     Porcentaje
                                                 </th>
+                                                <th class="text-center" style="width: 18%">
+                                                    % Exento
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr v-for="(
-                                                    item2, index2
-                                                ) in item.detail" :key="index2" :class="{
+                                                    proration, index_proration
+                                                ) in item.detail" :key="index_proration" :class="{
                                                     'bg-negative':
-                                                        item2.for_delete == 1,
+                                                    proration.for_delete == 1,
                                                 }">
+
                                                 <td class="text-center">
                                                     <q-btn flat color="negative" icon="eva-trash-2-outline" @click="
                                                         HandleDeleteLineDetail(
                                                             index,
-                                                            index2
+                                                            index_proration
                                                         )
                                                         " dense size="10px" />
                                                 </td>
                                                 <td class="text-center">
-                                                    <q-select v-model="item2.type" :options="options.type" dense
-                                                        class="input-theme" @update:model-value="
-                                                            item2.type ==
-                                                                'EXENTO' ||
-                                                                item2.type ==
-                                                                'TASA' ||
-                                                                item2.type == 'ICE'
-                                                                ? (item2.account =
-                                                                    '-')
-                                                                : (item2.account =
-                                                                    null)
-                                                            " />
-                                                    <div v-if="
-                                                        errors[
-                                                        'documents.' +
-                                                        index +
-                                                        '.detail.' +
-                                                        index2 +
-                                                        '.type'
-                                                        ]
-                                                    " class="container-error">
+                                                    <q-select v-model="proration.type" :options="options.type" dense
+                                                        class="input-theme"
+                                                        @update:model-value="proration.type == 'EXENTO' || proration.type == 'TASA' || proration.type == 'ICE' ? item2.account = '-' : proration.account = null" />
+                                                    <div v-if="errors['documents.' + index + '.detail.' + index_proration + '.type']"
+                                                        class="container-error">
                                                         <ul v-for="(
-                                                                error, index
-                                                            ) in errors[
-                                                                        'documents.' +
-                                                                        index +
-                                                                        '.detail.' +
-                                                                        index2 +
-                                                                        '.type'
-                                                                    ]" :key="index" class="message-error">
+                                                                error, i
+                                                            ) in errors['documents.' + index + '.detail.' + index_proration + '.type']"
+                                                            :key="i" class="message-error">
+                                                            <li>{{ error }}</li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <q-select class="input-theme" dense
+                                                        :options="['Grossing Up', 'Grossing Down']"
+                                                        v-model="proration.type_calculation" clearable />
+                                                    <div v-if="errors['documents.' + index + '.detail.' + index_proration + '.account']"
+                                                        class="container-error">
+                                                        <ul v-for="(
+                                                                error, i
+                                                            ) in errors['documents.' + index + '.detail.' + index_proration + '.type_calculation']"
+                                                            :key="i" class="message-error">
                                                             <li>{{ error }}</li>
                                                         </ul>
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
                                                     <q-select class="input-theme" dense :options="options.accounts_filter
-                                                        " v-model="item2.account" option-value="AcctCode"
+                                                        " v-model="proration.account" option-value="AcctCode"
                                                         option-label="AcctName" emit-value map-options use-input
                                                         @filter="HandleFilterAccountsDocuments
-                                                            " clearable :disable="item2.type ==
-                                                                'EXENTO' ||
-                                                                item2.type ==
-                                                                'TASA' ||
-                                                                item2.type == 'ICE'
-                                                                ? true
-                                                                : false
-                                                                " />
-                                                    <div v-if="
-                                                        errors[
-                                                        'documents.' +
-                                                        index +
-                                                        '.detail.' +
-                                                        index2 +
-                                                        '.account'
-                                                        ]
-                                                    " class="container-error">
+                                                            " clearable
+                                                        :disable="proration.type == 'EXENTO' || proration.type == 'TASA' || proration.type == 'ICE' ? true : false" />
+                                                    <div v-if="errors['documents.' + index + '.detail.' + index_proration + '.account']"
+                                                        class="container-error">
                                                         <ul v-for="(
                                                                 error, index
-                                                            ) in errors[
-                                                                        'documents.' +
-                                                                        index +
-                                                                        '.detail.' +
-                                                                        index2 +
-                                                                        '.account'
-                                                                    ]" :key="index" class="message-error">
+                                                            ) in errors['documents.' + index + '.detail.' + index_proration + '.account']"
+                                                            :key="index" class="message-error">
                                                             <li>{{ error }}</li>
                                                         </ul>
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
-                                                    <q-input v-model="item2.percentage
+                                                    <q-input v-model="proration.percentage
                                                         " dense class="input-theme" type="number" />
-                                                    <div v-if="
-                                                        errors[
-                                                        'documents.' +
-                                                        index +
-                                                        '.detail.' +
-                                                        index2 +
-                                                        '.percentage'
-                                                        ]
-                                                    " class="container-error">
+                                                    <div v-if="errors['documents.' + index + '.detail.' + index_proration + '.percentage']"
+                                                        class="container-error">
                                                         <ul v-for="(
                                                                 error, index
-                                                            ) in errors[
-                                                                        'documents.' +
-                                                                        index +
-                                                                        '.detail.' +
-                                                                        index2 +
-                                                                        '.percentage'
-                                                                    ]" :key="index" class="message-error">
+                                                            ) in errors['documents.' + index + '.detail.' + index_proration + '.percentage']"
+                                                            :key="index" class="message-error">
+                                                            <li>{{ error }}</li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <q-input v-model="proration.exento
+                                                        " dense class="input-theme" type="number"
+                                                        :disable="item.exento_status" />
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </q-markup-table>
+                                    <q-markup-table separator="cell" flat bordered dense>
+                                        <thead>
+                                            <tr style="
+                                                    color: white;
+                                                    background-color: #344767;
+                                                ">
+                                                <th colspan="4" class="text-center" style="width:100%">
+                                                    Campos Adicionales
+                                                </th>
+                                            </tr>
+                                            <tr style="
+                                                    color: #344767;
+                                                    background-color: #f0f2f5;
+                                                ">
+                                                <th class="text-center" style="width: 10%">
+                                                    <q-btn color="primary" icon="eva-plus" @click="
+                                                        HandleAddLineFields(
+                                                            index
+                                                        )
+                                                        " dense flat size="10px" />
+                                                </th>
+                                                <th class="text-center" style="width: 30%">
+                                                    Tipo
+                                                </th>
+                                                <th class="text-center" style="width: 30%">
+                                                    Nombre
+                                                </th>
+                                                <th class="text-center" style="width: 30%">
+                                                    Cuenta
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(
+                                                    field, index_field
+                                                ) in item.fields" :key="index_field" :class="{
+                                                    'bg-negative':
+                                                    field.for_delete == 1,
+                                                }">
+                                                <td class="text-center">
+                                                    <q-btn flat color="negative" icon="eva-trash-2-outline" @click="
+                                                        HandleDeleteLineField(
+                                                            index,
+                                                            index_field
+                                                        )
+                                                        " dense size="10px" />
+                                                </td>
+                                                <td class="text-center">
+                                                    <q-select class="input-theme" dense :options="['Debito', 'Credito']"
+                                                        v-model="field.type_calculation" clearable />
+                                                    <div v-if="errors['documents.' + index + '.fields.' + index_field + '.type_calculation']"
+                                                        class="container-error">
+                                                        <ul v-for="(
+                                                                error, i
+                                                            ) in errors['documents.' + index + '.fields.' + index_field + '.type_calculation']"
+                                                            :key="i" class="message-error">
+                                                            <li>{{ error }}</li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <q-input v-model="field.name
+                                                        " dense class="input-theme" />
+                                                    <div v-if="errors['documents.' + index + '.fields.' + index_field + '.name']"
+                                                        class="container-error">
+                                                        <ul v-for="(
+                                                                error, i
+                                                            ) in errors['documents.' + index + '.fields.' + index_field + '.name']"
+                                                            :key="i" class="message-error">
+                                                            <li>{{ error }}</li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <q-select class="input-theme" dense :options="options.accounts_filter
+                                                        " v-model="field.account" option-value="AcctCode"
+                                                        option-label="AcctName" emit-value map-options use-input
+                                                        @filter="HandleFilterAccountsDocuments
+                                                            " clearable />
+                                                    <div v-if="errors['documents.' + index + '.fields.' + index_field + '.account']"
+                                                        class="container-error">
+                                                        <ul v-for="(
+                                                                error, i
+                                                            ) in errors['documents.' + index + '.fields.' + index_field + '.account']"
+                                                            :key="i" class="message-error">
                                                             <li>{{ error }}</li>
                                                         </ul>
                                                     </div>
@@ -732,6 +808,16 @@ function HandleAddDocument() {
                 type: null,
                 percentage: null,
                 account: null,
+                exento: null,
+                type_calculation: null,
+                for_delete: 0,
+            },
+        ],
+        fields: [
+            {
+                account: null,
+                name: null,
+                type_calculation: null,
                 for_delete: 0,
             },
         ],
@@ -743,6 +829,15 @@ function HandleAddLineDetail(index) {
         type: null,
         percentage: null,
         account: null,
+        type_calculation: null,
+        for_delete: 0,
+    });
+}
+function HandleAddLineFields(index) {
+    form.value.documents[index].fields.push({
+        name: null,
+        account: null,
+        type_calculation: null,
         for_delete: 0,
     });
 }
@@ -758,6 +853,23 @@ function HandleDeleteLineDetail(index, index2) {
                 form.value.documents[index].detail[index2].for_delete = 1;
             } else {
                 form.value.documents[index].detail.splice(index2, 1);
+            }
+        })
+        .onCancel(() => { })
+        .onDismiss(() => { });
+}
+function HandleDeleteLineField(index, index2) {
+    $q.dialog({
+        title: "Confirmar",
+        message: "¿Esta seguro de eliminar la linea?",
+        cancel: true,
+        persistent: true,
+    })
+        .onOk(() => {
+            if (form.value.documents[index].fields[index2].id) {
+                form.value.documents[index].fields[index2].for_delete = 1;
+            } else {
+                form.value.documents[index].fields.splice(index2, 1);
             }
         })
         .onCancel(() => { })

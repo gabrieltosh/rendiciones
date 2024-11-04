@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('type_document_sap');
-            $table->enum('type_calculation',['Grossing Up','Grossing Down']);
+            //$table->enum('type_calculation',['Grossing Up','Grossing Down']);
             $table->decimal('ice',8,2)->default(0)->nullable(); //descuento
             $table->decimal('tasas',8,2)->default(0)->nullable(); //descuento
             $table->decimal('exento',8,2)->default(0)->nullable(); //descuento

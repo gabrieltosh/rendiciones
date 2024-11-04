@@ -5,16 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DocumentDetail extends Model
+class DocumentField extends Model
 {
     use HasFactory;
-    protected $table='document_details';
+    protected $table='document_fields';
     protected $fillable=[
         'document_id',
-        'type',
-        'percentage',
         'account',
-        'exento',
+        'name',
         'type_calculation'
     ];
 }

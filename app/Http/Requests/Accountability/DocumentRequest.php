@@ -31,7 +31,8 @@ class DocumentRequest extends FormRequest
             //'control_code'=>'required',
             //'business_name'=>'required',
             //'nit'=>'required',
-            'amount'=>'required'
+            'amount'=>'required',
+            'field.*.value'=>'required',
         ];
     }
     public function messages(): array
@@ -46,7 +47,8 @@ class DocumentRequest extends FormRequest
             'control_code.required'=>'El campo Codigo de Control es obligatorio',
             'business_name.required'=>'El campo Razón Social es obligatorio',
             'nit.required'=>'El campo NIT es obligatorio',
-            'amount.required'=>'El campo Monto es obligatorio'
+            'amount.required'=>'El campo Monto es obligatorio',
+            'field.*.value'=>'El campo es obligatorio',
         ];
     }
 }

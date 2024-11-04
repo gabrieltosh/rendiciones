@@ -26,10 +26,13 @@ class ProfileRequest extends FormRequest
             'type_currency'=>'required',
             'documents.*.name'=>'required',
             'documents.*.type_document_sap'=>'required',
-            'documents.*.type_calculation'=>'required',
             'documents.*.detail.*.type'=>'required',
             'documents.*.detail.*.percentage'=>'required',
             'documents.*.detail.*.account'=>'required',
+            'documents.*.detail.*.type_calculation'=>'required',
+            'documents.*.fields.*.account'=>'required',
+            'documents.*.fields.*.name'=>'required',
+            'documents.*.fields.*.type_calculation'=>'required',
         ];
     }
     public function messages(): array
@@ -42,10 +45,14 @@ class ProfileRequest extends FormRequest
             'name.unique'=>'El Nombre del Perfil ya esta registrado',
             'documents.*.name.required'=>'El Nombre Documento es obligatorio',
             'documents.*.type_document_sap.required'=>'El Tipo Documento es obligatorio',
-            'documents.*.type_calculation.required'=>'El Tipo Calculo es obligatorio',
+            'documents.*.type_calculation.required'=>'El Calculo es obligatorio',
             'documents.*.detail.*.type.required'=>'El Tipo es Obligatorio',
             'documents.*.detail.*.percentage.required'=>'El Porcentaje es Obligatorio',
-            'documents.*.detail.*.account.required'=>'La Cuenta es Obligatorio',
+            'documents.*.detail.*.account.required'=>'La Cuenta es Obligatoria',
+            'documents.*.detail.*.type_calculation'=>'El Calculo es Obligatorio',
+            'documents.*.fields.*.account'=>'La Cuenta es Obligatoria',
+            'documents.*.fields.*.name'=>'El Nombre es Obligatorio',
+            'documents.*.fields.*.type_calculation'=>'El Tipo es Obligatorio',
         ];
     }
 }
