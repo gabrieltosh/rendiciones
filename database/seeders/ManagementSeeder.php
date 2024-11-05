@@ -33,7 +33,7 @@ class ManagementSeeder extends Seeder
                 'name'=>'service_layer',
                 'label'=>'URL Service Layer SAP',
                 'type'=>'text',
-                'value'=>'https://181.114.125.190:55555'
+                'value'=>'https://localhost:50000'
             ],
             [
                 'group'=>'accountability',
@@ -54,7 +54,7 @@ class ManagementSeeder extends Seeder
                 'name'=>'notification_email',
                 'label'=>'Notificaciones por Correo',
                 'type'=>'text',
-                'value'=>'SI'
+                'value'=>'NO'
             ]
             /*[
                 'group'=>'accountability',
