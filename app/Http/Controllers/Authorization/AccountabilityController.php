@@ -161,18 +161,22 @@ class AccountabilityController extends Controller
         foreach ($document_line->field as $field) {
             $amount_line += ($field->document_field->type_calculation == 'Credito' ? 1 : -1)* $field->value;
             $detail_lines[] = [
-                'AccountCode' => $field->account,
+                'AccountCode' => $field->document_field->account,
                 'Debit' => $field->document_field->type_calculation == 'Credito' ? 0 : $field->value,
                 'Credit' => $field->document_field->type_calculation == 'Credito' ? $field->value : 0,
-                'AccountName' => $field->document_field->account,
+                'ShortName' => $field->document_field->account,
+                'LineMemo' => $document_line->concept
             ];
         }
         $total_ice = $document_line->ice_status ? $document_line->ice : $amount_line * $ice_percentage;
         $total_tasas = $document_line->tasas_status ? $document_line->tasas : $amount_line * $rate_percentage;
 
+        $max_exento=0;
         foreach ($document_line->document->detail as $detail) {
             $exento_percentage = $detail->exento / 100;
             $total_excento = $document_line->exento_status ? $document_line->exento : $amount_line * $exento_percentage;
+            $max_exento=$total_excento>$max_exento?$total_excento:$max_exento;
+
             //$amount = $amount_line - $total_excento - $total_tasas - $total_ice;
             $amount = ($total_excento==0?$amount_line:$total_excento) + $total_tasas + $total_ice;
 
@@ -210,7 +214,7 @@ class AccountabilityController extends Controller
             $management->where('name', 'nit')->first()->value => $document_line->nit,
             $management->where('name', 'amount')->first()->value => $document_line->amount,
             $management->where('name', 'discount')->first()->value => $document_line->discount,
-            $management->where('name', 'excento')->first()->value => $document_line->excento,
+            $management->where('name', 'excento')->first()->value => $max_exento,
             $management->where('name', 'rate')->first()->value => $document_line->rate,
             $management->where('name', 'gift_card')->first()->value => $document_line->gift_card,
             $management->where('name', 'ice')->first()->value => $document_line->ice,
@@ -258,7 +262,7 @@ class AccountabilityController extends Controller
             ]
         ];
 
-        dd($journal_entries);
+        //dd($journal_entries);
 
         $params_sap = Management::where('group', 'accountability')->get();
 

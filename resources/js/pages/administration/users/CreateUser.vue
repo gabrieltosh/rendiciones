@@ -96,7 +96,6 @@
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
                                         Codigo Empleado
-                                        <span class="text-red">*</span>
                                     </div>
                                     <q-input v-model="form.card_code" dense outlined class="input-theme" />
                                     <div v-if="errors.card_code" class="container-error">

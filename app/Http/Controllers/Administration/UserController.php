@@ -104,20 +104,37 @@ class UserController extends Controller
                 'auth_user_id' => $auth_user_id
             ]);
         }
-        User::findOrFail($request->id)->fill([
-            'name' => $request->name,
-            'email' => $request->email,
-            'username' => $request->username,
-            'type' => $request->type,
-            'card_code' => $request->card_code,
-            'distribution_rule_one' => $request->distribution_rule_one,
-            'distribution_rule_second' => $request->distribution_rule_second,
-            'distribution_rule_three' => $request->distribution_rule_three,
-            'distribution_rule_four' => $request->distribution_rule_four,
-            'distribution_rule_five' => $request->distribution_rule_five,
-            'status' => $request->status,
-            'password'=>Hash::make($request->password)
-        ])->save();
+        if(is_null($request->password)){
+            User::findOrFail($request->id)->fill([
+                'name' => $request->name,
+                'email' => $request->email,
+                'username' => $request->username,
+                'type' => $request->type,
+                'card_code' => $request->card_code,
+                'distribution_rule_one' => $request->distribution_rule_one,
+                'distribution_rule_second' => $request->distribution_rule_second,
+                'distribution_rule_three' => $request->distribution_rule_three,
+                'distribution_rule_four' => $request->distribution_rule_four,
+                'distribution_rule_five' => $request->distribution_rule_five,
+                'status' => $request->status,
+            ])->save();
+        }else{
+            User::findOrFail($request->id)->fill([
+                'name' => $request->name,
+                'email' => $request->email,
+                'username' => $request->username,
+                'type' => $request->type,
+                'card_code' => $request->card_code,
+                'distribution_rule_one' => $request->distribution_rule_one,
+                'distribution_rule_second' => $request->distribution_rule_second,
+                'distribution_rule_three' => $request->distribution_rule_three,
+                'distribution_rule_four' => $request->distribution_rule_four,
+                'distribution_rule_five' => $request->distribution_rule_five,
+                'status' => $request->status,
+                'password'=>Hash::make($request->password)
+            ])->save();
+        }
+
         return Redirect::route('panel.user.index');
     }
     public function HandleFormatUser($data)
