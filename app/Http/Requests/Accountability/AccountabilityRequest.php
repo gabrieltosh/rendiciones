@@ -22,6 +22,7 @@ class AccountabilityRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'employee'=>'required',
             'account'=>'required',
             'total'=>'required',
             'description'=>'required',
@@ -37,6 +38,7 @@ class AccountabilityRequest extends FormRequest
             'description.required'=>'El campo Description es obligatorio',
             'start_date.required'=>'El campo Fecha Inicio es obligatorio',
             'end_date.required'=>'El campo Fecha Final es obligatorio',
+            'employee.required'=>'El campo Empleado es obligatorio'
         ];
     }
 }

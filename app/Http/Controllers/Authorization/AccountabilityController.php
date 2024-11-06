@@ -31,11 +31,19 @@ use App\Models\User;
 class AccountabilityController extends Controller
 {
     public function HandleGetReportAccountability($accountability_id){
+        $params=Management::where('group','company')->get();
+        $company=[
+            'company_name'=>$params->where('name','company_name')->first()->value,
+            'company_location'=>$params->where('name','company_location')->first()->value,
+            'nit'=>$params->where('name','nit')->first()->value,
+            'logo'=>$params->where('name','logo')->first()->value,
+        ];
         $data=Accountability::with('profile','user','detail.document')
                     ->where('id',$accountability_id)
                     ->first();
         $pdf = Pdf::loadView('pdf.accountability_detail',[
-            'data'=>$data
+            'data'=>$data,
+            'company'=>$company
         ]);
         $pdf->setPaper('letter', 'portrait');
         return $pdf->stream();
