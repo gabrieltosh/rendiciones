@@ -66,7 +66,6 @@ class AccountabilityController extends Controller
     {
         $account = DetailAccounts::where('account_code', $request->account)->first();
         AccountabilityDetail::findOrFail($request->id)->fill([
-            'accountability_id' => $accountability_id,
             'account' => $request->account,
             'account_name' => $account->account_name,
             'date' => $request->date,

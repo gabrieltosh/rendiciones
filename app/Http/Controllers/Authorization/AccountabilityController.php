@@ -27,6 +27,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Config;
 use App\Helpers\Hana;
 use App\Notifications\Accountability\StatusAccountabilityNotification;
+use App\Models\AccountabilityField;
 use App\Models\User;
 class AccountabilityController extends Controller
 {
@@ -479,6 +480,15 @@ SQL;
             'distribution_rule_four' => $request->distribution_rule_four,
             'distribution_rule_five' => $request->distribution_rule_five,
         ])->save();
+        AccountabilityField::where('accountability_detail_id',$request->id)->delete();
+        foreach ($request->field as $key => $field) {
+            AccountabilityField::create([
+                'value'=>$field['value'],
+                'field_id'=>$field['field_id']??$field['id'],
+                'name'=>$field['name'],
+                'accountability_detail_id'=>$request->id
+            ]);
+        }
         Session::flash('message', "Documento actualizado correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id);
@@ -585,9 +595,9 @@ SQL;
             'account_code',
             'account_name'
         )->where('profile_id', $profile->id)->get();
-        $documents = Document::where('profile_id', $profile->id)->get();
+        $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
-        $data = AccountabilityDetail::where('id', $document_id)->first();
+        $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
         return Inertia::render(
             'authorization/Detail/EditDetail',
             [
