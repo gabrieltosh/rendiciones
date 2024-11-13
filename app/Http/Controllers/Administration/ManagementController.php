@@ -35,6 +35,7 @@ class ManagementController extends Controller
         $this->HandleUpdateData($request->accountability_detail);
         $this->HandleUpdateData($request->employee);
         $this->HandleUpdateData($request->suppliers);
+        $this->HandleUpdateData($request->company);
         Session::flash('message', "Configuración actualizadas correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.management.index');

@@ -209,7 +209,8 @@ function HanldeStoreData() {
             accountability: data.value.accountability,
             accountability_detail: data.value.accountability_detail,
             employee: data.value.employee,
-            suppliers: data.value.suppliers
+            suppliers: data.value.suppliers,
+            company: data.value.company
         }
         , {
             onSuccess: () => {
