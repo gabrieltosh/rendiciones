@@ -258,6 +258,7 @@ SQL;
         $profile = Profile::where('id', $profile_id)->first();
         $accountabilities = Accountability::where('user_id', $request->user()->id)
             ->where('profile_id', $profile_id)
+            ->orderBy('created_at','desc')
             ->get();
         return Inertia::render(
             'accountability/IndexAccountability',

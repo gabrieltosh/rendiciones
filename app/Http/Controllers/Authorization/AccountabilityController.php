@@ -329,6 +329,7 @@ class AccountabilityController extends Controller
         $accountabilities = Accountability::with('user', 'profile')
             ->where('status', 'Pendiente')
             ->whereIn('user_id', $users)
+            ->orderBy('created_at','desc')
             ->get();
 
         $authorized = Accountability::with('user', 'profile')
