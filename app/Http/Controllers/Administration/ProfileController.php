@@ -235,7 +235,8 @@ SQL;
                     'type_calculation' => $item['type_calculation'],
                     'percentage' => $item['percentage'],
                     'account' => $item['account'],
-                    'exento'=>$item['exento']
+                    'exento'=>$item['exento'],
+                    'calculation'=>$item['calculation']
                 ]);
             }
             foreach ($document['fields'] as $item) {
@@ -416,7 +417,8 @@ SQL;
                         'percentage' => $item['percentage'],
                         'account' => $item['account'],
                         'exento' => $item['exento'],
-                        'type_calculation'=> $item['type_calculation']
+                        'type_calculation'=> $item['type_calculation'],
+                        'calculation'=>$item['calculation']
                     ]);
                 }
                 foreach ($document['fields'] as $item) {
@@ -467,7 +469,8 @@ SQL;
                                 'percentage' => $item['percentage'],
                                 'account' => $item['account'],
                                 'exento' => $item['exento'],
-                                'type_calculation'=> $item['type_calculation']
+                                'type_calculation'=> $item['type_calculation'],
+                                'calculation'=>$item['calculation']
                             ]);
                         } else {
                             if ((int) $item['for_delete'] == 1) {
@@ -478,7 +481,8 @@ SQL;
                                     'percentage' => $item['percentage'],
                                     'account' => $item['account'],
                                     'exento' => $item['exento'],
-                                    'type_calculation'=> $item['type_calculation']
+                                    'type_calculation'=> $item['type_calculation'],
+                                    'calculation'=>$item['calculation']
                                 ])->save();
                             }
                         }
@@ -545,6 +549,7 @@ SQL;
                     'account',
                     'type_calculation',
                     'exento',
+                    'calculation',
                     DB::raw("0 as for_delete"),
                 )->orderBy('id', 'asc');
             },

@@ -157,18 +157,16 @@ class AccountabilityController extends Controller
         $journal = [];
         $detail_lines = [];
         $total = 0;
-        $amount_line=$document_line->amount;
-        //$exento_percentage = $document_line->document->exento / 100;
+        $total_percentage_lines=0;
+        $operation_lines=false;
+
         $rate_percentage = $document_line->document->tasas / 100;
         $ice_percentage = $document_line->document->ice / 100;
-        // $total_excento = $document_line->exento_status ? $document_line->exento : $document_line->amount * $exento_percentage;
-        // $total_ice = $document_line->ice_status ? $document_line->ice : $document_line->amount * $ice_percentage;
-        // $total_tasas = $document_line->tasas_status ? $document_line->tasas : $document_line->amount * $rate_percentage;
-        // $amount = $document_line->amount - $total_excento - $total_tasas - $total_ice;
-        // $operation = $document_line->document->type_calculation == 'Grossing Up' ? 1 : -1;
+
+        $amount_line_other=0;
 
         foreach ($document_line->field as $field) {
-            $amount_line += ($field->document_field->type_calculation == 'Credito' ? 1 : -1)* $field->value;
+            $amount_line_other += ($field->document_field->type_calculation == 'Credito' ? 1 : -1)* $field->value;
             $detail_lines[] = [
                 'AccountCode' => $field->document_field->account,
                 'Debit' => $field->document_field->type_calculation == 'Credito' ? 0 : $field->value,
@@ -177,26 +175,40 @@ class AccountabilityController extends Controller
                 'LineMemo' => $document_line->concept
             ];
         }
+
+        foreach ($document_line->document->detail as $detail) {
+            $total_percentage_lines+=$detail->calculation?$detail->percentage / 100:0;
+            $operation_lines = $detail->type_calculation == 'Grossing Up' ? true : false;
+        }
+        //$amount_line=$document_line->amount;
+        $amount_line = $document_line->amount + $amount_line_other;
+        if ($operation_lines) {
+            $amount_line /= (1 - $total_percentage_lines);
+        } else {
+            $amount_line *= (1 - $total_percentage_lines);
+        }
+
         $total_ice = $document_line->ice_status ? $document_line->ice : $amount_line * $ice_percentage;
         $total_tasas = $document_line->tasas_status ? $document_line->tasas : $amount_line * $rate_percentage;
 
         $max_exento=0;
         foreach ($document_line->document->detail as $detail) {
             $exento_percentage = $detail->exento / 100;
-            $total_excento = $document_line->exento_status ? $document_line->exento : $amount_line * $exento_percentage;
+            $total_excento = $document_line->exento_status ? $document_line->exento : $document_line->amount * $exento_percentage;
             $max_exento=$total_excento>$max_exento?$total_excento:$max_exento;
 
-            //$amount = $amount_line - $total_excento - $total_tasas - $total_ice;
-            $amount = ($total_excento==0?$amount_line:$total_excento) + $total_tasas + $total_ice;
+            //$operation = $detail->type_calculation == 'Grossing Up' ? 1 : -1;
 
-            $operation = $detail->type_calculation == 'Grossing Up' ? 1 : -1;
+            $total_operation = $detail->type_calculation == 'Grossing Up' ? $amount_line : $document_line->amount + $amount_line_other;
+
+            $amount = ($total_excento==0? $total_operation:$total_excento) + $total_tasas + $total_ice;
             $percentage = $detail->percentage / 100;
             $total_percentage = $amount * $percentage;
-            $total += $operation * $total_percentage;
+            //$total += $operation * $total_percentage;
             $detail_lines[] = [
                 'AccountCode' => $detail->account,
-                'Debit' => $document_line->document->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
-                'Credit' => $document_line->document->type_calculation == 'Grossing Up' ? $total_percentage : 0,
+                'Debit' => $detail->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
+                'Credit' => $detail->type_calculation == 'Grossing Up' ? $total_percentage : 0,
                 'ShortName' => $detail->account,
                 'LineMemo' => $document_line->concept
             ];

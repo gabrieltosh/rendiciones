@@ -15,6 +15,11 @@ class DocumentDetail extends Model
         'percentage',
         'account',
         'exento',
-        'type_calculation'
+        'type_calculation',
+        'calculation'
     ];
+    public function getCalculationAttribute($value)
+    {
+        return (bool) $value;
+    }
 }

@@ -451,7 +451,7 @@
                                                     color: white;
                                                     background-color: #344767;
                                                 ">
-                                                <th colspan="6" class="text-center" style="width:100%">
+                                                <th colspan="7" class="text-center" style="width:100%">
                                                     Prorrateo Asiento
                                                 </th>
                                             </tr>
@@ -480,6 +480,9 @@
                                                 </th>
                                                 <th class="text-center" style="width: 18%">
                                                     % Exento
+                                                </th>
+                                                <th class="text-center" style="width: 18%">
+                                                    Calculo
                                                 </th>
                                             </tr>
                                         </thead>
@@ -557,6 +560,9 @@
                                                     <q-input v-model="proration.exento
                                                         " dense class="input-theme" type="number"
                                                         :disable="item.exento_status" />
+                                                </td>
+                                                <td class="text-center">
+                                                    <q-checkbox  v-model="proration.calculation" />
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -736,7 +742,8 @@ const form = ref({
                     percentage: null,
                     account: null,
                     exento: null,
-                    type_calculation: null
+                    type_calculation: null,
+                    calculation: false
                 },
             ],
             fields: [
@@ -803,7 +810,8 @@ function HandleAddDocument() {
                 percentage: null,
                 account: null,
                 exento: null,
-                type_calculation: null
+                type_calculation: null,
+                calculation: false
             },
         ],
         fields: [
@@ -821,7 +829,8 @@ function HandleAddLineDetail(index) {
         percentage: null,
         account: null,
         exento: null,
-        type_calculation: null
+        type_calculation: null,
+        calculation: false
     });
 }
 function HandleAddLineFields(index) {
