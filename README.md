@@ -1,47 +1,33 @@
-# LaraQuasar
+# 🧾 Sistema de Rendiciones
 
-<p align="center">
-    <img src="https://github.com/mohamad-supangat/laraquasar/assets/48933993/12f8c831-56c0-42f2-825c-1a23e72e1b6e" alt="Welcome Screen" width="500" />
-</p>
+Sistema web para la gestión de rendiciones de gastos y viáticos, desarrollado en **Laravel + Vue.js**. Permite a los usuarios registrar gastos, adjuntar comprobantes y enviar solicitudes para su revisión y aprobación.
 
-A Laravel + Quasar Vue Framework as main frontend, using inertia.js and vite as the main foundation
+---
 
-Laraquasar is a Laravel template that use Quasar Framework and utilities for your Laravel project. With Laraquasar, you can quickly and easily integrate Quasar components into your Laravel.
+## 🚀 Funcionalidades
 
-## Who is template for?
+- Registro de rendiciones con detalle por ítem.
+- Carga de archivos comprobantes (PDF, imagen, etc.).
+- Aprobación o rechazo por parte de un revisor.
+- Historial de rendiciones y estado.
+- Reportes por usuario, proyecto o periodo.
 
-Starting from my favorite using laravel as a backend and also quasar as the basic component of my application. I really do not like to waste time by making 2 backend and frontend projects. if you can combine it to the two why not
+---
 
-I am happy to hear the philosophy of being made inertia.js
-https://inertiajs.com/who-is-it-for
+## 🛠️ Tecnologías
 
-And I'm glad I could make this 😁
+- **Backend:** Laravel 10+
+- **Frontend:** Vue 3 con Vite
+- **Base de datos:** MySQL / MariaDB
+- **Autenticación:** Laravel Breeze / Sanctum
+- **Otros:** Bootstrap / Tailwind CSS
 
+---
 
-## Installation
+## 📦 Instalación
+
+### 1. Clonar el proyecto
+
 ```bash
-composer create-project laraquasar/laraquasar
-```
-
-Install all node_modules packages using the package manager that you like, here I recommend using PNPM
-```bash
-cd laraquasar
-pnpm install
-```
-
-## Usage
-### Dev
-Open 2 terminals, one to run a laravel and one to run Vite
-``` bash
- php artisan serve
- ```
-```bash
- pnpm dev
- ```
-### Production
-build all frontend using
-```bash
-pnpm build
-```
-
-
+git clone https://github.com/gabrieltosh/rendiciones.git
+cd rendiciones
