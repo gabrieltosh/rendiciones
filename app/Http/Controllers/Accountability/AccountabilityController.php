@@ -276,7 +276,7 @@ SQL;
 <<<SQL
                 select
                     T1."PrjCode",
-                    T1."PrjName"
+                    CONCAT(CONCAT(T1."PrjCode",'-'),T1."PrjName")
                 from $db.OPRJ as T1
 SQL;
             return Hana::query($sql);
@@ -285,7 +285,7 @@ SQL;
                 ->table('OPRJ as T1')
                 ->select(
                     'T1.PrjCode',
-                    'T1.PrjName'
+                    DB::raw("CONCAT(T1.PrjCode,'-',T1.PrjName)")
                 )
                 ->get();
         }

@@ -289,9 +289,10 @@
                                     <div class="form-label" for="device_name">
                                         Proyecto
                                     </div>
-                                    <q-select class="input-theme" dense outlined :options="options.projects"
-                                        v-model="form.project_code" option-value="PrjCode" option-label="PrjCode"
-                                        emit-value map-options clearable />
+                                     <q-select class="input-theme" dense outlined :options="options.projects"
+                                        v-model="form.project_code" option-value="PrjCode" option-label="PrjName"
+                                        emit-value map-options use-input input-debounce="0"
+                                        @filter="HandleFilterProjects" clearable />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -442,6 +443,22 @@ function HandleFilterAccounts(val, update) {
         );
     });
 }
+
+function HandleFilterProjects(val, update) {
+    if (val === "") {
+        update(() => {
+            options.value.projects = page.props.projects;
+        });
+        return;
+    }
+    update(() => {
+        const needle = val.toLowerCase();
+        options.value.projects = page.props.projects.filter(
+            (v) => v.label.toLowerCase().indexOf(needle) > -1
+        );
+    });
+}
+
 onMounted(() => {
     form.value.distribution_rule_one = page.props.auth.user.distribution_rule_one
     form.value.distribution_rule_second = page.props.auth.user.distribution_rule_second

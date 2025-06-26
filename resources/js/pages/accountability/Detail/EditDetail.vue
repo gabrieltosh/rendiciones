@@ -313,9 +313,10 @@
                                     <div class="form-label" for="device_name">
                                         Proyecto
                                     </div>
-                                    <q-select class="input-theme" dense outlined :options="options.projects"
-                                        v-model="form.project_code" option-value="PrjCode" option-label="PrjCode"
-                                        emit-value map-options />
+                                      <q-select class="input-theme" dense outlined :options="options.projects"
+                                        v-model="form.project_code" option-value="PrjCode" option-label="PrjName"
+                                        emit-value map-options use-input input-debounce="0"
+                                        @filter="HandleFilterProjects" clearable />
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
@@ -448,6 +449,20 @@ function HandleFilterSuppliers(val, update) {
         const needle = val.toLowerCase();
         options.value.suppliers = page.props.suppliers.filter(
             (v) => v.business.toLowerCase().indexOf(needle) > -1
+        );
+    });
+}
+function HandleFilterProjects(val, update) {
+    if (val === "") {
+        update(() => {
+            options.value.projects = page.props.projects;
+        });
+        return;
+    }
+    update(() => {
+        const needle = val.toLowerCase();
+        options.value.projects = page.props.projects.filter(
+            (v) => v.label.toLowerCase().indexOf(needle) > -1
         );
     });
 }
