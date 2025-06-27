@@ -276,7 +276,7 @@ SQL;
 <<<SQL
                 select
                     T1."PrjCode",
-                    CONCAT(CONCAT(T1."PrjCode",'-'),T1."PrjName")
+                    CONCAT(CONCAT(T1."PrjCode",'-'),T1."PrjName") as "PrjName"
                 from $db.OPRJ as T1
 SQL;
             return Hana::query($sql);
@@ -285,7 +285,7 @@ SQL;
                 ->table('OPRJ as T1')
                 ->select(
                     'T1.PrjCode',
-                    DB::raw("CONCAT(T1.PrjCode,'-',T1.PrjName)")
+                    DB::raw("CONCAT(T1.PrjCode,'-',T1.PrjName) as PrjName")
                 )
                 ->get();
         }
@@ -299,11 +299,10 @@ SQL;
             for ($i = 1; $i <= 5; $i++) {
                 $sql=
 <<<SQL
-                select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName" as PrcName,T1."OcrCode" as PrcCode
-                from $db.OOCR as T1
+                select CONCAT(CONCAT(T1."PrcCode",'-'),T1."PrcName") as "Name", T1."PrcName",T1."PrcCode"
+                from $db.OPRC as T1
                 where T1."DimCode" = $i
                 and T1."Locked" = 'N'
-                Order by T1."OcrCode" asc
 SQL;
                 $data[$i] = Hana::query($sql);
             }
@@ -313,11 +312,11 @@ SQL;
             for ($i = 1; $i <= 5; $i++) {
                 $data[$i] =
                     DB::connection('sap')
-                        ->table('OOCR as T1')
+                        ->table('OPRC as T1')
                         ->select(
-                            DB::raw("CONCAT(T1.OcrCode,'-',T1.OcrName) as Name"),
-                            'T1.OcrCode as PrcCode',
-                            'T1.OcrName as PrcName'
+                            DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
+                            'T1.PrcCode',
+                            'T1.PrcName'
                         )
                         ->where('T1.DimCode', $i)
                         ->where('T1.Locked', 'N')

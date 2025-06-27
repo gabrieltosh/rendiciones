@@ -219,7 +219,7 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
                                         <div class="form-label" for="device_name">
-                                            Norma Reparto 1
+                                            Centro de Costo 1
                                         </div>
                                         <div class="text-grid q-pl-xs">
                                             {{ props.row.distribution_rule_one }}
@@ -227,7 +227,7 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
                                         <div class="form-label" for="device_name">
-                                            Norma Reparto 2
+                                            Centro de Costo 2
                                         </div>
                                         <div class="text-grid q-pl-xs">
                                             {{ props.row.distribution_rule_second }}
@@ -235,7 +235,7 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
                                         <div class="form-label" for="device_name">
-                                            Norma Reparto 3
+                                            Centro de Costo 3
                                         </div>
                                         <div class="text-grid q-pl-xs">
                                             {{ props.row.distribution_rule_three }}
@@ -243,7 +243,7 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
                                         <div class="form-label" for="device_name">
-                                            Norma Reparto 4
+                                            Centro de Costo 4
                                         </div>
                                         <div class="text-grid q-pl-xs">
                                             {{ props.row.distribution_rule_four }}
@@ -251,7 +251,7 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
                                         <div class="form-label" for="device_name">
-                                            Norma Reparto 5
+                                            Centro de Costo 5
                                         </div>
                                         <div class="text-grid q-pl-xs">
                                             {{ props.row.distribution_rule_five }}
@@ -404,7 +404,7 @@
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
                                             <q-item-section>
-                                                <q-item-label class="title-grid">Norma Reparto 1</q-item-label>
+                                                <q-item-label class="title-grid">Centro de Costo 1</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.distribution_rule_one ? props.row.distribution_rule_one :
                                                         '-'
@@ -413,7 +413,7 @@
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
                                             <q-item-section>
-                                                <q-item-label class="title-grid">Norma Reparto 2</q-item-label>
+                                                <q-item-label class="title-grid">Centro de Costo 2</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.distribution_rule_second ?
                                                         props.row.distribution_rule_second : '-'
@@ -422,7 +422,7 @@
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
                                             <q-item-section>
-                                                <q-item-label class="title-grid">Norma Reparto 3</q-item-label>
+                                                <q-item-label class="title-grid">Centro de Costo 3</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.distribution_rule_three ?
                                                         props.row.distribution_rule_three : '-'
@@ -431,7 +431,7 @@
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
                                             <q-item-section>
-                                                <q-item-label class="title-grid">Norma Reparto 4</q-item-label>
+                                                <q-item-label class="title-grid">Centro de Costo 4</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.distribution_rule_four ? props.row.distribution_rule_four
                                                         : '-'
@@ -440,7 +440,7 @@
                                         </q-item>
                                         <q-item class="text-left" v-if="props.expand">
                                             <q-item-section>
-                                                <q-item-label class="title-grid">Norma Reparto 5</q-item-label>
+                                                <q-item-label class="title-grid">Centro de Costo 5</q-item-label>
                                                 <q-item-label class="text-grid">{{
                                                     props.row.distribution_rule_five ? props.row.distribution_rule_five
                                                         : '-'

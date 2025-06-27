@@ -268,7 +268,7 @@
                             <div class="row q-col-gutter-md q-mt-xs">
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
-                                        Norma Reparto 1
+                                        Centro de Costo 1
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[1]"
                                         v-model="form.distribution_rule_one" option-value="PrcCode" option-label="Name"
@@ -276,7 +276,7 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
-                                        Norma Reparto 2
+                                        Centro de Costo 2
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[2]"
                                         v-model="form.distribution_rule_second" option-value="PrcCode"
@@ -284,7 +284,7 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
-                                        Norma Reparto 3
+                                        Centro de Costo 3
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[3]"
                                         v-model="form.distribution_rule_three" option-value="PrcCode"
@@ -292,7 +292,7 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
-                                        Norma Reparto 4
+                                        Centro de Costo 4
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[4]"
                                         v-model="form.distribution_rule_four" option-value="PrcCode" option-label="Name"
@@ -300,7 +300,7 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
-                                        Norma Reparto 5
+                                        Centro de Costo 5
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.distribution[5]"
                                         v-model="form.distribution_rule_five" option-value="PrcCode" option-label="Name"
