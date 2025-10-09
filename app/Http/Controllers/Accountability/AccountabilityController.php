@@ -85,11 +85,11 @@ class AccountabilityController extends Controller
             'rate_zero' => $request->rate_zero,
             'ice' => $request->ice,
             'project_code' => $request->project_code,
-            'distribution_rule_one' => $request->distribution_rule_one,
-            'distribution_rule_second' => $request->distribution_rule_second,
-            'distribution_rule_three' => $request->distribution_rule_three,
-            'distribution_rule_four' => $request->distribution_rule_four,
-            'distribution_rule_five' => $request->distribution_rule_five,
+            'distribution_rule_one' => $request->distribution_rule_one['OcrCode']??null,
+            'distribution_rule_second' => $request->distribution_rule_second['OcrCode']??null,
+            'distribution_rule_three' => $request->distribution_rule_three['OcrCode']??null,
+            'distribution_rule_four' => $request->distribution_rule_four['OcrCode']??null,
+            'distribution_rule_five' => $request->distribution_rule_five['OcrCode']??null,
         ])->save();
         AccountabilityField::where('accountability_detail_id',$request->id)->delete();
         foreach ($request->field as $key => $field) {
@@ -117,6 +117,12 @@ class AccountabilityController extends Controller
         )->where('profile_id', $profile->id)->get();
         $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
+        $data->distribution_rule_one = $this->HandleGetDistribution( $data->distribution_rule_one, 1);
+        $data->distribution_rule_second = $this->HandleGetDistribution( $data->distribution_rule_second, 2);
+        $data->distribution_rule_three = $this->HandleGetDistribution( $data->distribution_rule_three, 3);
+        $data->distribution_rule_four = $this->HandleGetDistribution( $data->distribution_rule_four, 4);
+        $data->distribution_rule_five = $this->HandleGetDistribution( $data->distribution_rule_five, 5);
+
         return Inertia::render(
             'accountability/Detail/EditDetail',
             [
@@ -162,11 +168,11 @@ class AccountabilityController extends Controller
             'rate_zero' => $request->rate_zero,
             'ice' => $request->ice,
             'project_code' => $request->project_code,
-            'distribution_rule_one' => $request->distribution_rule_one,
-            'distribution_rule_second' => $request->distribution_rule_second,
-            'distribution_rule_three' => $request->distribution_rule_three,
-            'distribution_rule_four' => $request->distribution_rule_four,
-            'distribution_rule_five' => $request->distribution_rule_five,
+            'distribution_rule_one' => $request->distribution_rule_one['OcrCode']??null,
+            'distribution_rule_second' => $request->distribution_rule_second['OcrCode']??null,
+            'distribution_rule_three' => $request->distribution_rule_three['OcrCode']??null,
+            'distribution_rule_four' => $request->distribution_rule_four['OcrCode']??null,
+            'distribution_rule_five' => $request->distribution_rule_five['OcrCode']??null,
         ]);
         foreach ($request->field as $key => $field) {
             AccountabilityField::create([
@@ -258,7 +264,6 @@ SQL;
         $profile = Profile::where('id', $profile_id)->first();
         $accountabilities = Accountability::where('user_id', $request->user()->id)
             ->where('profile_id', $profile_id)
-            ->orderBy('created_at','desc')
             ->get();
         return Inertia::render(
             'accountability/IndexAccountability',
@@ -290,6 +295,41 @@ SQL;
                 ->get();
         }
     }
+    public function HandleGetDistribution($code,$number)
+    {
+        $params_sap = Management::where('group', 'accountability')->get();
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $data = array();
+            $db=Config::get('database.connections.hana.database');
+            $sql=
+<<<SQL
+            select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName",T1."OcrCode"
+            from $db.OOCR as T1
+            where T1."DimCode" = $number
+            and T1."Active" = 'Y'
+            and T1."OcrCode" = '$code'
+            order by T1."OcrCode"
+SQL;
+            $data = Hana::query($sql);
+            return $data[0]??[];
+        } else {
+            $data = array();
+            for ($i = 1; $i <= 5; $i++) {
+                $data[$i] =
+                    DB::connection('sap')
+                        ->table('OPRC as T1')
+                        ->select(
+                            DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
+                            'T1.PrcCode',
+                            'T1.PrcName'
+                        )
+                        ->where('T1.DimCode', $i)
+                        ->where('T1.Locked', 'N')
+                        ->get();
+            }
+            return $data;
+        }
+    }
     public function HandleGetDistributions()
     {
         $params_sap = Management::where('group', 'accountability')->get();
@@ -299,10 +339,11 @@ SQL;
             for ($i = 1; $i <= 5; $i++) {
                 $sql=
 <<<SQL
-                select CONCAT(CONCAT(T1."PrcCode",'-'),T1."PrcName") as "Name", T1."PrcName",T1."PrcCode"
-                from $db.OPRC as T1
+                select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName",T1."OcrCode"
+                from $db.OOCR as T1
                 where T1."DimCode" = $i
-                and T1."Locked" = 'N'
+                and T1."Active" = 'Y'
+                order by T1."OcrCode"
 SQL;
                 $data[$i] = Hana::query($sql);
             }

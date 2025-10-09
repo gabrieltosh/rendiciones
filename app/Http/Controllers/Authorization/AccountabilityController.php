@@ -157,16 +157,18 @@ class AccountabilityController extends Controller
         $journal = [];
         $detail_lines = [];
         $total = 0;
-        $total_percentage_lines=0;
-        $operation_lines=false;
-
+        $amount_line=$document_line->amount;
+        //$exento_percentage = $document_line->document->exento / 100;
         $rate_percentage = $document_line->document->tasas / 100;
         $ice_percentage = $document_line->document->ice / 100;
-
-        $amount_line_other=0;
+        // $total_excento = $document_line->exento_status ? $document_line->exento : $document_line->amount * $exento_percentage;
+        // $total_ice = $document_line->ice_status ? $document_line->ice : $document_line->amount * $ice_percentage;
+        // $total_tasas = $document_line->tasas_status ? $document_line->tasas : $document_line->amount * $rate_percentage;
+        // $amount = $document_line->amount - $total_excento - $total_tasas - $total_ice;
+        // $operation = $document_line->document->type_calculation == 'Grossing Up' ? 1 : -1;
 
         foreach ($document_line->field as $field) {
-            $amount_line_other += ($field->document_field->type_calculation == 'Credito' ? 1 : -1)* $field->value;
+            $amount_line += ($field->document_field->type_calculation == 'Credito' ? 1 : -1)* $field->value;
             $detail_lines[] = [
                 'AccountCode' => $field->document_field->account,
                 'Debit' => $field->document_field->type_calculation == 'Credito' ? 0 : $field->value,
@@ -175,40 +177,26 @@ class AccountabilityController extends Controller
                 'LineMemo' => $document_line->concept
             ];
         }
-
-        foreach ($document_line->document->detail as $detail) {
-            $total_percentage_lines+=$detail->calculation?$detail->percentage / 100:0;
-            $operation_lines = $detail->type_calculation == 'Grossing Up' ? true : false;
-        }
-        //$amount_line=$document_line->amount;
-        $amount_line = $document_line->amount + $amount_line_other;
-        if ($operation_lines) {
-            $amount_line /= (1 - $total_percentage_lines);
-        } else {
-            $amount_line *= (1 - $total_percentage_lines);
-        }
-
         $total_ice = $document_line->ice_status ? $document_line->ice : $amount_line * $ice_percentage;
         $total_tasas = $document_line->tasas_status ? $document_line->tasas : $amount_line * $rate_percentage;
 
         $max_exento=0;
         foreach ($document_line->document->detail as $detail) {
             $exento_percentage = $detail->exento / 100;
-            $total_excento = $document_line->exento_status ? $document_line->exento : $document_line->amount * $exento_percentage;
+            $total_excento = $document_line->exento_status ? $document_line->exento : $amount_line * $exento_percentage;
             $max_exento=$total_excento>$max_exento?$total_excento:$max_exento;
 
-            //$operation = $detail->type_calculation == 'Grossing Up' ? 1 : -1;
+            //$amount = $amount_line - $total_excento - $total_tasas - $total_ice;
+            $amount = ($total_excento==0?$amount_line:$total_excento) + $total_tasas + $total_ice;
 
-            $total_operation = $detail->type_calculation == 'Grossing Up' ? $amount_line : $document_line->amount + $amount_line_other;
-
-            $amount = ($total_excento==0? $total_operation:$total_excento) + $total_tasas + $total_ice;
+            $operation = $detail->type_calculation == 'Grossing Up' ? 1 : -1;
             $percentage = $detail->percentage / 100;
             $total_percentage = $amount * $percentage;
-            //$total += $operation * $total_percentage;
+            $total += $operation * $total_percentage;
             $detail_lines[] = [
                 'AccountCode' => $detail->account,
-                'Debit' => $detail->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
-                'Credit' => $detail->type_calculation == 'Grossing Up' ? $total_percentage : 0,
+                'Debit' => $document_line->document->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
+                'Credit' => $document_line->document->type_calculation == 'Grossing Up' ? $total_percentage : 0,
                 'ShortName' => $detail->account,
                 'LineMemo' => $document_line->concept
             ];
@@ -341,7 +329,6 @@ class AccountabilityController extends Controller
         $accountabilities = Accountability::with('user', 'profile')
             ->where('status', 'Pendiente')
             ->whereIn('user_id', $users)
-            ->orderBy('created_at','desc')
             ->get();
 
         $authorized = Accountability::with('user', 'profile')
@@ -487,11 +474,11 @@ SQL;
             'rate_zero' => $request->rate_zero,
             'ice' => $request->ice,
             'project_code' => $request->project_code,
-            'distribution_rule_one' => $request->distribution_rule_one,
-            'distribution_rule_second' => $request->distribution_rule_second,
-            'distribution_rule_three' => $request->distribution_rule_three,
-            'distribution_rule_four' => $request->distribution_rule_four,
-            'distribution_rule_five' => $request->distribution_rule_five,
+            'distribution_rule_one' => $request->distribution_rule_one['OcrCode']??null,
+            'distribution_rule_second' => $request->distribution_rule_second['OcrCode']??null,
+            'distribution_rule_three' => $request->distribution_rule_three['OcrCode']??null,
+            'distribution_rule_four' => $request->distribution_rule_four['OcrCode']??null,
+            'distribution_rule_five' => $request->distribution_rule_five['OcrCode']??null,
         ])->save();
         AccountabilityField::where('accountability_detail_id',$request->id)->delete();
         foreach ($request->field as $key => $field) {
@@ -531,11 +518,11 @@ SQL;
             'rate_zero' => $request->rate_zero,
             'ice' => $request->ice,
             'project_code' => $request->project_code,
-            'distribution_rule_one' => $request->distribution_rule_one,
-            'distribution_rule_second' => $request->distribution_rule_second,
-            'distribution_rule_three' => $request->distribution_rule_three,
-            'distribution_rule_four' => $request->distribution_rule_four,
-            'distribution_rule_five' => $request->distribution_rule_five,
+            'distribution_rule_one' => $request->distribution_rule_one['OcrCode']??null,
+            'distribution_rule_second' => $request->distribution_rule_second['OcrCode']??null,
+            'distribution_rule_three' => $request->distribution_rule_three['OcrCode']??null,
+            'distribution_rule_four' => $request->distribution_rule_four['OcrCode']??null,
+            'distribution_rule_five' => $request->distribution_rule_five['OcrCode']??null,
         ]);
         Session::flash('message', "Documento creado correctamente");
         Session::flash('type', 'positive');
@@ -611,6 +598,12 @@ SQL;
         $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
         $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
+        $data->distribution_rule_one = $this->HandleGetDistribution( $data->distribution_rule_one, 1);
+        $data->distribution_rule_second = $this->HandleGetDistribution( $data->distribution_rule_second, 2);
+        $data->distribution_rule_three = $this->HandleGetDistribution( $data->distribution_rule_three, 3);
+        $data->distribution_rule_four = $this->HandleGetDistribution( $data->distribution_rule_four, 4);
+        $data->distribution_rule_five = $this->HandleGetDistribution( $data->distribution_rule_five, 5);
+
         return Inertia::render(
             'authorization/Detail/EditDetail',
             [
@@ -625,6 +618,41 @@ SQL;
             ]
         );
     }
+    public function HandleGetDistribution($code,$number)
+    {
+        $params_sap = Management::where('group', 'accountability')->get();
+        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
+            $data = array();
+            $db=Config::get('database.connections.hana.database');
+            $sql=
+<<<SQL
+            select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName",T1."OcrCode"
+            from $db.OOCR as T1
+            where T1."DimCode" = $number
+            and T1."Active" = 'Y'
+            and T1."OcrCode" = '$code'
+            order by T1."OcrCode"
+SQL;
+            $data = Hana::query($sql);
+            return $data[0]??[];
+        } else {
+            $data = array();
+            for ($i = 1; $i <= 5; $i++) {
+                $data[$i] =
+                    DB::connection('sap')
+                        ->table('OPRC as T1')
+                        ->select(
+                            DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
+                            'T1.PrcCode',
+                            'T1.PrcName'
+                        )
+                        ->where('T1.DimCode', $i)
+                        ->where('T1.Locked', 'N')
+                        ->get();
+            }
+            return $data;
+        }
+    }
     public function HandleGetProjects(){
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
@@ -633,7 +661,7 @@ SQL;
 <<<SQL
                 select
                     T1."PrjCode",
-                    T1."PrjName"
+                    CONCAT(CONCAT(T1."PrjCode",'-'),T1."PrjName") as "PrjName"
                 from $db.OPRJ as T1
 SQL;
             return Hana::query($sql);
@@ -656,10 +684,11 @@ SQL;
             for ($i = 1; $i <= 5; $i++) {
                 $sql=
 <<<SQL
-                select CONCAT(CONCAT(T1."PrcCode",'-'),T1."PrcName") as "Name", T1."PrcName",T1."PrcCode"
-                from $db.OPRC as T1
+               select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName",T1."OcrCode"
+                from $db.OOCR as T1
                 where T1."DimCode" = $i
-                and T1."Locked" = 'N'
+                and T1."Active" = 'Y'
+                order by T1."OcrCode"
 SQL;
                 $data[$i] = Hana::query($sql);
             }
