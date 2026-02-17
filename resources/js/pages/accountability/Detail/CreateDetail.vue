@@ -14,6 +14,7 @@
                                     <h5 class="title-form">Información General</h5>
                                 </div>
                                 <div class="col-sm-6 text-right q-gutter-sm">
+                                    <q-btn color="deep-purple" icon="qr_code_scanner" label="Escanear QR" size="12px" no-caps @click="showQrScanner = true" />
                                     <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
                                         router.visit(
                                             route('panel.accountability.manage.detail.index', [page.props.profile.id, page.props.accountability.id])
@@ -341,6 +342,59 @@
                 </q-stepper>
             </div>
         </div>
+        <q-dialog v-model="showQrScanner" persistent maximized transition-show="slide-up" transition-hide="slide-down">
+            <q-card class="bg-dark text-white">
+                <q-bar class="bg-primary">
+                    <q-space />
+                    <span class="text-body1">Escanear QR de Factura</span>
+                    <q-space />
+                    <q-btn dense flat icon="close" @click="showQrScanner = false">
+                        <q-tooltip>Cerrar</q-tooltip>
+                    </q-btn>
+                </q-bar>
+                <q-card-section class="q-pa-md">
+                    <div class="row justify-center q-col-gutter-md">
+                        <div class="col-xs-12 col-sm-12 col-md-6">
+                            <div style="max-width: 500px; margin: 0 auto;">
+                                <QrcodeStream
+                                    @detect="onQrDetect"
+                                    @error="onQrError"
+                                    :paused="qrLoading"
+                                >
+                                    <div v-if="qrLoading" class="text-center q-pa-xl">
+                                        <q-spinner-dots color="primary" size="40px" />
+                                        <div class="q-mt-sm text-body1">Consultando factura...</div>
+                                    </div>
+                                </QrcodeStream>
+                                <div v-if="qrCameraError" class="text-center q-pa-md">
+                                    <q-icon name="videocam_off" size="48px" color="warning" />
+                                    <div class="q-mt-sm text-body2">{{ qrCameraError }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-6">
+                            <div class="text-body2 q-mb-sm">O pegar URL manualmente:</div>
+                            <q-input
+                                v-model="qrManualUrl"
+                                dense
+                                outlined
+                                dark
+                                placeholder="https://siat.impuestos.gob.bo/consulta/QR?nit=..."
+                                class="q-mb-sm"
+                            />
+                            <q-btn
+                                color="primary"
+                                label="Consultar"
+                                no-caps
+                                :loading="qrLoading"
+                                @click="HandleConsultaSiat(qrManualUrl)"
+                                :disable="!qrManualUrl"
+                            />
+                        </div>
+                    </div>
+                </q-card-section>
+            </q-card>
+        </q-dialog>
     </Layout>
 </template>
 <script setup>
@@ -349,6 +403,8 @@ import { ref, onMounted, watch } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
+import { QrcodeStream } from "vue-qrcode-reader";
+import axios from "axios";
 
 defineProps({
     title: String,
@@ -372,6 +428,11 @@ const loading = ref({
 });
 
 let step = ref(1);
+
+const showQrScanner = ref(false);
+const qrLoading = ref(false);
+const qrManualUrl = ref("");
+const qrCameraError = ref(null);
 
 const form = ref({
     account: null,
@@ -477,6 +538,65 @@ function HandleFindDocument() {
             id:e.id
         })
     });
+}
+
+function onQrDetect(detectedCodes) {
+    if (detectedCodes.length > 0) {
+        const url = detectedCodes[0].rawValue;
+        HandleConsultaSiat(url);
+    }
+}
+
+function onQrError(error) {
+    if (error.name === "NotAllowedError") {
+        qrCameraError.value = "Se necesita permiso para acceder a la cámara.";
+    } else if (error.name === "NotFoundError") {
+        qrCameraError.value = "No se encontró una cámara en este dispositivo.";
+    } else if (error.name === "NotReadableError") {
+        qrCameraError.value = "La cámara está siendo utilizada por otra aplicación.";
+    } else if (error.name === "OverconstrainedError") {
+        qrCameraError.value = "La cámara no es compatible.";
+    } else if (error.name === "StreamApiNotSupportedError") {
+        qrCameraError.value = "Este navegador no soporta la API de cámara. Use HTTPS.";
+    } else {
+        qrCameraError.value = "Error de cámara: " + error.message;
+    }
+}
+
+async function HandleConsultaSiat(url) {
+    if (!url) return;
+
+    qrLoading.value = true;
+    try {
+        const response = await axios.post(route("siat.consulta"), { url });
+        const data = response.data;
+
+        if (data.error) {
+            $q.notify({ type: "negative", message: data.error });
+            return;
+        }
+
+        const factura = data;
+
+        if (factura.numeroFactura) form.value.document_number = factura.numeroFactura;
+        if (factura.cuf) form.value.cuf = factura.cuf;
+        if (factura.nitEmisor) form.value.nit = String(factura.nitEmisor);
+        if (factura.razonSocialEmisor) form.value.business_name = factura.razonSocialEmisor;
+        if (factura.montoTotal) form.value.amount = factura.montoTotal;
+        if (factura.fechaEmision) {
+            const fecha = factura.fechaEmision.substring(0, 10);
+            form.value.date = fecha;
+        }
+
+        showQrScanner.value = false;
+        qrManualUrl.value = "";
+        $q.notify({ type: "positive", message: "Datos de factura cargados correctamente" });
+    } catch (error) {
+        const msg = error.response?.data?.error || "Error al consultar SIAT";
+        $q.notify({ type: "negative", message: msg });
+    } finally {
+        qrLoading.value = false;
+    }
 }
 
 </script>

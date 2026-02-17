@@ -35,6 +35,8 @@ Route::middleware('auth')->group(function() {
     Route::get('/',[PanelController::class,'HandleIndexDashboard'])->middleware('verified')->name('home');
     Route::post('logout', [AuthController::class, 'HandleLogoutAuth'])->name('auth.logout');
 
+    Route::post('siat/consulta', [AccountabilityController::class, 'HandleConsultaFactura'])->name('siat.consulta');
+
     Route::name('panel.')->prefix('panel')->group(function(){
         Route::name('management.')->prefix('management')->controller(ManagementController::class)->group(function(){
             Route::get('','HandleIndexManagement')->name('index');

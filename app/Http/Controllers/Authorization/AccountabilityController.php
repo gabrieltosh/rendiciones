@@ -336,7 +336,7 @@ class AccountabilityController extends Controller
             ->whereIn('user_id', $users)
             ->get();
         return Inertia::render(
-            'authorization/IndexAccountability',
+            'authorization/IndexAccountabilityNew',
             [
                 'data' => $accountabilities,
                 'authorized'=>$authorized,
@@ -435,7 +435,7 @@ SQL;
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $documents = AccountabilityDetail::where('accountability_id', $accountability_id)->get();
         return Inertia::render(
-            'authorization/DetailAccountability',
+            'authorization/DetailAccountabilityNew',
             [
                 'profile' => $profile,
                 'accountability' => $accountability,

@@ -29,16 +29,19 @@ importers:
       vue:
         specifier: ^3.3.4
         version: 3.3.4
+      vue-qrcode-reader:
+        specifier: ^5.7.3
+        version: 5.7.3
       ziggy-js:
         specifier: ^2.1.0
         version: 2.1.0
     devDependencies:
       '@quasar/vite-plugin':
         specifier: ^1.5.0
-        version: 1.5.0(@vitejs/plugin-vue@4.4.0)(quasar@2.13.0)(vite@4.4.11)(vue@3.3.4)
+        version: 1.5.0(@vitejs/plugin-vue@4.4.0(vite@4.4.11(sass@1.77.6))(vue@3.3.4))(quasar@2.13.0)(vite@4.4.11(sass@1.77.6))(vue@3.3.4)
       '@vitejs/plugin-vue':
         specifier: ^4.4.0
-        version: 4.4.0(vite@4.4.11)(vue@3.3.4)
+        version: 4.4.0(vite@4.4.11(sass@1.77.6))(vue@3.3.4)
       autoprefixer:
         specifier: ^10.4.16
         version: 10.4.16(postcss@8.4.31)
@@ -47,7 +50,7 @@ importers:
         version: 1.5.1
       laravel-vite-plugin:
         specifier: ^0.8.1
-        version: 0.8.1(vite@4.4.11)
+        version: 0.8.1(vite@4.4.11(sass@1.77.6))
       postcss:
         specifier: ^8.4.31
         version: 8.4.31
@@ -55,11 +58,11 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
       sass:
-        specifier: 1.32.12
-        version: 1.32.12
+        specifier: 1.77.6
+        version: 1.77.6
       vite:
         specifier: ^4.4.11
-        version: 4.4.11(sass@1.32.12)
+        version: 4.4.11(sass@1.77.6)
       vite-svg-loader:
         specifier: ^4.0.0
         version: 4.0.0
@@ -248,6 +251,12 @@ packages:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
     engines: {node: '>=10.13.0'}
 
+  '@types/dom-webcodecs@0.1.18':
+    resolution: {integrity: sha512-vAvE8C9DGWR+tkb19xyjk1TSUlJ7RUzzp4a9Anu7mwBT+fpyePWK1UxmH14tMO5zHmrnrRIMg5NutnnDztLxgg==}
+
+  '@types/emscripten@1.41.5':
+    resolution: {integrity: sha512-cMQm7pxu6BxtHyqJ7mQZ2kXWV5SLmugybFdHCBbJ5eHzOo6VhBckEgAT3//rP5FwPHNPeEiq4SmQ5ucBwsOo4Q==}
+
   '@vitejs/plugin-vue@4.4.0':
     resolution: {integrity: sha512-xdguqb+VUwiRpSg+nsc2HtbAUSGak25DXYvpQQi4RVU1Xq1uworyoH/md9Rfd8zMmPR/pSghr309QNcftUVseg==}
     engines: {node: ^14.18.0 || >=16.0.0}
@@ -318,6 +327,9 @@ packages:
   babel-walk@3.0.0-canary-5:
     resolution: {integrity: sha512-GAwkz0AihzY5bkwIY5QDR+LvsRQgB/B+1foMPvi0FZPMl5fjD7ICiznUiBdLYMH1QYe6vqu4gWYytZOccLouFw==}
     engines: {node: '>= 10.0.0'}
+
+  barcode-detector@2.2.2:
+    resolution: {integrity: sha512-JcSekql+EV93evfzF9zBr+Y6aRfkR+QFvgyzbwQ0dbymZXoAI9+WgT7H1E429f+3RKNncHz2CW98VQtaaKpmfQ==}
 
   binary-extensions@2.2.0:
     resolution: {integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==}
@@ -474,6 +486,9 @@ packages:
   has@1.0.4:
     resolution: {integrity: sha512-qdSAmqLF6209RFj4VVItywPMbm3vWylknmB3nvNiUIs72xAimcM8nVYxYr7ncvZq5qzk9MKIZR8ijqD/1QuYjQ==}
     engines: {node: '>= 0.4.0'}
+
+  immutable@4.3.7:
+    resolution: {integrity: sha512-1hqclzwYwjRDFLjcFxOM5AYkkG0rpFPpr1RLPMEuGczoS7YA8gLhy8SWXYRAA/XwfEHpfo3cw5JGioS32fnMRw==}
 
   is-binary-path@2.1.0:
     resolution: {integrity: sha512-ZMERYes6pDydyuGidse7OsHxtbI7WVeUEozgR/g7rd0xUimYNlvZRE/K2MgZTjWy725IfelLeVcEM97mmtRGXw==}
@@ -656,10 +671,13 @@ packages:
     engines: {node: '>=14.18.0', npm: '>=8.0.0'}
     hasBin: true
 
-  sass@1.32.12:
-    resolution: {integrity: sha512-zmXn03k3hN0KaiVTjohgkg98C3UowhL1/VSGdj4/VAAiMKGQOE80PFPxFP2Kyq0OUskPKcY5lImkhBKEHlypJA==}
-    engines: {node: '>=8.9.0'}
+  sass@1.77.6:
+    resolution: {integrity: sha512-ByXE1oLD79GVq9Ht1PeHWCPMPB8XHpBuz1r85oByKHjZY6qV6rWnQovQzXJXuQ/XyE1Oj3iPk3lo28uzaRA2/Q==}
+    engines: {node: '>=14.0.0'}
     hasBin: true
+
+  sdp@3.2.1:
+    resolution: {integrity: sha512-lwsAIzOPlH8/7IIjjz3K0zYBk7aBVVcvjMwt3M4fLxpjMYyy7i3I97SLHebgn4YBjirkzfp3RvRDWSKsh/+WFw==}
 
   side-channel@1.0.4:
     resolution: {integrity: sha512-q5XPytqFEIKHkGdiMIrY10mvLRvnQh42/+GoBlFW3b2LXLE2xxJpZFdm94we0BaoV3RwJyGqg5wS7epxTv0Zvw==}
@@ -734,8 +752,16 @@ packages:
     resolution: {integrity: sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==}
     engines: {node: '>=0.10.0'}
 
+  vue-qrcode-reader@5.7.3:
+    resolution: {integrity: sha512-iSGko42FsEvdHyizBMBs/X+HMO9Z5ONDxjW+mQdoraOR5emRNedmjC5SEJdYzGz8ZP5ME3lwB4iHy3S7MOt5Qw==}
+    engines: {node: '>=18.0.0'}
+
   vue@3.3.4:
     resolution: {integrity: sha512-VTyEYn3yvIeY1Py0WaYGZsXnz3y5UnGi62GjVEqvEGPl6nxbOrCXbVOTQWBEJUqAyTUk2uJ5JLVnYJ6ZzGbrSw==}
+
+  webrtc-adapter@8.2.3:
+    resolution: {integrity: sha512-gnmRz++suzmvxtp3ehQts6s2JtAGPuDPjA1F3a9ckNpG1kYdYuHWYpazoAnL9FS5/B21tKlhkorbdCXat0+4xQ==}
+    engines: {node: '>=6.0.0', npm: '>=3.10.0'}
 
   with@7.0.2:
     resolution: {integrity: sha512-RNGKj82nUPg3g5ygxkQl0R937xLyho1J24ItRCBTr/m1YnZkzJy1hUiHUJrc/VlsDQzsCnInEGSg3bci0Lmd4w==}
@@ -743,6 +769,9 @@ packages:
 
   ziggy-js@2.1.0:
     resolution: {integrity: sha512-BhbVGWwKXSkB2LsY2L+cG78WNdymxzI+wCWWi8qtPMVhxi2vkrHcU2CchEs1NGCkgo41KUOMOrct7Bu7Rpthwg==}
+
+  zxing-wasm@1.1.3:
+    resolution: {integrity: sha512-MYm9k/5YVs4ZOTIFwlRjfFKD0crhefgbnt1+6TEpmKUDFp3E2uwqGSKwQOd2hOIsta/7Usq4hnpNRYTLoljnfA==}
 
 snapshots:
 
@@ -854,18 +883,22 @@ snapshots:
 
   '@quasar/extras@1.16.7': {}
 
-  '@quasar/vite-plugin@1.5.0(@vitejs/plugin-vue@4.4.0)(quasar@2.13.0)(vite@4.4.11)(vue@3.3.4)':
+  '@quasar/vite-plugin@1.5.0(@vitejs/plugin-vue@4.4.0(vite@4.4.11(sass@1.77.6))(vue@3.3.4))(quasar@2.13.0)(vite@4.4.11(sass@1.77.6))(vue@3.3.4)':
     dependencies:
-      '@vitejs/plugin-vue': 4.4.0(vite@4.4.11)(vue@3.3.4)
+      '@vitejs/plugin-vue': 4.4.0(vite@4.4.11(sass@1.77.6))(vue@3.3.4)
       quasar: 2.13.0
-      vite: 4.4.11(sass@1.32.12)
+      vite: 4.4.11(sass@1.77.6)
       vue: 3.3.4
 
   '@trysound/sax@0.2.0': {}
 
-  '@vitejs/plugin-vue@4.4.0(vite@4.4.11)(vue@3.3.4)':
+  '@types/dom-webcodecs@0.1.18': {}
+
+  '@types/emscripten@1.41.5': {}
+
+  '@vitejs/plugin-vue@4.4.0(vite@4.4.11(sass@1.77.6))(vue@3.3.4)':
     dependencies:
-      vite: 4.4.11(sass@1.32.12)
+      vite: 4.4.11(sass@1.77.6)
       vue: 3.3.4
 
   '@vue/compiler-core@3.3.4':
@@ -963,6 +996,11 @@ snapshots:
   babel-walk@3.0.0-canary-5:
     dependencies:
       '@babel/types': 7.23.0
+
+  barcode-detector@2.2.2:
+    dependencies:
+      '@types/dom-webcodecs': 0.1.18
+      zxing-wasm: 1.1.3
 
   binary-extensions@2.2.0: {}
 
@@ -1136,6 +1174,8 @@ snapshots:
 
   has@1.0.4: {}
 
+  immutable@4.3.7: {}
+
   is-binary-path@2.1.0:
     dependencies:
       binary-extensions: 2.2.0
@@ -1171,11 +1211,11 @@ snapshots:
       is-promise: 2.2.2
       promise: 7.3.1
 
-  laravel-vite-plugin@0.8.1(vite@4.4.11):
+  laravel-vite-plugin@0.8.1(vite@4.4.11(sass@1.77.6)):
     dependencies:
       picocolors: 1.0.0
-      vite: 4.4.11(sass@1.32.12)
-      vite-plugin-full-reload: 1.0.5(vite@4.4.11)
+      vite: 4.4.11(sass@1.77.6)
+      vite-plugin-full-reload: 1.0.5(vite@4.4.11(sass@1.77.6))
 
   lodash.clonedeep@4.5.0: {}
 
@@ -1324,9 +1364,13 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.3
 
-  sass@1.32.12:
+  sass@1.77.6:
     dependencies:
       chokidar: 3.5.3
+      immutable: 4.3.7
+      source-map-js: 1.0.2
+
+  sdp@3.2.1: {}
 
   side-channel@1.0.4:
     dependencies:
@@ -1361,27 +1405,32 @@ snapshots:
       escalade: 3.1.1
       picocolors: 1.0.0
 
-  vite-plugin-full-reload@1.0.5(vite@4.4.11):
+  vite-plugin-full-reload@1.0.5(vite@4.4.11(sass@1.77.6)):
     dependencies:
       picocolors: 1.0.0
       picomatch: 2.3.1
-      vite: 4.4.11(sass@1.32.12)
+      vite: 4.4.11(sass@1.77.6)
 
   vite-svg-loader@4.0.0:
     dependencies:
       '@vue/compiler-sfc': 3.3.4
       svgo: 3.0.2
 
-  vite@4.4.11(sass@1.32.12):
+  vite@4.4.11(sass@1.77.6):
     dependencies:
       esbuild: 0.18.20
       postcss: 8.4.31
       rollup: 3.29.4
-      sass: 1.32.12
     optionalDependencies:
       fsevents: 2.3.3
+      sass: 1.77.6
 
   void-elements@3.1.0: {}
+
+  vue-qrcode-reader@5.7.3:
+    dependencies:
+      barcode-detector: 2.2.2
+      webrtc-adapter: 8.2.3
 
   vue@3.3.4:
     dependencies:
@@ -1390,6 +1439,10 @@ snapshots:
       '@vue/runtime-dom': 3.3.4
       '@vue/server-renderer': 3.3.4(vue@3.3.4)
       '@vue/shared': 3.3.4
+
+  webrtc-adapter@8.2.3:
+    dependencies:
+      sdp: 3.2.1
 
   with@7.0.2:
     dependencies:
@@ -1401,3 +1454,7 @@ snapshots:
   ziggy-js@2.1.0:
     dependencies:
       qs: 6.9.7
+
+  zxing-wasm@1.1.3:
+    dependencies:
+      '@types/emscripten': 1.41.5

@@ -1,81 +1,140 @@
 <template>
     <Head :title="title" />
     <Layout>
-        <div class="q-px-sm q-py-md">
-            <div class="row q-col-gutter-md">
-                <div
-                    class="col-sm-3 col-xs-12"
-                    v-for="(profile, index) in profiles"
-                    :key="index"
-                >
-                    <q-card
-                        class="card-form q-mt-md cursor-pointer"
-                        @click="HandleVisitAccountability(profile.profile_id)"
-                    >
-                        <q-avatar
-                            square
-                            size="50px"
-                            class="absolute"
-                            style="
-                                top: 12px;
-                                left: 12px;
-                                transform: translateY(-50%);
-                                border-radius: 10px;
-                                background-color: #1b2033;
-                                box-shadow: 0rem 0.25rem 1.25rem 0rem
-                                        rgba(0, 0, 0, 0.14),
-                                    0rem 0.4375rem 0.625rem -0.3125rem rgba(64, 64, 64, 0.4);
-                            "
-                        >
-                            <lord-icon
-                                target=".q-card"
-                                src="https://cdn.lordicon.com/dlzzlyaa.json"
-                                trigger="hover"
-                                colors="primary:white,secondary:#08a88a"
-                                style="width: 50px; height: 50px"
-                                ref="animation"
-                            >
-                            </lord-icon>
-                        </q-avatar>
-                        <div class="row q-pa-sm">
-                            <div class="col-xs-3 col-sm-3 col-md-2"></div>
-                            <div class="col-xs-9 col-sm-9 col-md-10 text-right">
-                                <div class="form-label">
-                                    {{ profile.profile.name }}
-                                </div>
-                                <q-separator spaced  />
-                                <div class="text-caption">
-                                    Tipo Moneda: <strong>{{ profile.profile.type_currency }}</strong>
-                                </div>
+        <div class="row justify-center q-px-md q-py-lg">
+            <div class="col-xs-12 col-sm-12 col-md-11 col-lg-10">
+
+                <!-- Header -->
+                <q-card class="q-pa-md card-form q-mb-md">
+                    <div class="row items-center">
+                        <div class="col">
+                            <div class="text-h6 title-form">
+                                Rendiciones
+                            </div>
+                            <div class="text-caption text-grey">
+                                Selecciona un perfil para gestionar sus rendiciones
                             </div>
                         </div>
-                    </q-card>
+                    </div>
+                </q-card>
+
+                <!-- Empty State -->
+                <div
+                    v-if="profiles.length === 0"
+                    class="text-center q-pa-xl"
+                >
+                    <q-icon
+                        name="folder_open"
+                        size="64px"
+                        color="grey-4"
+                        aria-hidden="true"
+                    />
+                    <div class="text-body1 text-grey q-mt-md">
+                        No tienes perfiles asignados
+                    </div>
                 </div>
+
+                <!-- Profile Cards -->
+                <div v-else class="row q-col-gutter-md">
+                    <div
+                        v-for="(profile, index) in profiles"
+                        :key="index"
+                        class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
+                    >
+                        <q-card
+                            class="card-form profile-card full-height"
+                            tabindex="0"
+                            role="link"
+                            :aria-label="'Ir a rendiciones de ' + profile.profile.name"
+                            @click="HandleVisitAccountability(profile.profile_id)"
+                            @keydown.enter="HandleVisitAccountability(profile.profile_id)"
+                        >
+                            <q-card-section>
+                                <div class="row items-center q-gutter-sm">
+                                    <div class="col-auto">
+                                        <q-avatar
+                                            size="42px"
+                                            class="profile-avatar"
+                                        >
+                                            <q-icon
+                                                name="description"
+                                                color="white"
+                                                size="sm"
+                                                aria-hidden="true"
+                                            />
+                                        </q-avatar>
+                                    </div>
+                                    <div class="col" style="min-width: 0;">
+                                        <div class="text-body2 text-weight-medium ellipsis">
+                                            {{ profile.profile.name }}
+                                        </div>
+                                        <div class="text-caption text-grey">
+                                            {{ profile.profile.type_currency }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <q-icon
+                                            name="chevron_right"
+                                            color="grey"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                </div>
+                            </q-card-section>
+                        </q-card>
+                    </div>
+                </div>
+
             </div>
         </div>
     </Layout>
 </template>
+
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, watch, onMounted } from "vue";
+import { ref } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
-import { useQuasar } from "quasar";
 
 defineProps({
     title: String,
-    errors: Object,
 });
 
-const $q = useQuasar();
 const page = usePage();
-
 const profiles = ref(page.props.profiles);
 
-function HandleVisitAccountability(profile_id){
-    router.visit(route('panel.accountability.manage.index',profile_id))
+function HandleVisitAccountability(profile_id) {
+    router.visit(route("panel.accountability.manage.index", profile_id));
+}
+</script>
+
+<style scoped>
+.profile-card {
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
 }
 
-onMounted(() => {
-});
-</script>
+.profile-card:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-card:focus-visible {
+    outline: 2px solid var(--q-primary);
+    outline-offset: 2px;
+}
+
+.profile-avatar {
+    background-color: #1b2033;
+    border-radius: 10px;
+}
+
+.full-height {
+    height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .profile-card {
+        transition: none;
+    }
+}
+</style>
