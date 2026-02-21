@@ -10,7 +10,7 @@ class AccountabilityDetail extends Model
 {
     use HasFactory;
     protected $table='accountability_details';
-    protected $dateFormat = 'Y-m-d H:i:s';
+    protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $fillable=[
         'accountability_id',
         'account',

@@ -9,7 +9,7 @@ class Management extends Model
 {
     use HasFactory;
     protected $table='management';
-    protected $dateFormat = 'Y-m-d H:i:s';
+    protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $fillable=[
         'group',
         'name',

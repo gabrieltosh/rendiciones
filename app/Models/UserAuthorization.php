@@ -9,7 +9,7 @@ class UserAuthorization extends Model
 {
     use HasFactory;
     protected $table='user_authorizations';
-    protected $dateFormat = 'Y-m-d H:i:s';
+    protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $fillable=[
             'user_id',
             'auth_user_id'

@@ -9,7 +9,7 @@ class DocumentDetail extends Model
 {
     use HasFactory;
     protected $table='document_details';
-    protected $dateFormat = 'Y-m-d H:i:s';
+    protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $fillable=[
         'document_id',
         'type',

@@ -11,7 +11,7 @@ class Profile extends Model
 {
     use HasFactory;
     protected $table='profiles';
-    protected $dateFormat = 'Y-m-d H:i:s';
+    protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $fillable=[
         'name',
         'employee_code',

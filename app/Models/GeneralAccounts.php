@@ -10,7 +10,7 @@ class GeneralAccounts extends Model
 {
     use HasFactory;
     protected $table='general_accounts';
-    protected $dateFormat = 'Y-m-d H:i:s';
+    protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $fillable=[
         'profile_id',
         'account_code',
