@@ -10,6 +10,7 @@ class DetailAccounts extends Model
 {
     use HasFactory;
     protected $table='detail_accounts';
+    protected $dateFormat = 'Y-m-d H:i:s';
     protected $fillable=[
         'profile_id',
         'account_code',

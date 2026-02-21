@@ -11,6 +11,7 @@ class Accountability extends Model
 {
     use HasFactory;
     protected $table='accountabilities';
+    protected $dateFormat = 'Y-m-d H:i:s';
     protected $fillable=[
         'profile_id',
         'user_id',

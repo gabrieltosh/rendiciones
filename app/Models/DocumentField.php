@@ -9,6 +9,7 @@ class DocumentField extends Model
 {
     use HasFactory;
     protected $table='document_fields';
+    protected $dateFormat = 'Y-m-d H:i:s';
     protected $fillable=[
         'document_id',
         'account',
