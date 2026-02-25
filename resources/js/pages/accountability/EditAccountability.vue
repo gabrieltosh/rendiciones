@@ -51,7 +51,7 @@
                     </div>
                     <div class="row q-col-gutter-md">
                         <!-- Empleado -->
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                        <div v-if="!page.props.profile.sin_empleado" class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                             <label class="form-label">Empleado</label>
                             <q-select
                                 class="input-theme"

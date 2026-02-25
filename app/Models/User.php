@@ -32,7 +32,8 @@ class User extends Authenticatable
         'distribution_rule_five',
         'password',
         'status',
-        'card_code'
+        'card_code',
+        'area_id',
     ];
 
     /**
@@ -63,5 +64,9 @@ class User extends Authenticatable
     }
     public function user_authorization(){
         return $this->hasMany(UserAuthorization::class,'user_id','id');
+    }
+
+    public function area(){
+        return $this->belongsTo(Area::class,'area_id','id');
     }
 }

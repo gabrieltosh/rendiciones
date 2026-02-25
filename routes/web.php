@@ -8,6 +8,8 @@ use App\Http\Controllers\Administration\ManagementController;
 use App\Http\Controllers\Administration\ProfileController;
 use App\Http\Controllers\Administration\DocumentController;
 use App\Http\Controllers\Administration\SupplierController;
+use App\Http\Controllers\Administration\AreaController;
+use App\Http\Controllers\Administration\ReportController;
 use App\Http\Controllers\Accountability\ProfileController as AccountabilityProfileController;
 use App\Http\Controllers\Accountability\AccountabilityController;
 use App\Http\Controllers\Authorization\AccountabilityController as AuthAccountabilityController;
@@ -66,6 +68,15 @@ Route::middleware('auth')->group(function() {
             Route::put('','HandleUpdateDocument')->name('update');
             Route::get('{id}/edit','HandleEditDocument')->name('edit');
             Route::get('create','HandleCreateDocument')->name('create');
+        });
+        Route::get('report/accountability', [ReportController::class, 'HandleIndexReport'])->name('report.accountability');
+        Route::delete('{id}/area',[AreaController::class,'HandleDeleteArea'])->name('area.delete');
+        Route::name('area.')->prefix('area')->controller(AreaController::class)->group(function(){
+            Route::get('','HandleIndexArea')->name('index');
+            Route::post('','HandleStoreArea')->name('store');
+            Route::put('','HandleUpdateArea')->name('update');
+            Route::get('{id}/edit','HandleEditArea')->name('edit');
+            Route::get('create','HandleCreateArea')->name('create');
         });
         Route::delete('{id}/supplier',[SupplierController::class,'HandleDeleteSupplier'])->name('supplier.delete');
         Route::name('supplier.')->prefix('supplier')->controller(SupplierController::class)->group(function(){

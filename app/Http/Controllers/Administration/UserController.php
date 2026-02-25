@@ -14,6 +14,7 @@ use Illuminate\Database\QueryException;
 use Inertia\Inertia;
 use DB;
 use App\Models\Management;
+use App\Models\Area;
 use App\Helpers\Hana;
 use Config;
 use Hash;
@@ -33,6 +34,7 @@ class UserController extends Controller
             'distribution_rule_five' => $request->distribution_rule_five,
             'password' => $request->password,
             'card_code' => $request->card_code,
+            'area_id' => $request->area_id,
             'status' => 'PreActivo'
         ]);
         foreach ($request->profiles as $name_profile) {
@@ -111,6 +113,7 @@ class UserController extends Controller
                 'username' => $request->username,
                 'type' => $request->type,
                 'card_code' => $request->card_code,
+                'area_id' => $request->area_id,
                 'distribution_rule_one' => $request->distribution_rule_one,
                 'distribution_rule_second' => $request->distribution_rule_second,
                 'distribution_rule_three' => $request->distribution_rule_three,
@@ -125,6 +128,7 @@ class UserController extends Controller
                 'username' => $request->username,
                 'type' => $request->type,
                 'card_code' => $request->card_code,
+                'area_id' => $request->area_id,
                 'distribution_rule_one' => $request->distribution_rule_one,
                 'distribution_rule_second' => $request->distribution_rule_second,
                 'distribution_rule_three' => $request->distribution_rule_three,
@@ -168,13 +172,15 @@ class UserController extends Controller
             ->where('user_id', $user->id)
             ->get()
             ->pluck('label');
+        $areas = Area::select('id as value', 'name as label')->orderBy('name')->get();
         return Inertia::render(
             'administration/users/EditUser',
             [
                 'user' => $user,
                 'profiles' => $profiles,
                 'distribution' => $this->HandleGetDistributions(),
-                'users' => $users
+                'users' => $users,
+                'areas' => $areas,
             ]
         );
     }
@@ -200,12 +206,14 @@ class UserController extends Controller
         $users = User::select(
             DB::raw("CONCAT(id,'-',name) as label"),
         )->get();
+        $areas = Area::select('id as value', 'name as label')->orderBy('name')->get();
         return Inertia::render(
             'administration/users/CreateUser',
             [
                 'profiles' => $profiles,
                 'distribution' => $this->HandleGetDistributions(),
-                'users' => $users
+                'users' => $users,
+                'areas' => $areas,
             ]
         );
     }

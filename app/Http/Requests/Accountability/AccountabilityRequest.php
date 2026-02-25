@@ -22,7 +22,7 @@ class AccountabilityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee'=>'required',
+            'employee'=>'nullable',
             'account'=>'required',
             'total'=>'required',
             'description'=>'required',

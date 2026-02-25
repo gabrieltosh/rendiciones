@@ -146,7 +146,46 @@
                                 >
                             </q-item-section>
                         </q-item>
+                        <q-item
+                            class="cursor-pointer q-ml-sm"
+                            clickable
+                            @click="router.visit(route('panel.area.index'))"
+                        >
+                            <q-item-section avatar>
+                                <q-avatar
+                                    class="submenu-icon-inactive"
+                                    icon="hdr_weak"
+                                >
+                                </q-avatar>
+                            </q-item-section>
+                            <q-item-section>
+                                <q-item-label class="text-menu"
+                                    >Áreas</q-item-label
+                                >
+                            </q-item-section>
+                        </q-item>
                     </q-expansion-item>
+                    <q-item
+                        clickable
+                        class="cursor-pointer q-mx-md q-mb-md"
+                        :active="active"
+                        active-class="menu-inactive"
+                        @click="router.visit(route('panel.report.accountability'))"
+                    >
+                        <q-item-section avatar>
+                            <q-avatar
+                                square
+                                class="icon-theme"
+                                icon="eva-bar-chart-outline"
+                            >
+                            </q-avatar>
+                        </q-item-section>
+                        <q-item-section>
+                            <q-item-label class="text-menu"
+                                >Reportes</q-item-label
+                            >
+                        </q-item-section>
+                    </q-item>
                     <q-item
                         clickable
                         class="cursor-pointer q-mx-md q-mb-md"

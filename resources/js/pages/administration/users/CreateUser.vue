@@ -106,6 +106,23 @@
                                         </ul>
                                     </div>
                                 </div>
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                                    <div class="form-label" for="device_name">
+                                        Área
+                                    </div>
+                                    <q-select
+                                        v-model="form.area_id"
+                                        :options="options.areas"
+                                        option-value="value"
+                                        option-label="label"
+                                        emit-value
+                                        map-options
+                                        dense
+                                        outlined
+                                        class="input-theme"
+                                        clearable
+                                    />
+                                </div>
                             </div>
                         </q-card>
                     </q-step>
@@ -313,6 +330,7 @@ const options = ref({
     profiles: page.props.profiles,
     distribution: page.props.distribution,
     users: page.props.users,
+    areas: page.props.areas,
 });
 const filter = ref("");
 const filter2 = ref("");
@@ -333,6 +351,7 @@ const form = ref({
     card_code: null,
     profiles: [],
     users: [],
+    area_id: null,
 });
 function HandleStoreForm() {
     router.post(route("panel.user.store"), form.value, {

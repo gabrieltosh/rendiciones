@@ -198,32 +198,44 @@
                                     </div>
                                     <q-separator />
                                 </div>
-                                <div class="col-sm-6">
-                                    <h5 class="title-tree text-center">
-                                        Lista de Empleados
-                                    </h5>
-                                    <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter_emp"
-                                        class="input-theme"></q-input>
-                                    <q-tree :nodes="employees" node-key="label" tick-strategy="leaf"
-                                        v-model:ticked="form.employees" :filter="filter_emp"
-                                        :filter-method="HandleFilterAccounts">
-                                        <template v-slot:default-header="prop">
-                                            <div class="tree-label">
-                                                {{ prop.node.label }}
-                                            </div>
-                                        </template>
-                                    </q-tree>
+                                <div class="col-12 q-py-md">
+                                    <q-toggle
+                                        v-model="form.sin_empleado"
+                                        label="Sin Empleado (el perfil no requiere asignación de empleado)"
+                                        color="primary"
+                                    />
                                 </div>
-                                <q-separator spaced inset vertical />
-                                <div class="col-sm-5">
-                                    <h5 class="title-tree text-center">
-                                        Empleados Seleccionados
-                                    </h5>
-                                    <ul class="q-ma-none">
-                                        <div v-for="tick in form.employees" :key="`ticked-${tick}`" class="tree-label">
-                                            <li>{{ tick }}</li>
-                                        </div>
-                                    </ul>
+                                <template v-if="!form.sin_empleado">
+                                    <div class="col-sm-6">
+                                        <h5 class="title-tree text-center">
+                                            Lista de Empleados
+                                        </h5>
+                                        <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter_emp"
+                                            class="input-theme"></q-input>
+                                        <q-tree :nodes="employees" node-key="label" tick-strategy="leaf"
+                                            v-model:ticked="form.employees" :filter="filter_emp"
+                                            :filter-method="HandleFilterAccounts">
+                                            <template v-slot:default-header="prop">
+                                                <div class="tree-label">
+                                                    {{ prop.node.label }}
+                                                </div>
+                                            </template>
+                                        </q-tree>
+                                    </div>
+                                    <q-separator spaced inset vertical />
+                                    <div class="col-sm-5">
+                                        <h5 class="title-tree text-center">
+                                            Empleados Seleccionados
+                                        </h5>
+                                        <ul class="q-ma-none">
+                                            <div v-for="tick in form.employees" :key="`ticked-${tick}`" class="tree-label">
+                                                <li>{{ tick }}</li>
+                                            </div>
+                                        </ul>
+                                    </div>
+                                </template>
+                                <div v-else class="col-12 q-py-md text-grey-6" style="font-size:13px">
+                                    Este perfil no requiere asignación de empleado.
                                 </div>
                             </div>
                         </q-card>
@@ -714,6 +726,7 @@ let expand = ref({
 const form = ref({
     name: null,
     type_currency: null,
+    sin_empleado: false,
     detail: [],
     general: [],
     employees: [],

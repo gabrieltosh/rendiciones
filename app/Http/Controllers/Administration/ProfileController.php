@@ -180,7 +180,8 @@ SQL;
         $params_sap = Management::where('group', 'accountability')->get();
         $profile = Profile::create([
             'name' => $request->name,
-            'type_currency' => $request->type_currency
+            'type_currency' => $request->type_currency,
+            'sin_empleado' => $request->boolean('sin_empleado'),
         ]);
 
         $sl=$params_sap->where('name', 'hana_enable')->first()->value == 'SI';
@@ -333,7 +334,8 @@ SQL;
         Profile::findOrFail($request->id)
             ->fill([
                 'name' => $request->name,
-                'type_currency' => $request->type_currency
+                'type_currency' => $request->type_currency,
+                'sin_empleado' => $request->boolean('sin_empleado'),
             ])->save();
         $detail = DetailAccounts::select('account_code')
             ->where('profile_id', $request->id)

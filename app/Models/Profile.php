@@ -16,7 +16,11 @@ class Profile extends Model
         'name',
         'employee_code',
         'supplier_code',
-        'type_currency'
+        'type_currency',
+        'sin_empleado',
+    ];
+    protected $casts = [
+        'sin_empleado' => 'boolean',
     ];
     public function createdAt(): Attribute
     {

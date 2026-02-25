@@ -445,12 +445,21 @@ SQL;
         $account = GeneralAccounts::where('account_code', $request->account)->first();
         $params_sap = Management::where('group', 'accountability')->get();
         $hana = $params_sap->where('name', 'hana_enable')->first()->value == 'SI';
-        $employee = $this->HandleGetEmployee($request->employee);
+        $profile = Profile::where('id', $profile_id)->first();
+
+        $employee_name = null;
+        $employee_code = null;
+        if (!$profile->sin_empleado) {
+            $employee = $this->HandleGetEmployee($request->employee);
+            $employee_name = $hana ? $employee['CardName'] : $employee->CardName;
+            $employee_code = $hana ? $employee['CardCode'] : $employee->CardCode;
+        }
+
         Accountability::create([
             'profile_id' => $profile_id,
             'user_id' => $request->user()->id,
-            'employee_name' => $hana ? $employee['CardName'] : $employee->CardName,
-            'employee_code' => $hana ? $employee['CardCode'] : $employee->CardCode,
+            'employee_name' => $employee_name,
+            'employee_code' => $employee_code,
             'account_code' => $account->account_code,
             'account_name' => $account->account_name,
             'total' => $request->total,
@@ -517,10 +526,19 @@ SQL;
         $account = GeneralAccounts::where('account_code', $request->account)->first();
         $params_sap = Management::where('group', 'accountability')->get();
         $hana = $params_sap->where('name', 'hana_enable')->first()->value == 'SI';
-        $employee = $this->HandleGetEmployee($request->employee);
+        $profile = Profile::where('id', $profile_id)->first();
+
+        $employee_name = null;
+        $employee_code = null;
+        if (!$profile->sin_empleado) {
+            $employee = $this->HandleGetEmployee($request->employee);
+            $employee_name = $hana ? $employee['CardName'] : $employee->CardName;
+            $employee_code = $hana ? $employee['CardCode'] : $employee->CardCode;
+        }
+
         Accountability::findOrFail($request->id)->fill([
-            'employee_name' => $hana ? $employee['CardName'] : $employee->CardName,
-            'employee_code' => $hana ? $employee['CardCode'] : $employee->CardCode,
+            'employee_name' => $employee_name,
+            'employee_code' => $employee_code,
             'account_code' => $account->account_code,
             'account_name' => $account->account_name,
             'total' => $request->total,

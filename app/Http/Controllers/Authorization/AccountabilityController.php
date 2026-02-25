@@ -135,12 +135,16 @@ class AccountabilityController extends Controller
             $total_credit += (float) $line['Credit'];
         }
         $debit = $total_debit - $total_credit;
+        $report_profile = Profile::where('id', $accountability->profile_id)->first();
+        $short_name = ($report_profile && $report_profile->sin_empleado)
+            ? $accountability->account_code
+            : $accountability->employee_code;
         $last_line[] = [
             'AccountCode' => $accountability->account_code,
             'AccountName' => $accountability->account_name,
             'Debit' => 0,
             'Credit' => $debit,
-            'ShortName' => $accountability->employee_code,
+            'ShortName' => $short_name,
             'LineMemo' => $accountability->description,
         ];
         $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
@@ -251,11 +255,15 @@ class AccountabilityController extends Controller
         }
         //return $total_debit;
         $debit = $total_debit - $total_credit;
+        $export_profile = Profile::where('id', $accountability->profile_id)->first();
+        $export_short_name = ($export_profile && $export_profile->sin_empleado)
+            ? $accountability->account_code
+            : $accountability->employee_code;
         $last_line[] = [
             'AccountCode' => $accountability->account_code,
             'Debit' => 0,
             'Credit' => $debit,
-            'ShortName' => $accountability->employee_code,
+            'ShortName' => $export_short_name,
             'LineMemo' => $accountability->description,
         ];
         $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
@@ -414,10 +422,20 @@ SQL;
         $account = GeneralAccounts::where('account_code', $request->account)->first();
         $params_sap = Management::where('group', 'accountability')->get();
         $hana=$params_sap->where('name', 'hana_enable')->first()->value == 'SI';
-        $employee = $this->HandleGetEmployee($request->employee);
+        $auth_accountability = Accountability::where('id', $request->id)->first();
+        $auth_profile = Profile::where('id', $auth_accountability->profile_id)->first();
+
+        $employee_name = null;
+        $employee_code = null;
+        if (!$auth_profile || !$auth_profile->sin_empleado) {
+            $employee = $this->HandleGetEmployee($request->employee);
+            $employee_name = $hana ? $employee['CardName'] : $employee->CardName;
+            $employee_code = $hana ? $employee['CardCode'] : $employee->CardCode;
+        }
+
         Accountability::findOrFail($request->id)->fill([
-            'employee_name' => $hana?$employee['CardName']:$employee->CardName,
-            'employee_code' => $hana?$employee['CardCode']:$employee->CardCode,
+            'employee_name' => $employee_name,
+            'employee_code' => $employee_code,
             'account_code' => $account->account_code,
             'account_name' => $account->account_name,
             'total' => $request->total,
