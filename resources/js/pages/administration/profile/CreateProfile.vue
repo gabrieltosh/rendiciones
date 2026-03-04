@@ -872,7 +872,7 @@ function HandleFilterAccountsDocuments(val, update) {
     update(() => {
         const needle = val.toLowerCase();
         options.value.accounts_filter = options.value.accounts_document.filter(
-            (v) => v.AcctName.toLowerCase().indexOf(needle) > -1
+            (v) => v.AcctName?.toLowerCase().indexOf(needle) > -1
         );
     });
 }
