@@ -495,7 +495,7 @@ SQL;
         }
 
         try {
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'Accept' => 'application/json, text/plain, */*',
                 'Origin' => 'https://siat.impuestos.gob.bo',
                 'Referer' => 'https://siat.impuestos.gob.bo/',

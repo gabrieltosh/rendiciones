@@ -358,9 +358,9 @@ SQL;
         $to_delete_employee = array_diff($employees, $this->HandleGetAccountCode($request->employees));
         $to_create_employee = array_diff($this->HandleGetAccountCode($request->employees), $employees);
 
-        DetailAccounts::whereIn('account_code', $to_delete_detail)->delete();
-        GeneralAccounts::whereIn('account_code', $to_delete_general)->delete();
-        Employee::whereIn('card_code', $to_delete_employee)->delete();
+        DetailAccounts::where('profile_id', $request->id)->whereIn('account_code', $to_delete_detail)->delete();
+        GeneralAccounts::where('profile_id', $request->id)->whereIn('account_code', $to_delete_general)->delete();
+        Employee::where('profile_id', $request->id)->whereIn('card_code', $to_delete_employee)->delete();
 
         if(count($to_create_detail)>0){
             foreach ($this->HandleGetAccountSAP($to_create_detail) as $account) {
