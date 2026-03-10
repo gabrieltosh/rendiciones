@@ -141,25 +141,20 @@ SQL;
     }
     public function HandleGetEmployeeFormat($data)
     {
-        $card_codes = [];
-        foreach ($data as $value) {
-            $card_code = explode('-', $value);
-            array_push($card_codes, $card_code[0]);
-        }
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
             $db=Config::get('database.connections.hana.database');
-            $format_accounts=array_map(function($e){
-                return "'".$e."'";
-            },$card_codes);
-            $card_codes_string = implode(",", $format_accounts);
+            $format_labels=array_map(function($e){
+                return "'" . str_replace("'", "''", $e) . "'";
+            },$data);
+            $labels_string = implode(",", $format_labels);
             $sql=
 <<<SQL
                 select
                     T1."CardCode",
                     T1."CardName"
                 from $db.OCRD as T1
-                where T1."CardCode" in ($card_codes_string)
+                where CONCAT(CONCAT(T1."CardCode",'-'),T1."CardName") in ($labels_string)
 SQL;
             return Hana::query($sql);
         }else{
@@ -169,7 +164,7 @@ SQL;
                     'T1.CardCode',
                     'T1.CardName',
                 )
-                ->whereIn('T1.CardCode', $card_codes)
+                ->whereIn(DB::raw("CONCAT(T1.CardCode,'-',T1.CardName)"), $data)
                 ->get();
             return $data_format;
         }
@@ -345,22 +340,24 @@ SQL;
             ->where('profile_id', $request->id)
             ->pluck('account_code')
             ->toArray();
-        $employees = Employee::select('card_code')
-            ->where('profile_id', $request->id)
-            ->pluck('card_code')
-            ->toArray();
+        $existing_employees = Employee::where('profile_id', $request->id)->get();
+        $existing_employee_labels = $existing_employees->map(fn($e) => $e->card_code . '-' . $e->card_name)->toArray();
 
         $to_delete_detail = array_diff($detail, $this->HandleGetAccountCode($request->detail));
         $to_delete_general = array_diff($general, $this->HandleGetAccountCode($request->general));
         $to_create_detail = array_diff($this->HandleGetAccountCode($request->detail), $detail);
         $to_create_general = array_diff($this->HandleGetAccountCode($request->general), $general);
 
-        $to_delete_employee = array_diff($employees, $this->HandleGetAccountCode($request->employees));
-        $to_create_employee = array_diff($this->HandleGetAccountCode($request->employees), $employees);
+        $to_delete_employee_labels = array_diff($existing_employee_labels, $request->employees);
+        $to_create_employee_labels = array_diff($request->employees, $existing_employee_labels);
 
         DetailAccounts::where('profile_id', $request->id)->whereIn('account_code', $to_delete_detail)->delete();
         GeneralAccounts::where('profile_id', $request->id)->whereIn('account_code', $to_delete_general)->delete();
-        Employee::where('profile_id', $request->id)->whereIn('card_code', $to_delete_employee)->delete();
+        foreach ($existing_employees as $emp) {
+            if (in_array($emp->card_code . '-' . $emp->card_name, $to_delete_employee_labels)) {
+                $emp->delete();
+            }
+        }
 
         if(count($to_create_detail)>0){
             foreach ($this->HandleGetAccountSAP($to_create_detail) as $account) {
@@ -382,8 +379,8 @@ SQL;
                 ]);
             }
         }
-        if(count($to_create_employee)>0){
-            foreach ($this->HandleGetEmpSAP($to_create_employee) as $employee) {
+        if(count($to_create_employee_labels)>0){
+            foreach ($this->HandleGetEmployeeFormat($to_create_employee_labels) as $employee) {
                 Employee::create([
                     'profile_id' => $request->id,
                     'card_code' => $hana?$employee['CardCode']:$employee->CardCode,
