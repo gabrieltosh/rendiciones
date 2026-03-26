@@ -25,10 +25,6 @@
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                                    <label class="form-label" for="profile_name">
-                                        Nombre Perfil
-                                        <span class="text-red">*</span>
-                                    </label>
                                     <q-input v-model="form.name" dense outlined class="input-theme" name="profile_name" autocomplete="off" input-id="profile_name" />
                                     <div v-if="errors.name" class="container-error">
                                         <ul v-for="(

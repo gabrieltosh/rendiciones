@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Accountability;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Profile;
 
 class AccountabilityRequest extends FormRequest
 {
@@ -21,8 +22,10 @@ class AccountabilityRequest extends FormRequest
      */
     public function rules(): array
     {
+        $profile = Profile::where('id', $this->route('profile_id'))->first();
+        $employeeRule = ($profile && !$profile->sin_empleado) ? 'required' : 'nullable';
         return [
-            'employee'=>'nullable',
+            'employee' => $employeeRule,
             'account'=>'required',
             'total'=>'required',
             'description'=>'required',

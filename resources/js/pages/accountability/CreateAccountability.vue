@@ -50,7 +50,7 @@
                     <div class="row q-col-gutter-md">
                         <!-- Empleado -->
                         <div v-if="!page.props.profile.sin_empleado" class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <label class="form-label">Empleado</label>
+                            <label class="form-label">Empleado <span class="text-red">*</span></label>
                             <q-select
                                 class="input-theme"
                                 dense
@@ -68,6 +68,8 @@
                                 aria-label="Seleccionar empleado"
                                 name="employee"
                                 autocomplete="off"
+                                :error="!!errors.employee"
+                                :error-message="errors.employee ? errors.employee[0] : ''"
                             >
                                 <template v-slot:no-option>
                                     <q-item>
