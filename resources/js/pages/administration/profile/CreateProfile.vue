@@ -25,11 +25,11 @@
                             </div>
                             <div class="row q-col-gutter-md q-mt-xs">
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                                    <div class="form-label" for="device_name">
+                                    <label class="form-label" for="profile_name">
                                         Nombre Perfil
                                         <span class="text-red">*</span>
-                                    </div>
-                                    <q-input v-model="form.name" dense outlined class="input-theme" />
+                                    </label>
+                                    <q-input v-model="form.name" dense outlined class="input-theme" name="profile_name" autocomplete="off" input-id="profile_name" />
                                     <div v-if="errors.name" class="container-error">
                                         <ul v-for="(
                                                 error, index
@@ -39,12 +39,12 @@
                                     </div>
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                                    <div class="form-label" for="device_name">
+                                    <label class="form-label" for="type_currency">
                                         Moneda <span class="text-red">*</span>
-                                    </div>
+                                    </label>
                                     <q-select class="input-theme" v-model="form.type_currency" :options="currencies"
                                         dense outlined option-value="CurrCode" option-label="CurrName" emit-value
-                                        map-options />
+                                        map-options input-id="type_currency" />
                                     <div v-if="errors.type_currency" class="container-error">
                                         <ul v-for="(
                                                 error, index
@@ -87,8 +87,8 @@
                                     <h5 class="title-tree text-center">
                                         Lista de Cuentas Contables
                                     </h5>
-                                    <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter"
-                                        class="input-theme">
+                                    <q-input outlined dense color="primary" placeholder="Buscar…" v-model="filter"
+                                        class="input-theme" name="search_general" autocomplete="off" aria-label="Buscar cuentas cabecera">
                                     </q-input>
                                     <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
                                         v-model:ticked="form.general" :filter="filter"
@@ -145,8 +145,8 @@
                                     <h5 class="title-tree text-center">
                                         Lista de Cuentas Contables
                                     </h5>
-                                    <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter2"
-                                        class="input-theme"></q-input>
+                                    <q-input outlined dense color="primary" placeholder="Buscar…" v-model="filter2"
+                                        class="input-theme" name="search_detail" autocomplete="off" aria-label="Buscar cuentas detalle"></q-input>
                                     <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
                                         v-model:ticked="form.detail" :filter="filter2"
                                         :filter-method="HandleFilterAccounts" :default-expand-all="expand.header">
@@ -210,8 +210,8 @@
                                         <h5 class="title-tree text-center">
                                             Lista de Empleados
                                         </h5>
-                                        <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter_emp"
-                                            class="input-theme"></q-input>
+                                        <q-input outlined dense color="primary" placeholder="Buscar…" v-model="filter_emp"
+                                            class="input-theme" name="search_employees" autocomplete="off" aria-label="Buscar empleados"></q-input>
                                         <q-tree :nodes="employees" node-key="label" tick-strategy="leaf"
                                             v-model:ticked="form.employees" :filter="filter_emp"
                                             :filter-method="HandleFilterAccounts">
@@ -336,7 +336,7 @@
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox
                                                                         v-model="item.authorization_number_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="Nº Autorización" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -345,7 +345,7 @@
                                                                 <div class="col-6 self-center">CUF</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.cuf_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="CUF" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -354,7 +354,7 @@
                                                                 <div class="col-6 self-center">Codigo Control</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.control_code_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="Código Control" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -363,7 +363,7 @@
                                                                 <div class="col-6 self-center">Razón Social</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.business_name_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="Razón Social" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -372,7 +372,7 @@
                                                                 <div class="col-6 self-center">NIT</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.nit_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="NIT" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -381,7 +381,7 @@
                                                                 <div class="col-6 self-center">Descuento</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.discount_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="Descuento" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -390,7 +390,7 @@
                                                                 <div class="col-6 self-center">Gift Card</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.gift_card_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="Gift Card" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -399,7 +399,7 @@
                                                                 <div class="col-6 self-center">Tasa Cero</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.rate_zero_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="Tasa Cero" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -408,7 +408,7 @@
                                                                 <div class="col-6 self-center">Exento Variable</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.exento_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="Exento Variable" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -417,7 +417,7 @@
                                                                 <div class="col-6 self-center">Tasa Variable</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.tasas_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="Tasa Variable" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -426,7 +426,7 @@
                                                                 <div class="col-6 self-center">ICE Variable</div>
                                                                 <div class="col-6 self-center">
                                                                     <q-checkbox v-model="item.ice_status"
-                                                                        color="positive" />
+                                                                        color="positive" aria-label="ICE Variable" />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -442,16 +442,18 @@
                                                     <div v-if="!item.tasas_status">
                                                         Tasas
                                                         <span class="text-red">*</span>
-                                                        <q-input v-model="item.tasas
-                                                            " dense class="input-theme" type="number" />
+                                                        <q-input v-model="item.tasas"
+                                                            dense class="input-theme" type="number"
+                                                            input-style="font-variant-numeric: tabular-nums" />
                                                     </div>
                                                 </th>
                                                 <th colspan="1" align="left">
                                                     <div v-if="!item.ice_status">
                                                         ICE
                                                         <span class="text-red">*</span>
-                                                        <q-input v-model="item.ice
-                                                            " dense class="input-theme" type="number" />
+                                                        <q-input v-model="item.ice"
+                                                            dense class="input-theme" type="number"
+                                                            input-style="font-variant-numeric: tabular-nums" />
                                                     </div>
                                                 </th>
                                             </tr>
@@ -472,11 +474,8 @@
                                                     background-color: #f0f2f5;
                                                 ">
                                                 <th class="text-center" style="width: 10%">
-                                                    <q-btn color="primary" icon="eva-plus" @click="
-                                                        HandleAddLineDetail(
-                                                            index
-                                                        )
-                                                        " dense flat size="10px" />
+                                                    <q-btn color="primary" icon="eva-plus" @click="HandleAddLineDetail(index)"
+                                                        dense flat size="10px" aria-label="Agregar línea de prorrateo" />
                                                 </th>
                                                 <th class="text-center" style="width: 18%">
                                                     Tipo
@@ -493,9 +492,6 @@
                                                 <th class="text-center" style="width: 18%">
                                                     % Exento
                                                 </th>
-                                                <th class="text-center" style="width: 18%">
-                                                    Calculo
-                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -503,12 +499,9 @@
                                                     proration, index_proration
                                                 ) in item.detail" :key="index_proration">
                                                 <td class="text-center">
-                                                    <q-btn flat color="negative" icon="eva-trash-2-outline" @click="
-                                                        HandleDeleteLineDetail(
-                                                            index,
-                                                            index_proration
-                                                        )
-                                                        " dense size="10px" />
+                                                    <q-btn flat color="negative" icon="eva-trash-2-outline"
+                                                        @click="HandleDeleteLineDetail(index, index_proration)"
+                                                        dense size="10px" aria-label="Eliminar línea de prorrateo" />
                                                 </td>
                                                 <td class="text-center">
                                                     <q-select v-model="proration.type" :options="options.type" dense
@@ -556,8 +549,9 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
-                                                    <q-input v-model="proration.percentage
-                                                        " dense class="input-theme" type="number" />
+                                                    <q-input v-model="proration.percentage"
+                                                        dense class="input-theme" type="number"
+                                                        input-style="font-variant-numeric: tabular-nums" />
                                                     <div v-if="errors['documents.' + index + '.detail.' + index_proration + '.percentage']"
                                                         class="container-error">
                                                         <ul v-for="(
@@ -569,12 +563,10 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
-                                                    <q-input v-model="proration.exento
-                                                        " dense class="input-theme" type="number"
+                                                    <q-input v-model="proration.exento"
+                                                        dense class="input-theme" type="number"
+                                                        input-style="font-variant-numeric: tabular-nums"
                                                         :disable="item.exento_status" />
-                                                </td>
-                                                <td class="text-center">
-                                                    <q-checkbox  v-model="proration.calculation" />
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -594,11 +586,8 @@
                                                     background-color: #f0f2f5;
                                                 ">
                                                 <th class="text-center" style="width: 10%">
-                                                    <q-btn color="primary" icon="eva-plus" @click="
-                                                        HandleAddLineFields(
-                                                            index
-                                                        )
-                                                        " dense flat size="10px" />
+                                                    <q-btn color="primary" icon="eva-plus" @click="HandleAddLineFields(index)"
+                                                        dense flat size="10px" aria-label="Agregar campo adicional" />
                                                 </th>
                                                 <th class="text-center" style="width: 30%">
                                                     Tipo
@@ -616,12 +605,9 @@
                                                     field, index_field
                                                 ) in item.fields" :key="index_field">
                                                 <td class="text-center">
-                                                    <q-btn flat color="negative" icon="eva-trash-2-outline" @click="
-                                                        HandleDeleteLineField(
-                                                            index,
-                                                            index_field
-                                                        )
-                                                        " dense size="10px" />
+                                                    <q-btn flat color="negative" icon="eva-trash-2-outline"
+                                                        @click="HandleDeleteLineField(index, index_field)"
+                                                        dense size="10px" aria-label="Eliminar campo adicional" />
                                                 </td>
                                                 <td class="text-center">
                                                     <q-select class="input-theme" dense :options="['Debito', 'Credito']"
@@ -674,8 +660,9 @@
                                         color: #344767;
                                         background-color: #f0f2f5;
                                         border-radius: 0.5rem;
-                                    " @click="HandleAddDocument()">
-                                    <q-icon name="eva-plus" /> Añadir Documento
+                                    " @click="HandleAddDocument()" @keydown.enter.space="HandleAddDocument()"
+                                    role="button" tabindex="0" aria-label="Añadir nuevo documento">
+                                    <q-icon name="eva-plus" aria-hidden="true" /> Añadir Documento
                                 </div>
                             </div>
                         </q-card>
@@ -735,9 +722,9 @@ const form = ref({
             name: null,
             type_document_sap: null,
             type_calculation: null,
-            ice: null,
-            tasas: null,
-            exento: null,
+            ice: 0,
+            tasas: 0,
+            exento: 0,
             ice_status: false,
             tasas_status: false,
             exento_status: false,
@@ -754,7 +741,7 @@ const form = ref({
                     type: null,
                     percentage: null,
                     account: null,
-                    exento: null,
+                    exento: 0,
                     type_calculation: null,
                     calculation: false
                 },
@@ -803,9 +790,9 @@ function HandleAddDocument() {
         name: null,
         type_document_sap: null,
         type_calculation: null,
-        ice: null,
-        tasas: null,
-        exento: null,
+        ice: 0,
+        tasas: 0,
+        exento: 0,
         ice_status: false,
         tasas_status: false,
         exento_status: false,
@@ -822,7 +809,7 @@ function HandleAddDocument() {
                 type: null,
                 percentage: null,
                 account: null,
-                exento: null,
+                exento: 0,
                 type_calculation: null,
                 calculation: false
             },
@@ -841,7 +828,7 @@ function HandleAddLineDetail(index) {
         type: null,
         percentage: null,
         account: null,
-        exento: null,
+        exento: 0,
         type_calculation: null,
         calculation: false
     });

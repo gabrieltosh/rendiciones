@@ -208,9 +208,9 @@ SQL;
             $document_create = Document::create([
                 'name' => $document['name'],
                 'type_document_sap' => $document['type_document_sap'],
-                'ice' => $document['ice'],
-                'tasas' => $document['tasas'],
-                'exento' => $document['exento'],
+                'ice' => $document['ice'] ?? 0,
+                'tasas' => $document['tasas'] ?? 0,
+                'exento' => $document['exento'] ?? 0,
                 'ice_status' => $document['ice_status'],
                 'tasas_status' => $document['tasas_status'],
                 'exento_status' => $document['exento_status'],
@@ -231,8 +231,8 @@ SQL;
                     'type_calculation' => $item['type_calculation'],
                     'percentage' => $item['percentage'],
                     'account' => $item['account'],
-                    'exento'=>$item['exento'],
-                    'calculation'=>$item['calculation']
+                    'exento' => $item['exento'] ?? 0,
+                    'calculation' => $item['calculation']
                 ]);
             }
             foreach ($document['fields'] as $item) {
@@ -393,9 +393,9 @@ SQL;
                 $document_create = Document::create([
                     'name' => $document['name'],
                     'type_document_sap' => $document['type_document_sap'],
-                    'ice' => $document['ice'],
-                    'tasas' => $document['tasas'],
-                    'exento' => $document['exento'],
+                    'ice' => $document['ice'] ?? 0,
+                    'tasas' => $document['tasas'] ?? 0,
+                    'exento' => $document['exento'] ?? 0,
                     'ice_status' => $document['ice_status'],
                     'tasas_status' => $document['tasas_status'],
                     'exento_status' => $document['exento_status'],
@@ -415,9 +415,9 @@ SQL;
                         'type' => $item['type'],
                         'percentage' => $item['percentage'],
                         'account' => $item['account'],
-                        'exento' => $item['exento'],
-                        'type_calculation'=> $item['type_calculation'],
-                        'calculation'=>$item['calculation']
+                        'exento' => $item['exento'] ?? 0,
+                        'type_calculation' => $item['type_calculation'],
+                        'calculation' => $item['calculation']
                     ]);
                 }
                 foreach ($document['fields'] as $item) {
@@ -445,9 +445,9 @@ SQL;
                     Document::findOrFail($document['id'])->fill([
                         'name' => $document['name'],
                         'type_document_sap' => $document['type_document_sap'],
-                        'ice' => $document['ice'],
-                        'tasas' => $document['tasas'],
-                        'exento' => $document['exento'],
+                        'ice' => $document['ice'] ?? 0,
+                        'tasas' => $document['tasas'] ?? 0,
+                        'exento' => $document['exento'] ?? 0,
                         'ice_status' => $document['ice_status'],
                         'tasas_status' => $document['tasas_status'],
                         'exento_status' => $document['exento_status'],
@@ -467,9 +467,9 @@ SQL;
                                 'type' => $item['type'],
                                 'percentage' => $item['percentage'],
                                 'account' => $item['account'],
-                                'exento' => $item['exento'],
-                                'type_calculation'=> $item['type_calculation'],
-                                'calculation'=>$item['calculation']
+                                'exento' => $item['exento'] ?? 0,
+                                'type_calculation' => $item['type_calculation'],
+                                'calculation' => $item['calculation']
                             ]);
                         } else {
                             if ((int) $item['for_delete'] == 1) {
@@ -479,9 +479,9 @@ SQL;
                                     'type' => $item['type'],
                                     'percentage' => $item['percentage'],
                                     'account' => $item['account'],
-                                    'exento' => $item['exento'],
-                                    'type_calculation'=> $item['type_calculation'],
-                                    'calculation'=>$item['calculation']
+                                    'exento' => $item['exento'] ?? 0,
+                                    'type_calculation' => $item['type_calculation'],
+                                    'calculation' => $item['calculation']
                                 ])->save();
                             }
                         }
@@ -511,6 +511,92 @@ SQL;
         }
         return Redirect::route('panel.profile.index');
     }
+
+    public function HandleCopyProfile($id)
+    {
+        $original = Profile::with(['documents.detail', 'documents.fields'])->findOrFail($id);
+
+        $copy = Profile::create([
+            'name' => '(Copia) ' . $original->name,
+            'type_currency' => $original->type_currency,
+            'sin_empleado' => $original->sin_empleado,
+        ]);
+
+        foreach ($original->documents as $document) {
+            $newDoc = Document::create([
+                'name' => $document->name,
+                'type_document_sap' => $document->type_document_sap,
+                'profile_id' => $copy->id,
+                'ice' => $document->ice,
+                'tasas' => $document->tasas,
+                'exento' => $document->exento,
+                'ice_status' => $document->ice_status,
+                'tasas_status' => $document->tasas_status,
+                'exento_status' => $document->exento_status,
+                'authorization_number_status' => $document->authorization_number_status,
+                'cuf_status' => $document->cuf_status,
+                'control_code_status' => $document->control_code_status,
+                'business_name_status' => $document->business_name_status,
+                'nit_status' => $document->nit_status,
+                'discount_status' => $document->discount_status,
+                'gift_card_status' => $document->gift_card_status,
+                'rate_zero_status' => $document->rate_zero_status,
+            ]);
+
+            foreach ($document->detail as $detail) {
+                DocumentDetail::create([
+                    'document_id' => $newDoc->id,
+                    'type' => $detail->type,
+                    'type_calculation' => $detail->type_calculation,
+                    'percentage' => $detail->percentage,
+                    'account' => $detail->account,
+                    'exento' => $detail->exento,
+                    'calculation' => $detail->calculation,
+                ]);
+            }
+
+            foreach ($document->fields as $field) {
+                DocumentField::create([
+                    'document_id' => $newDoc->id,
+                    'name' => $field->name,
+                    'account' => $field->account,
+                    'type_calculation' => $field->type_calculation,
+                ]);
+            }
+        }
+
+        DB::table('detail_accounts')->where('profile_id', $id)->get()->each(function ($account) use ($copy) {
+            DetailAccounts::create([
+                'profile_id' => $copy->id,
+                'account_code' => $account->account_code,
+                'format_code' => $account->format_code,
+                'account_name' => $account->account_name,
+            ]);
+        });
+
+        DB::table('general_accounts')->where('profile_id', $id)->get()->each(function ($account) use ($copy) {
+            GeneralAccounts::create([
+                'profile_id' => $copy->id,
+                'account_code' => $account->account_code,
+                'format_code' => $account->format_code,
+                'account_name' => $account->account_name,
+            ]);
+        });
+
+        DB::table('employees')->where('profile_id', $id)->get()->each(function ($employee) use ($copy) {
+            Employee::create([
+                'profile_id' => $copy->id,
+                'card_code' => $employee->card_code,
+                'card_name' => $employee->card_name,
+            ]);
+        });
+
+        Session::flash('message', 'Perfil copiado correctamente');
+        Session::flash('type', 'positive');
+
+        return Redirect::route('panel.profile.edit', $copy->id);
+    }
+
     public function HandleEditProfile($id)
     {
         Session::put('title', 'Editar Profile');
@@ -652,8 +738,13 @@ SQL;
                 T1."AcctName",
                 T1."AcctCode"
             from $db.OACT as T1
-            where T1."Levels" in (1,2,3,4,5,6,7,8,9,10)
-            order by T1."Levels",T1."FatherNum"
+            where T1."AcctCode" not in (
+                select T2."FatherNum"
+                from $db.OACT as T2
+                where T2."FatherNum" is not null
+                and T2."FatherNum" != ''
+            )
+            order by T1."AcctCode"
 SQL;
             $accounts = Hana::query($sql);
             return $accounts;
@@ -664,9 +755,13 @@ SQL;
                     'T1.AcctName',
                     'T1.AcctCode',
                 )
-                ->whereIn('T1.Levels', range(1, 10))
-                ->orderBy('T1.Levels')
-                ->orderBy('T1.FatherNum')
+                ->whereNotIn('T1.AcctCode', function ($q) {
+                    $q->select('FatherNum')
+                      ->from('OACT')
+                      ->whereNotNull('FatherNum')
+                      ->where('FatherNum', '!=', '');
+                })
+                ->orderBy('T1.AcctCode')
                 ->get();
             return $accounts;
         }

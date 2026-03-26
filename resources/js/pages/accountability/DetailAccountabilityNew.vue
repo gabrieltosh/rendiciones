@@ -420,7 +420,7 @@
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, computed } from "vue";
+import { ref, computed, reactive } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar, openURL } from "quasar";
@@ -433,7 +433,7 @@ defineProps({
 
 const $q = useQuasar();
 const page = usePage();
-const accountability = page.props.accountability;
+const accountability = reactive({ ...page.props.accountability });
 const documents = ref(page.props.documents);
 const filter = ref("");
 const expandedRows = ref({});
@@ -579,6 +579,7 @@ function HandleUpdateStatus(status) {
             {
                 onSuccess: () => {
                     documents.value = page.props.documents;
+                    Object.assign(accountability, page.props.accountability);
                     $q.notify({
                         type: page.props.flash.type,
                         message: page.props.flash.message,

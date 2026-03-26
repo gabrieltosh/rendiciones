@@ -59,12 +59,28 @@
                                         dense
                                         @click="HandleEditUser(props.row.id)"
                                         icon="eva-edit-2-outline"
+                                        aria-label="Editar perfil"
                                     >
                                         <q-tooltip
                                             class="bg-secondary"
                                             :offset="[10, 10]"
                                         >
-                                            Editar de Perfil
+                                            Editar Perfil
+                                        </q-tooltip>
+                                    </q-btn>
+                                    <q-btn
+                                        size="sm"
+                                        color="teal"
+                                        dense
+                                        @click="HandleCopyProfile(props.row.id)"
+                                        icon="content_copy"
+                                        aria-label="Copiar perfil"
+                                    >
+                                        <q-tooltip
+                                            class="bg-teal"
+                                            :offset="[10, 10]"
+                                        >
+                                            Copiar Perfil
                                         </q-tooltip>
                                     </q-btn>
                                     <q-btn
@@ -73,6 +89,7 @@
                                         dense
                                         @click="HandleDeleteUser(props.row.id)"
                                         icon="eva-trash-2-outline"
+                                        aria-label="Eliminar perfil"
                                     >
                                         <q-tooltip
                                             class="bg-red"
@@ -157,6 +174,23 @@ function HandleCreateUser() {
 }
 function HandleEditUser($id) {
     router.visit(route("panel.profile.edit", $id));
+}
+function HandleCopyProfile($id) {
+    $q.dialog({
+        title: "Confirmar",
+        message: "¿Está seguro de copiar este perfil? Se creará una copia con todos sus documentos y configuración.",
+        cancel: true,
+        persistent: true,
+    }).onOk(() => {
+        router.post(route("panel.profile.copy", $id), {}, {
+            onSuccess: () => {
+                $q.notify({
+                    type: page.props.flash.type,
+                    message: page.props.flash.message,
+                });
+            },
+        });
+    });
 }
 function HandleDeleteUser($id) {
     $q.dialog({

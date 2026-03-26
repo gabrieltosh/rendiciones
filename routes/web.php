@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function() {
             Route::put('','HandleUpdateProfile')->name('update');
             Route::get('{id}/edit','HandleEditProfile')->name('edit');
             Route::get('create','HandleCreateProfile')->name('create');
+            Route::post('{id}/copy','HandleCopyProfile')->name('copy');
         });
         Route::delete('{id}/document',[DocumentController::class,'HandleDeleteDocument'])->name('document.delete');
         Route::name('document.')->prefix('document')->controller(DocumentController::class)->group(function(){
