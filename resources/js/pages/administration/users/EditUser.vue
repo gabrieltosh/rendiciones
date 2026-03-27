@@ -113,19 +113,6 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
-                                        Codigo Empleado
-                                    </div>
-                                    <q-input v-model="form.card_code" dense outlined class="input-theme" clearable />
-                                    <div v-if="errors.card_code" class="container-error">
-                                        <ul v-for="(
-                                                error, index
-                                            ) in errors.card_code" :key="index" class="message-error">
-                                            <li>{{ error }}</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                                    <div class="form-label" for="device_name">
                                         Área
                                     </div>
                                     <q-select

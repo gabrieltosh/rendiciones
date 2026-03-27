@@ -28,11 +28,11 @@ class UserController extends Controller
             'username' => $request->username,
             'type' => $request->type,
             'distribution_rule_one' => $request->distribution_rule_one,
-            'distribution_rule_second' => $request->distribution_rule_second,
+            'distribution_rule_second' => $request->distribution_rule_two,
             'distribution_rule_three' => $request->distribution_rule_three,
             'distribution_rule_four' => $request->distribution_rule_four,
             'distribution_rule_five' => $request->distribution_rule_five,
-            'password' => $request->password,
+            'password' => Hash::make($request->password),
             'card_code' => $request->card_code,
             'area_id' => $request->area_id,
             'status' => 'PreActivo'
@@ -192,12 +192,13 @@ class UserController extends Controller
             Session::flash('type', 'positive');
         } catch (QueryException $e) {
             Session::flash('type', 'negative');
-            if ($e->errorInfo[1] == 1451) {
+            if ($e->errorInfo[1] == 547) {
                 Session::flash('message', 'No puedes eliminar este usuario porque hay registros asociados en otras tablas');
             } else {
                 Session::flash('message', $e->getMessage());
             }
         }
+        return Redirect::route('panel.user.index');
     }
     public function HandleCreateUser()
     {
