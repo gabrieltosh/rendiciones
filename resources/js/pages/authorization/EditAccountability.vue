@@ -33,7 +33,7 @@
                         </div>
                     </div>
                     <div class="row q-col-gutter-md q-mt-xs">
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                        <div v-if="!page.props.profile.sin_empleado" class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                             <div class="form-label" for="device_name">
                                 Empleado
                             </div>

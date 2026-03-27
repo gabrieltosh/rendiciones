@@ -683,17 +683,35 @@ SQL;
     public function HandleDeleteProfile($id)
     {
         try {
-            Profile::findOrFail($id)->delete();
+            $profile = Profile::findOrFail($id);
+
+            if (DB::table('accountabilities')->where('profile_id', $id)->exists()) {
+                Session::flash('type', 'negative');
+                Session::flash('message', 'No puedes eliminar este perfil porque tiene rendiciones asociadas.');
+                return Redirect::route('panel.profile.index');
+            }
+
+            // Eliminar documentos y sus hijos
+            $documentIds = DB::table('documents')->where('profile_id', $id)->pluck('id');
+            DB::table('document_details')->whereIn('document_id', $documentIds)->delete();
+            DB::table('document_fields')->whereIn('document_id', $documentIds)->delete();
+            DB::table('documents')->where('profile_id', $id)->delete();
+
+            // Eliminar registros de configuración
+            DB::table('detail_accounts')->where('profile_id', $id)->delete();
+            DB::table('general_accounts')->where('profile_id', $id)->delete();
+            DB::table('employees')->where('profile_id', $id)->delete();
+            DB::table('user_profiles')->where('profile_id', $id)->delete();
+
+            $profile->delete();
+
             Session::flash('message', "Perfil eliminado correctamente");
             Session::flash('type', 'positive');
         } catch (QueryException $e) {
             Session::flash('type', 'negative');
-            if ($e->errorInfo[1] == 547) {
-                Session::flash('message', 'No puedes eliminar este perfil porque hay registros asociados en otras tablas');
-            } else {
-                Session::flash('message', $e->getMessage());
-            }
+            Session::flash('message', $e->getMessage());
         }
+        return Redirect::route('panel.profile.index');
     }
     public function HandleGetDocumentType($field){
         $field_explode=explode('_',$field);
