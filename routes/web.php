@@ -40,57 +40,62 @@ Route::middleware('auth')->group(function() {
     Route::post('siat/consulta', [AccountabilityController::class, 'HandleConsultaFactura'])->name('siat.consulta');
 
     Route::name('panel.')->prefix('panel')->group(function(){
-        Route::name('management.')->prefix('management')->controller(ManagementController::class)->group(function(){
-            Route::get('','HandleIndexManagement')->name('index');
-            Route::post('','HandleUpdateManagement')->name('update');
-            Route::post('logo','HandleStoreImage')->name('logo');
-        });
-        Route::delete('{id}/user',[UserController::class,'HandleDeleteUser'])->name('user.delete');
-        Route::name('user.')->prefix('user')->controller(UserController::class)->group(function(){
-            Route::get('','HandleIndexUser')->name('index');
-            Route::post('','HandleStoreUser')->name('store');
-            Route::put('','HandleUpdateUser')->name('update');
-            Route::get('{id}/edit','HandleEditUser')->name('edit');
-            Route::get('create','HandleCreateUser')->name('create');
-        });
-        Route::delete('{id}/profile',[ProfileController::class,'HandleDeleteProfile'])->name('profile.delete');
-        Route::name('profile.')->prefix('profile')->controller(ProfileController::class)->group(function(){
-            Route::get('','HandleIndexProfile')->name('index');
-            Route::post('','HandleStoreProfile')->name('store');
-            Route::put('','HandleUpdateProfile')->name('update');
-            Route::get('{id}/edit','HandleEditProfile')->name('edit');
-            Route::get('create','HandleCreateProfile')->name('create');
-            Route::post('{id}/copy','HandleCopyProfile')->name('copy');
-        });
-        Route::delete('{id}/document',[DocumentController::class,'HandleDeleteDocument'])->name('document.delete');
-        Route::name('document.')->prefix('document')->controller(DocumentController::class)->group(function(){
-            Route::get('','HandleIndexDocument')->name('index');
-            Route::post('','HandleStoreDocument')->name('store');
-            Route::put('','HandleUpdateDocument')->name('update');
-            Route::get('{id}/edit','HandleEditDocument')->name('edit');
-            Route::get('create','HandleCreateDocument')->name('create');
-        });
-        Route::get('report/accountability', [ReportController::class, 'HandleIndexReport'])->name('report.accountability');
-        Route::get('report/audit-log', [ReportController::class, 'HandleIndexAuditLog'])->name('report.audit-log');
-        Route::delete('{id}/area',[AreaController::class,'HandleDeleteArea'])->name('area.delete');
-        Route::name('area.')->prefix('area')->controller(AreaController::class)->group(function(){
-            Route::get('','HandleIndexArea')->name('index');
-            Route::post('','HandleStoreArea')->name('store');
-            Route::put('','HandleUpdateArea')->name('update');
-            Route::get('{id}/edit','HandleEditArea')->name('edit');
-            Route::get('create','HandleCreateArea')->name('create');
-        });
-        Route::delete('{id}/supplier',[SupplierController::class,'HandleDeleteSupplier'])->name('supplier.delete');
-        Route::name('supplier.')->prefix('supplier')->controller(SupplierController::class)->group(function(){
-            Route::get('','HandleIndexSupplier')->name('index');
-            Route::post('','HandleStoreSupplier')->name('store');
-            Route::put('','HandleUpdateSupplier')->name('update');
-            Route::get('{id}/edit','HandleEditSupplier')->name('edit');
-            Route::get('create','HandleCreateSupplier')->name('create');
+
+        // ── Solo Administrador ───────────────────────────────────────────────
+        Route::middleware('role:Administrador')->group(function(){
+            Route::name('management.')->prefix('management')->controller(ManagementController::class)->group(function(){
+                Route::get('','HandleIndexManagement')->name('index');
+                Route::post('','HandleUpdateManagement')->name('update');
+                Route::post('logo','HandleStoreImage')->name('logo');
+            });
+            Route::delete('{id}/user',[UserController::class,'HandleDeleteUser'])->name('user.delete');
+            Route::name('user.')->prefix('user')->controller(UserController::class)->group(function(){
+                Route::get('','HandleIndexUser')->name('index');
+                Route::post('','HandleStoreUser')->name('store');
+                Route::put('','HandleUpdateUser')->name('update');
+                Route::get('{id}/edit','HandleEditUser')->name('edit');
+                Route::get('create','HandleCreateUser')->name('create');
+            });
+            Route::delete('{id}/profile',[ProfileController::class,'HandleDeleteProfile'])->name('profile.delete');
+            Route::name('profile.')->prefix('profile')->controller(ProfileController::class)->group(function(){
+                Route::get('','HandleIndexProfile')->name('index');
+                Route::post('','HandleStoreProfile')->name('store');
+                Route::put('','HandleUpdateProfile')->name('update');
+                Route::get('{id}/edit','HandleEditProfile')->name('edit');
+                Route::get('create','HandleCreateProfile')->name('create');
+                Route::post('{id}/copy','HandleCopyProfile')->name('copy');
+            });
+            Route::delete('{id}/document',[DocumentController::class,'HandleDeleteDocument'])->name('document.delete');
+            Route::name('document.')->prefix('document')->controller(DocumentController::class)->group(function(){
+                Route::get('','HandleIndexDocument')->name('index');
+                Route::post('','HandleStoreDocument')->name('store');
+                Route::put('','HandleUpdateDocument')->name('update');
+                Route::get('{id}/edit','HandleEditDocument')->name('edit');
+                Route::get('create','HandleCreateDocument')->name('create');
+            });
+            Route::delete('{id}/area',[AreaController::class,'HandleDeleteArea'])->name('area.delete');
+            Route::name('area.')->prefix('area')->controller(AreaController::class)->group(function(){
+                Route::get('','HandleIndexArea')->name('index');
+                Route::post('','HandleStoreArea')->name('store');
+                Route::put('','HandleUpdateArea')->name('update');
+                Route::get('{id}/edit','HandleEditArea')->name('edit');
+                Route::get('create','HandleCreateArea')->name('create');
+            });
+            Route::delete('{id}/supplier',[SupplierController::class,'HandleDeleteSupplier'])->name('supplier.delete');
+            Route::name('supplier.')->prefix('supplier')->controller(SupplierController::class)->group(function(){
+                Route::get('','HandleIndexSupplier')->name('index');
+                Route::post('','HandleStoreSupplier')->name('store');
+                Route::put('','HandleUpdateSupplier')->name('update');
+                Route::get('{id}/edit','HandleEditSupplier')->name('edit');
+                Route::get('create','HandleCreateSupplier')->name('create');
+            });
+            Route::get('report/audit-log', [ReportController::class, 'HandleIndexAuditLog'])->name('report.audit-log');
         });
 
-        Route::name('accountability.')->prefix('accountability')->group(function(){
-            Route::name('authorization.')->prefix('authorization')->controller(AuthAccountabilityController::class)->group(function(){
+        // ── Administrador + Autorizador ──────────────────────────────────────
+        Route::middleware('role:Administrador,Autorizador')->group(function(){
+            Route::get('report/accountability', [ReportController::class, 'HandleIndexReport'])->name('report.accountability');
+            Route::name('accountability.authorization.')->prefix('accountability/authorization')->controller(AuthAccountabilityController::class)->group(function(){
                 Route::get('','HandleIndexAccountability')->name('index');
                 Route::get('pending-export','HandleIndexPendingExport')->name('pending-export');
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
@@ -109,6 +114,10 @@ Route::middleware('auth')->group(function() {
                     Route::get('{document_id}/edit','HandleEditDocument')->name('edit');
                 });
             });
+        });
+
+        // ── Todos los usuarios autenticados (Solicitante) ────────────────────
+        Route::name('accountability.')->prefix('accountability')->group(function(){
             Route::get('profiles',[AccountabilityProfileController::class,'HandleIndexProfiles'])->name('profiles');
             Route::name('manage.')->prefix('{profile_id}/manage')->controller(AccountabilityController::class)->group(function(){
                 Route::get('','HandleIndexAccountability')->name('index');
@@ -128,8 +137,8 @@ Route::middleware('auth')->group(function() {
                     Route::get('{document_id}/edit','HandleEditDocument')->name('edit');
                 });
             });
-
         });
+
     });
 
 });

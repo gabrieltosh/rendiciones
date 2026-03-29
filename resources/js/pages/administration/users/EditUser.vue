@@ -84,7 +84,7 @@
                                     <div class="form-label" for="device_name">
                                         Tipo <span class="text-red">*</span>
                                     </div>
-                                    <q-select v-model="form.type" :options="['Administrador', 'Usuario']" dense outlined
+                                    <q-select v-model="form.type" :options="['Administrador', 'Autorizador', 'Usuario']" dense outlined
                                         class="input-theme" type="password" />
                                     <div v-if="errors.type" class="container-error">
                                         <ul v-for="(

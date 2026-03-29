@@ -184,6 +184,7 @@
                         </q-item>
                     </q-expansion-item>
                     <q-item
+                        v-if="isAdminOrAutorizador"
                         clickable
                         class="cursor-pointer q-mx-md q-mb-md"
                         :active="active"
@@ -228,6 +229,7 @@
                         </q-item-section>
                     </q-item>
                     <q-item
+                        v-if="isAdminOrAutorizador"
                         clickable
                         class="cursor-pointer q-mx-md q-mb-md"
                         :active="active"
@@ -251,6 +253,7 @@
                         </q-item-section>
                     </q-item>
                     <q-item
+                        v-if="isAdminOrAutorizador"
                         clickable
                         class="cursor-pointer q-mx-md q-mb-md"
                         :active="active"
@@ -301,6 +304,10 @@ const active = ref(false);
 const page = usePage();
 const $q = useQuasar();
 const user = page.props.auth.user;
+
+const isAdminOrAutorizador = computed(() =>
+    user.type === 'Administrador' || user.type === 'Autorizador'
+);
 
 const name_profile = computed(() => {
     let words = user.name.split(" ");
