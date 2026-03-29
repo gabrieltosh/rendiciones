@@ -580,8 +580,13 @@ SQL;
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.authorization.index');
     }
-    public function HandleDetailAccountability($accountability_id)
+    public function HandleDetailAccountability(Request $request, $accountability_id)
     {
+        if ($request->has('from')) {
+            Session::put('detail_origin_' . $accountability_id, $request->from);
+        }
+        $from = Session::get('detail_origin_' . $accountability_id);
+
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $documents = AccountabilityDetail::where('accountability_id', $accountability_id)->get();
@@ -612,6 +617,7 @@ SQL;
                 'accountability' => $accountability,
                 'documents'      => $documents,
                 'audits'         => $audits,
+                'from'           => $from,
             ]
         );
     }

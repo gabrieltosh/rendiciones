@@ -30,8 +30,10 @@
                                 size="12px"
                                 no-caps
                                 flat
-                                aria-label="Volver a la lista de autorizaciones"
-                                @click="router.visit(route('panel.accountability.authorization.index'))"
+                                aria-label="Volver"
+                                @click="props.from === 'pending-export'
+                                    ? router.visit(route('panel.accountability.authorization.pending-export'))
+                                    : router.visit(route('panel.accountability.authorization.index'))"
                             />
                             <template v-if="!isAuthorized">
                                 <q-btn
@@ -621,6 +623,7 @@ import axios from "axios";
 const props = defineProps({
     title: String,
     data: Object,
+    from: { type: String, default: null },
     audits: {
         type: Array,
         default: () => [],

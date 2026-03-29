@@ -57,7 +57,7 @@
                                         <q-tooltip>Exportar a SAP</q-tooltip>
                                     </q-btn>
                                     <q-btn flat round dense size="sm" icon="visibility" color="primary"
-                                        @click="HandleOpenDetail(props.row)">
+                                        @click="HandleOpenDetail(props.row.id)">
                                         <q-tooltip>Ver detalle</q-tooltip>
                                     </q-btn>
                                     <q-btn flat round dense size="sm" icon="edit" color="secondary"
@@ -78,92 +78,6 @@
                 </q-table>
             </q-card>
         </div>
-
-        <!-- ── Modal Detalle ─────────────────────────────────────────── -->
-        <q-dialog v-model="detailDialog" maximized>
-            <q-card>
-                <q-card-section class="row items-center q-pb-none">
-                    <div class="text-h6 title-form">Detalle de Rendición</div>
-                    <q-space />
-                    <q-btn icon="close" flat round dense v-close-popup />
-                </q-card-section>
-
-                <q-card-section v-if="selectedRow">
-                    <!-- Encabezado -->
-                    <div class="row q-col-gutter-md q-mb-md">
-                        <div class="col-xs-12 col-sm-6 col-md-3">
-                            <div class="form-label">Usuario</div>
-                            <div class="text-body2">{{ selectedRow.user?.name }}</div>
-                        </div>
-                        <div class="col-xs-12 col-sm-6 col-md-3">
-                            <div class="form-label">Perfil</div>
-                            <div class="text-body2">{{ selectedRow.profile?.name }}</div>
-                        </div>
-                        <div class="col-xs-12 col-sm-6 col-md-3">
-                            <div class="form-label">Descripción</div>
-                            <div class="text-body2">{{ selectedRow.description }}</div>
-                        </div>
-                        <div class="col-xs-12 col-sm-6 col-md-3">
-                            <div class="form-label">Empleado</div>
-                            <div class="text-body2">{{ selectedRow.employee_name || '—' }}</div>
-                        </div>
-                        <div class="col-xs-12 col-sm-6 col-md-3">
-                            <div class="form-label">Fecha Inicio</div>
-                            <div class="text-body2">{{ selectedRow.start_date }}</div>
-                        </div>
-                        <div class="col-xs-12 col-sm-6 col-md-3">
-                            <div class="form-label">Fecha Fin</div>
-                            <div class="text-body2">{{ selectedRow.end_date }}</div>
-                        </div>
-                        <div class="col-xs-12 col-sm-6 col-md-3">
-                            <div class="form-label">Monto Total</div>
-                            <div class="text-body2 text-weight-bold">{{ formatAmount(selectedRow.total) }}</div>
-                        </div>
-                    </div>
-
-                    <!-- Documentos -->
-                    <div class="form-label q-mb-sm">Documentos / Gastos</div>
-                    <q-table
-                        :rows="selectedRow.detail || []"
-                        :columns="detailColumns"
-                        row-key="id"
-                        class="table-theme"
-                        flat bordered dense
-                        :pagination="{ rowsPerPage: 0 }"
-                        hide-bottom
-                    >
-                        <template v-slot:header="props">
-                            <q-tr :props="props">
-                                <q-th v-for="col in props.cols" :key="col.name" :props="props">
-                                    {{ col.label }}
-                                </q-th>
-                            </q-tr>
-                        </template>
-                        <template v-slot:body="props">
-                            <q-tr :props="props">
-                                <q-td key="document" :props="props">{{ props.row.document?.name }}</q-td>
-                                <q-td key="concept" :props="props">{{ props.row.concept }}</q-td>
-                                <q-td key="business_name" :props="props">{{ props.row.business_name }}</q-td>
-                                <q-td key="date" :props="props">{{ props.row.date }}</q-td>
-                                <q-td key="amount" :props="props" class="text-right">
-                                    {{ formatAmount(props.row.amount) }}
-                                </q-td>
-                                <q-td key="status" :props="props">
-                                    <q-badge :color="statusColor(props.row.status)" :label="props.row.status" />
-                                </q-td>
-                            </q-tr>
-                        </template>
-                        <template v-slot:no-data>
-                            <div class="full-width text-center q-pa-md text-grey-6">Sin documentos registrados</div>
-                        </template>
-                    </q-table>
-                </q-card-section>
-
-                <q-card-actions align="right">
-                    <q-btn flat label="Cerrar" color="primary" v-close-popup no-caps />
-                </q-card-actions>
-            </q-card>
-        </q-dialog>
 
         <!-- ── Modal Edición ─────────────────────────────────────────── -->
         <q-dialog v-model="editDialog" persistent>
@@ -255,7 +169,7 @@
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
@@ -267,10 +181,6 @@ const page = usePage();
 const data = ref(page.props.data);
 const filter = ref("");
 
-// ── Detail modal ────────────────────────────────────────────
-const detailDialog = ref(false);
-const selectedRow = ref(null);
-
 // ── Edit modal ──────────────────────────────────────────────
 const editDialog = ref(false);
 const editLoading = ref(false);
@@ -278,10 +188,10 @@ const editSaving = ref(false);
 const editData = ref(null);
 const editForm = ref({});
 const editErrors = ref({});
-const allAccounts = ref([]);
-const allEmployees = ref([]);
 const filteredAccounts = ref([]);
 const filteredEmployees = ref([]);
+const allAccounts = ref([]);
+const allEmployees = ref([]);
 
 const columns = [
     { name: "id",           align: "center", label: "ID",          field: "id",           sortable: true },
@@ -294,25 +204,10 @@ const columns = [
     { name: "actions",      align: "center", label: "Acciones",    field: "actions" },
 ];
 
-const detailColumns = [
-    { name: "document",     align: "left",   label: "Tipo",        field: row => row.document?.name },
-    { name: "concept",      align: "left",   label: "Concepto",    field: "concept" },
-    { name: "business_name",align: "left",   label: "Proveedor",   field: "business_name" },
-    { name: "date",         align: "center", label: "Fecha",       field: "date" },
-    { name: "amount",       align: "right",  label: "Monto",       field: "amount" },
-    { name: "status",       align: "center", label: "Estado",      field: "status" },
-];
-
 function formatAmount(val) {
     return Number(val ?? 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function statusColor(status) {
-    const map = { Aprobado: "positive", Rechazado: "negative", Pendiente: "warning" };
-    return map[status] ?? "grey";
-}
-
-// ── Acciones tabla ──────────────────────────────────────────
 function HandleReExport(id) {
     $q.dialog({
         title: "Exportar a SAP",
@@ -334,9 +229,8 @@ function HandleReExport(id) {
     });
 }
 
-function HandleOpenDetail(row) {
-    selectedRow.value = row;
-    detailDialog.value = true;
+function HandleOpenDetail(id) {
+    router.visit(route("panel.accountability.authorization.detail.index", id) + "?from=pending-export");
 }
 
 async function HandleOpenEdit(id) {
