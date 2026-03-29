@@ -544,7 +544,7 @@ const statusIcon = computed(() => {
         'Pendiente': 'schedule',
         'Rechazado': 'cancel',
         'Anulado': 'block',
-        'Autorizado': 'check_circle',
+        'Autorizado': accountability.sap_exported ? 'check_circle' : 'pending',
     };
     return icons[accountability.status] || 'info';
 });
@@ -554,7 +554,9 @@ const statusMessage = computed(() => {
         'Pendiente': 'La rendicion esta pendiente de autorizacion',
         'Anulado': `La rendicion fue anulada: ${accountability.comments}`,
         'Rechazado': `La rendicion fue rechazada: ${accountability.comments}`,
-        'Autorizado': 'La rendicion fue aprobada y exportada',
+        'Autorizado': accountability.sap_exported
+            ? 'La rendición fue aprobada y exportada a SAP'
+            : 'La rendición fue aprobada. Pendiente de exportación a SAP',
     };
     return messages[accountability.status] || null;
 });

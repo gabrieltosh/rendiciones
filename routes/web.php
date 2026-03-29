@@ -98,6 +98,7 @@ Route::middleware('auth')->group(function() {
             Route::name('accountability.authorization.')->prefix('accountability/authorization')->controller(AuthAccountabilityController::class)->group(function(){
                 Route::get('','HandleIndexAccountability')->name('index');
                 Route::get('pending-export','HandleIndexPendingExport')->name('pending-export');
+                Route::get('{id}/edit-data','HandleGetEditData')->name('edit-data');
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
                 Route::put('','HandleUpdateAccountability')->name('update');
                 Route::get('{id}/report','HandleGetReportAccountability')->name('report');

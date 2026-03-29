@@ -28,7 +28,7 @@ use Config;
 use App\Helpers\Hana;
 use App\Models\User;
 use Http;
-use OwenIt\Auditing\Models\Audit;
+use App\Models\Audit;
 class AccountabilityController extends Controller
 {
     public function HandleGetReportAccountability($profile_id, $accountability_id)

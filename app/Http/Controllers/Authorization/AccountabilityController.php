@@ -29,7 +29,7 @@ use App\Helpers\Hana;
 use App\Notifications\Accountability\StatusAccountabilityNotification;
 use App\Models\AccountabilityField;
 use App\Models\User;
-use OwenIt\Auditing\Models\Audit;
+use App\Models\Audit;
 class AccountabilityController extends Controller
 {
     public function HandleGetReportAccountability($accountability_id){
@@ -352,12 +352,34 @@ class AccountabilityController extends Controller
     public function HandleIndexPendingExport(Request $request)
     {
         Session::put('title', 'Pendientes de Exportación SAP');
-        $data = Accountability::with('user', 'profile')
+        $data = Accountability::with('user', 'profile', 'detail.document')
             ->where('status', 'Autorizado')
             ->where('sap_exported', 0)
             ->get();
         return Inertia::render('authorization/PendingExport', [
             'data' => $data,
+        ]);
+    }
+
+    public function HandleGetEditData($accountability_id)
+    {
+        $accountability = Accountability::with('user')->where('id', $accountability_id)->first();
+        $profile = Profile::where('id', $accountability->profile_id)->first();
+        $accounts = GeneralAccounts::select(
+            DB::raw("CONCAT(account_code,'-',account_name) as label"),
+            'account_code',
+            'account_name'
+        )->where('profile_id', $profile->id)->get();
+        $accountability->account = $accountability->account_code;
+        $accountability->employee = $accountability->employee_code;
+        $employees = Employee::where('profile_id', $profile->id)->get();
+        return response()->json([
+            'profile'        => $profile,
+            'accounts'       => $accounts,
+            'accountability' => $accountability,
+            'employees'      => $employees->count() == 0
+                ? $this->HandleGetUserEmployee($accountability->user->card_code)
+                : $employees,
         ]);
     }
 

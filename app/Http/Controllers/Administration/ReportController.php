@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Session;
 use DB;
-use OwenIt\Auditing\Models\Audit;
+use App\Models\Audit;
 
 class ReportController extends Controller
 {
