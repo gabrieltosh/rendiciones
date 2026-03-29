@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Carbon\Carbon;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Accountability extends Model
+class Accountability extends Model implements Auditable
 {
     use HasFactory;
+    use \OwenIt\Auditing\Auditable;
     protected $table='accountabilities';
     protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $fillable=[
@@ -25,7 +27,12 @@ class Accountability extends Model
         'start_date',
         'status',
         'end_date',
-        'comments'
+        'comments',
+        'sap_exported',
+    ];
+
+    protected $casts = [
+        'sap_exported' => 'boolean',
     ];
     public function createdAt(): Attribute
     {

@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function() {
             Route::get('create','HandleCreateDocument')->name('create');
         });
         Route::get('report/accountability', [ReportController::class, 'HandleIndexReport'])->name('report.accountability');
+        Route::get('report/audit-log', [ReportController::class, 'HandleIndexAuditLog'])->name('report.audit-log');
         Route::delete('{id}/area',[AreaController::class,'HandleDeleteArea'])->name('area.delete');
         Route::name('area.')->prefix('area')->controller(AreaController::class)->group(function(){
             Route::get('','HandleIndexArea')->name('index');
@@ -91,12 +92,15 @@ Route::middleware('auth')->group(function() {
         Route::name('accountability.')->prefix('accountability')->group(function(){
             Route::name('authorization.')->prefix('authorization')->controller(AuthAccountabilityController::class)->group(function(){
                 Route::get('','HandleIndexAccountability')->name('index');
+                Route::get('pending-export','HandleIndexPendingExport')->name('pending-export');
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
                 Route::put('','HandleUpdateAccountability')->name('update');
                 Route::get('{id}/report','HandleGetReportAccountability')->name('report');
                 Route::name('detail.')->prefix('{id}/detail')->group(function(){
                     Route::post('status','HandleUpdateStatus')->name('status');
                     Route::post('export','HandleExportSAP')->name('export');
+                    Route::post('force-authorize','HandleForceAuthorize')->name('force-authorize');
+                    Route::post('re-export','HandleReExportSAP')->name('re-export');
                     Route::get('','HandleDetailAccountability')->name('index');
                     Route::get('create','HandleCreateDocument')->name('create');
                     Route::post('store','HandleStoreDocument')->name('store');

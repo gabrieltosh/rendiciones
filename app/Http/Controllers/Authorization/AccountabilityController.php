@@ -29,6 +29,7 @@ use App\Helpers\Hana;
 use App\Notifications\Accountability\StatusAccountabilityNotification;
 use App\Models\AccountabilityField;
 use App\Models\User;
+use OwenIt\Auditing\Models\Audit;
 class AccountabilityController extends Controller
 {
     public function HandleGetReportAccountability($accountability_id){
@@ -300,35 +301,145 @@ class AccountabilityController extends Controller
                     ])->post('JournalVouchersService_Add', $journal_entries);
                 if ($response->successful()) {
                     Accountability::findOrFail($accountability_id)->fill([
-                        'status' => $request->status,
-                        'comments' => $request->comments,
+                        'status'       => $request->status,
+                        'comments'     => $request->comments,
+                        'sap_exported' => 1,
                     ])->save();
                     Session::flash('message', "Documento autorizado y exportado correctamente");
                     Session::flash('type', 'positive');
                     $accountability = Accountability::where('id', $accountability_id)->first();
-                    $user=User::where('id',$accountability->user_id)->first();
-                    $params=Management::where('group','accountability')->get();
-                    if($params->where('name','notification_email')->first()->value=='SI'){
+                    $user = User::where('id', $accountability->user_id)->first();
+                    $params = Management::where('group', 'accountability')->get();
+                    if ($params->where('name', 'notification_email')->first()->value == 'SI') {
                         $user->notify(new StatusAccountabilityNotification($accountability));
                     }
                     return Redirect::route('panel.accountability.authorization.index');
                 } else {
-                    Session::flash('message', $response->json()['error']['message']['value']);
+                    Session::flash('message', $response->json()['error']['message']['value'] ?? 'Error al exportar a SAP');
+                    Session::flash('type', 'negative');
+                    return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id);
+                }
+            } else {
+                Session::flash('message', $login->json()['error']['message']['value'] ?? 'Error al conectar con SAP');
+                Session::flash('type', 'negative');
+                return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id);
+            }
+        } catch (Throwable $e) {
+            Session::flash('message', $e->getMessage());
+            Session::flash('type', 'negative');
+            return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id);
+        }
+    }
+
+    public function HandleForceAuthorize($accountability_id, Request $request)
+    {
+        Accountability::findOrFail($accountability_id)->fill([
+            'status'       => 'Autorizado',
+            'comments'     => $request->comments,
+            'sap_exported' => 0,
+        ])->save();
+        $accountability = Accountability::where('id', $accountability_id)->first();
+        $user = User::where('id', $accountability->user_id)->first();
+        $params = Management::where('group', 'accountability')->get();
+        if ($params->where('name', 'notification_email')->first()->value == 'SI') {
+            $user->notify(new StatusAccountabilityNotification($accountability));
+        }
+        Session::flash('message', "Rendición autorizada. Pendiente de exportación a SAP");
+        Session::flash('type', 'warning');
+        return Redirect::route('panel.accountability.authorization.index');
+    }
+
+    public function HandleIndexPendingExport(Request $request)
+    {
+        Session::put('title', 'Pendientes de Exportación SAP');
+        $data = Accountability::with('user', 'profile')
+            ->where('status', 'Autorizado')
+            ->where('sap_exported', 0)
+            ->get();
+        return Inertia::render('authorization/PendingExport', [
+            'data' => $data,
+        ]);
+    }
+
+    public function HandleReExportSAP($accountability_id, Request $request)
+    {
+        $journal_entry_lines = [];
+        $management = Management::where('group', 'accountability_detail')->get();
+        $accountability = Accountability::where('id', $accountability_id)->first();
+        $documents = AccountabilityDetail::with('document.detail', 'field.document_field')
+            ->where('accountability_id', $accountability_id)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        foreach ($documents as $document) {
+            $journal_entry_lines = array_merge($journal_entry_lines, $this->HandleFormatLine($document, $management));
+        }
+
+        $total_debit = 0;
+        $total_credit = 0;
+        foreach ($journal_entry_lines as $line) {
+            $total_debit  += (float) $line['Debit'];
+            $total_credit += (float) $line['Credit'];
+        }
+        $debit = $total_debit - $total_credit;
+        $export_profile = Profile::where('id', $accountability->profile_id)->first();
+        $export_short_name = ($export_profile && $export_profile->sin_empleado)
+            ? $accountability->account_code
+            : $accountability->employee_code;
+
+        $last_line[] = [
+            'AccountCode' => $accountability->account_code,
+            'Debit'       => 0,
+            'Credit'      => $debit,
+            'ShortName'   => $export_short_name,
+            'LineMemo'    => $accountability->description,
+        ];
+        $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
+        $journal_entries = [
+            'JournalVoucher' => [
+                'JournalEntry' => [
+                    'Memo'              => $accountability->description,
+                    'ReferenceDate'     => $accountability->end_date,
+                    'TaxDate'           => $accountability->end_date,
+                    'DueDate'           => $accountability->end_date,
+                    'JournalEntryLines' => $journal_entry_lines,
+                ],
+            ],
+        ];
+
+        $params_sap = Management::where('group', 'accountability')->get();
+
+        try {
+            $login = Http::withoutVerifying()
+                ->baseUrl($params_sap->where('name', 'service_layer')->first()->value . '/b1s/v1/')
+                ->post('Login', [
+                    'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
+                    'UserName'  => $params_sap->where('name', 'user')->first()->value,
+                    'Password'  => $params_sap->where('name', 'password')->first()->value,
+                ]);
+            if ($login->successful()) {
+                $session  = $login['SessionId'];
+                $response = Http::baseUrl($params_sap->where('name', 'service_layer')->first()->value . '/b1s/v1/')
+                    ->withoutVerifying()
+                    ->withHeaders(['Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9'])
+                    ->post('JournalVouchersService_Add', $journal_entries);
+                if ($response->successful()) {
+                    Accountability::findOrFail($accountability_id)->fill(['sap_exported' => 1])->save();
+                    Session::flash('message', "Rendición exportada a SAP correctamente");
+                    Session::flash('type', 'positive');
+                } else {
+                    Session::flash('message', $response->json()['error']['message']['value'] ?? 'Error al exportar a SAP');
                     Session::flash('type', 'negative');
                 }
             } else {
-                Session::flash('message', $login->json()['error']['message']['value']);
+                Session::flash('message', $login->json()['error']['message']['value'] ?? 'Error al conectar con SAP');
                 Session::flash('type', 'negative');
             }
         } catch (Throwable $e) {
-            if ($e->getCode() === 7) {
-                Session::flash('message', $e->getMessage());
-                Session::flash('type', 'negative');
-            } else {
-                Session::flash('message', $e->getMessage());
-                Session::flash('type', 'negative');
-            }
+            Session::flash('message', $e->getMessage());
+            Session::flash('type', 'negative');
         }
+        return Redirect::route('panel.accountability.authorization.pending-export');
     }
     public function HandleIndexAccountability(Request $request)
     {
@@ -452,12 +563,33 @@ SQL;
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $documents = AccountabilityDetail::where('accountability_id', $accountability_id)->get();
+
+        $audits = Audit::where('auditable_type', Accountability::class)
+            ->where('auditable_id', $accountability_id)
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($audit) {
+                return [
+                    'id'         => $audit->id,
+                    'event'      => $audit->event,
+                    'user'       => $audit->user ? $audit->user->name : 'Sistema',
+                    'old_values' => $audit->old_values,
+                    'new_values' => $audit->new_values,
+                    'ip_address' => $audit->ip_address,
+                    'created_at' => \Carbon\Carbon::parse($audit->created_at)
+                                        ->setTimezone('America/La_Paz')
+                                        ->format('Y-m-d g:i A'),
+                ];
+            });
+
         return Inertia::render(
             'authorization/DetailAccountabilityNew',
             [
-                'profile' => $profile,
+                'profile'        => $profile,
                 'accountability' => $accountability,
-                'documents' => $documents,
+                'documents'      => $documents,
+                'audits'         => $audits,
             ]
         );
     }

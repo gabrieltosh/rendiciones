@@ -160,11 +160,20 @@
                                                 </div>
                                             </div>
                                             <div class="col-auto">
-                                                <q-badge
-                                                    :color="getStatusColor(row.status)"
-                                                    :label="row.status || 'Pendiente'"
-                                                    class="q-pa-xs"
-                                                />
+                                                <div class="column items-end q-gutter-xs">
+                                                    <q-badge
+                                                        :color="getStatusColor(row.status)"
+                                                        :label="row.status || 'Pendiente'"
+                                                        class="q-pa-xs"
+                                                    />
+                                                    <q-badge
+                                                        v-if="activeTab === 'authorized'"
+                                                        :color="getSapLocationColor(row)"
+                                                        :label="getSapLocationLabel(row)"
+                                                        class="q-pa-xs"
+                                                        outline
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </q-card-section>
@@ -344,10 +353,18 @@
                                         {{ props.row.end_date || '-' }}
                                     </q-td>
                                     <q-td key="status" :props="props">
-                                        <q-badge
-                                            :color="getStatusColor(props.row.status)"
-                                            :label="props.row.status || 'Pendiente'"
-                                        />
+                                        <div class="column items-start q-gutter-xs">
+                                            <q-badge
+                                                :color="getStatusColor(props.row.status)"
+                                                :label="props.row.status || 'Pendiente'"
+                                            />
+                                            <q-badge
+                                                v-if="activeTab === 'authorized'"
+                                                :color="getSapLocationColor(props.row)"
+                                                :label="getSapLocationLabel(props.row)"
+                                                outline
+                                            />
+                                        </div>
                                     </q-td>
                                     <q-td key="actions" :props="props">
                                         <div class="q-gutter-xs">
@@ -521,6 +538,15 @@ function getStatusColor(status) {
         Autorizado: "green",
     };
     return colors[status] || "blue-grey";
+}
+
+function getSapLocationLabel(row) {
+    if (row.sap_exported) return 'En SAP';
+    return 'Pendiente SAP';
+}
+
+function getSapLocationColor(row) {
+    return row.sap_exported ? 'positive' : 'warning';
 }
 
 function HandleEditAccountability(id) {

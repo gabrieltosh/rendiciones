@@ -28,6 +28,7 @@ use Config;
 use App\Helpers\Hana;
 use App\Models\User;
 use Http;
+use OwenIt\Auditing\Models\Audit;
 class AccountabilityController extends Controller
 {
     public function HandleGetReportAccountability($profile_id, $accountability_id)
@@ -253,12 +254,33 @@ SQL;
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $documents = AccountabilityDetail::where('accountability_id', $accountability_id)->get();
+
+        $audits = Audit::where('auditable_type', Accountability::class)
+            ->where('auditable_id', $accountability_id)
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($audit) {
+                return [
+                    'id'         => $audit->id,
+                    'event'      => $audit->event,
+                    'user'       => $audit->user ? $audit->user->name : 'Sistema',
+                    'old_values' => $audit->old_values,
+                    'new_values' => $audit->new_values,
+                    'ip_address' => $audit->ip_address,
+                    'created_at' => \Carbon\Carbon::parse($audit->created_at)
+                                        ->setTimezone('America/La_Paz')
+                                        ->format('Y-m-d g:i A'),
+                ];
+            });
+
         return Inertia::render(
             'accountability/DetailAccountabilityNew',
             [
-                'profile' => $profile,
+                'profile'        => $profile,
                 'accountability' => $accountability,
-                'documents' => $documents,
+                'documents'      => $documents,
+                'audits'         => $audits,
             ]
         );
     }

@@ -152,6 +152,61 @@
                     </q-card>
                 </q-expansion-item>
 
+                <!-- Historial de cambios -->
+                <q-expansion-item
+                    class="card-form q-mb-md overflow-hidden rounded-borders"
+                    icon="history"
+                    label="Historial de cambios"
+                    header-class="text-subtitle2 text-weight-medium"
+                    dense
+                >
+                    <q-card>
+                        <q-card-section>
+                            <div v-if="audits.length === 0" class="text-center q-pa-lg text-grey">
+                                Sin registros de cambios
+                            </div>
+                            <q-timeline v-else color="grey-5" layout="loose">
+                                <q-timeline-entry
+                                    v-for="audit in audits"
+                                    :key="audit.id"
+                                    :icon="auditIcon(audit.event)"
+                                    :color="auditColor(audit.event)"
+                                >
+                                    <template v-slot:title>
+                                        <span class="text-body2 text-weight-medium">{{ auditLabel(audit.event) }}</span>
+                                        <span class="text-caption text-grey q-ml-sm">por {{ audit.user }}</span>
+                                    </template>
+                                    <template v-slot:subtitle>
+                                        <span class="text-caption text-grey">{{ audit.created_at }}</span>
+                                        <span v-if="audit.ip_address" class="text-caption text-grey q-ml-sm">&middot; {{ audit.ip_address }}</span>
+                                    </template>
+
+                                    <div v-if="audit.event === 'updated' && Object.keys(audit.new_values).length" class="q-mt-xs">
+                                        <div
+                                            v-for="(val, field) in audit.new_values"
+                                            :key="field"
+                                            class="row q-col-gutter-sm q-mb-xs items-center"
+                                        >
+                                            <div class="col-xs-12 col-sm-3">
+                                                <q-badge color="grey-4" text-color="grey-8" :label="fieldLabel(field)" />
+                                            </div>
+                                            <div class="col-xs-5 col-sm-4 text-caption text-negative" style="word-break:break-word;">
+                                                {{ audit.old_values[field] ?? '—' }}
+                                            </div>
+                                            <div class="col-auto">
+                                                <q-icon name="arrow_forward" size="12px" color="grey" />
+                                            </div>
+                                            <div class="col-xs-5 col-sm-4 text-caption text-positive" style="word-break:break-word;">
+                                                {{ val ?? '—' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </q-timeline-entry>
+                            </q-timeline>
+                        </q-card-section>
+                    </q-card>
+                </q-expansion-item>
+
                 <!-- Documents Section -->
                 <q-card class="card-form">
                     <!-- Toolbar -->
@@ -563,15 +618,52 @@ import { route } from "ziggy-js";
 import { useQuasar, openURL } from "quasar";
 import axios from "axios";
 
-defineProps({
+const props = defineProps({
     title: String,
     data: Object,
+    audits: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const $q = useQuasar();
 const page = usePage();
 const accountability = page.props.accountability;
 const documents = ref(page.props.documents);
+const audits = page.props.audits ?? [];
+
+const FIELD_LABELS = {
+    status:           'Estado',
+    comments:         'Comentarios',
+    total:            'Total',
+    description:      'Descripción',
+    start_date:       'Fecha Inicio',
+    end_date:         'Fecha Fin',
+    account_code:     'Código Cuenta',
+    account_name:     'Nombre Cuenta',
+    employee_code:    'Código Empleado',
+    employee_name:    'Empleado',
+};
+
+function fieldLabel(field) {
+    return FIELD_LABELS[field] ?? field;
+}
+
+function auditLabel(event) {
+    const labels = { created: 'Creado', updated: 'Modificado', deleted: 'Eliminado' };
+    return labels[event] ?? event;
+}
+
+function auditIcon(event) {
+    const icons = { created: 'add_circle', updated: 'edit', deleted: 'delete' };
+    return icons[event] ?? 'info';
+}
+
+function auditColor(event) {
+    const colors = { created: 'positive', updated: 'primary', deleted: 'negative' };
+    return colors[event] ?? 'grey';
+}
 const filter = ref("");
 const expandedRows = ref({});
 const selectedFactura = ref(null);
@@ -756,7 +848,29 @@ function HandleAuthorizeStatus(status) {
         router.post(
             route("panel.accountability.authorization.detail.export", accountability.id),
             { status, comments: null },
-            { onSuccess: notifyFlash }
+            {
+                onSuccess: () => {
+                    if (page.props.flash?.type === 'negative') {
+                        $q.dialog({
+                            title: "Error al exportar a SAP",
+                            message: `${page.props.flash.message}.\n\n¿Desea autorizar la rendición sin exportar a SAP? Quedará pendiente de exportación.`,
+                            cancel: { label: "Cancelar", flat: true, noCaps: true },
+                            ok: { label: "Autorizar sin SAP", color: "warning", noCaps: true },
+                            persistent: true,
+                        }).onOk(() => {
+                            router.post(
+                                route("panel.accountability.authorization.detail.force-authorize", accountability.id),
+                                { comments: null },
+                                { onSuccess: notifyFlash }
+                            );
+                        }).onCancel(() => {
+                            $q.notify({ type: 'negative', message: page.props.flash.message });
+                        });
+                    } else {
+                        notifyFlash();
+                    }
+                },
+            }
         );
     });
 }

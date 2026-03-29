@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Carbon\Carbon;
 use App\Models\Document;
-class Profile extends Model
+use OwenIt\Auditing\Contracts\Auditable;
+
+class Profile extends Model implements Auditable
 {
     use HasFactory;
+    use \OwenIt\Auditing\Auditable;
     protected $table='profiles';
     protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $fillable=[

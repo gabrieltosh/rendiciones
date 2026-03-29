@@ -9,9 +9,14 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Carbon\Carbon;
-class User extends Authenticatable
+use OwenIt\Auditing\Contracts\Auditable;
+
+class User extends Authenticatable implements Auditable
 {
     use HasApiTokens, HasFactory, Notifiable;
+    use \OwenIt\Auditing\Auditable;
+
+    protected $auditExclude = ['password', 'remember_token'];
 
     protected $dateFormat = 'Y-m-d\TH:i:s';
 

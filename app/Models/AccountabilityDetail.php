@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Carbon\Carbon;
-class AccountabilityDetail extends Model
+use OwenIt\Auditing\Contracts\Auditable;
+
+class AccountabilityDetail extends Model implements Auditable
 {
     use HasFactory;
+    use \OwenIt\Auditing\Auditable;
     protected $table='accountability_details';
     protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $fillable=[

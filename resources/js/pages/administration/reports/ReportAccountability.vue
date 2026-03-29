@@ -64,6 +64,21 @@
                                 clearable
                             />
                         </div>
+                        <div class="col-xs-12 col-sm-6 col-md-2">
+                            <div class="form-label">Estado SAP</div>
+                            <q-select
+                                v-model="filters.sap_status"
+                                :options="sapStatusOptions"
+                                option-value="value"
+                                option-label="label"
+                                emit-value
+                                map-options
+                                dense
+                                outlined
+                                class="input-theme"
+                                clearable
+                            />
+                        </div>
                         <div class="col-xs-12 col-sm-12 col-md-2 flex items-end">
                             <div class="row q-gutter-sm full-width">
                                 <q-btn
@@ -154,6 +169,12 @@
                                     :label="props.row.status"
                                 />
                             </q-td>
+                            <q-td key="sap_location" :props="props">
+                                <q-badge
+                                    :color="sapLocationColor(props.row)"
+                                    :label="sapLocationLabel(props.row)"
+                                />
+                            </q-td>
                         </q-tr>
                     </template>
 
@@ -187,11 +208,18 @@ const data = ref(page.props.data);
 
 const initialFilters = page.props.filters ?? {};
 const filters = ref({
-    area_id:   initialFilters.area_id   ?? null,
-    user_id:   initialFilters.user_id   ?? null,
-    date_from: initialFilters.date_from ?? null,
-    date_to:   initialFilters.date_to   ?? null,
+    area_id:    initialFilters.area_id    ?? null,
+    user_id:    initialFilters.user_id    ?? null,
+    date_from:  initialFilters.date_from  ?? null,
+    date_to:    initialFilters.date_to    ?? null,
+    sap_status: initialFilters.sap_status ?? null,
 });
+
+const sapStatusOptions = [
+    { value: 'exported',       label: 'En ambos sistemas'      },
+    { value: 'pending',        label: 'Autorizado (sin SAP)'   },
+    { value: 'not_authorized', label: 'Solo en Rendiciones'    },
+];
 
 const searched = ref(Object.values(initialFilters).some(v => v));
 const table = ref({
@@ -207,6 +235,7 @@ const table = ref({
         { name: "end_date",     align: "center", label: "Fecha Fin",     field: "end_date",     sortable: true },
         { name: "total",        align: "right",  label: "Monto",         field: "total",        sortable: true },
         { name: "status",       align: "center", label: "Estado",        field: "status",       sortable: true },
+        { name: "sap_location", align: "center", label: "Ubicación",      field: "sap_location", sortable: false },
     ],
 });
 
@@ -238,6 +267,17 @@ function onAreaChange() {
     }
 }
 
+function HandleClear() {
+    filters.value = { area_id: null, user_id: null, date_from: null, date_to: null, sap_status: null };
+    router.get(route("panel.report.accountability"), {}, {
+        preserveState: true,
+        onSuccess: () => {
+            data.value = page.props.data;
+            searched.value = false;
+        },
+    });
+}
+
 function HandleSearch() {
     router.get(route("panel.report.accountability"), filters.value, {
         preserveState: true,
@@ -248,16 +288,6 @@ function HandleSearch() {
     });
 }
 
-function HandleClear() {
-    filters.value = { area_id: null, user_id: null, date_from: null, date_to: null };
-    router.get(route("panel.report.accountability"), {}, {
-        preserveState: true,
-        onSuccess: () => {
-            data.value = page.props.data;
-            searched.value = false;
-        },
-    });
-}
 
 const totalAmount = computed(() => {
     const sum = data.value.reduce((acc, row) => acc + parseFloat(row.total ?? 0), 0);
@@ -271,5 +301,17 @@ function formatAmount(val) {
 function statusColor(status) {
     const map = { Pendiente: "orange", Rechazado: "red", Autorizado: "green", Anulado: "grey" };
     return map[status] ?? "grey";
+}
+
+function sapLocationLabel(row) {
+    if (row.status === 'Autorizado' && row.sap_exported) return 'Rendiciones + SAP';
+    if (row.status === 'Autorizado' && !row.sap_exported) return 'Pendiente SAP';
+    return 'Solo Rendiciones';
+}
+
+function sapLocationColor(row) {
+    if (row.status === 'Autorizado' && row.sap_exported) return 'positive';
+    if (row.status === 'Autorizado' && !row.sap_exported) return 'warning';
+    return 'blue-grey';
 }
 </script>
