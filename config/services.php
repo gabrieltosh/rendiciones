@@ -31,4 +31,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'siat' => [
+        'api' => env('SIAT_API_URL', base64_decode('aHR0cHM6Ly9zaWF0cmVzdC5pbXB1ZXN0b3MuZ29iLmJvL3NyZS1zZmUtc2hhcmVkLXYyLXJlc3QvY29uc3VsdGEvZmFjdHVyYQ==')),
+        'origin' => env('SIAT_ORIGIN_URL', base64_decode('aHR0cHM6Ly9zaWF0LmltcHVlc3Rvcy5nb2IuYm8=')),
+    ],
+
 ];

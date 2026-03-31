@@ -262,25 +262,25 @@ SQL;
             ->get()
             ->map(function ($audit) {
                 return [
-                    'id'         => $audit->id,
-                    'event'      => $audit->event,
-                    'user'       => $audit->user ? $audit->user->name : 'Sistema',
+                    'id' => $audit->id,
+                    'event' => $audit->event,
+                    'user' => $audit->user ? $audit->user->name : 'Sistema',
                     'old_values' => $audit->old_values,
                     'new_values' => $audit->new_values,
                     'ip_address' => $audit->ip_address,
                     'created_at' => \Carbon\Carbon::parse($audit->created_at)
-                                        ->setTimezone('America/La_Paz')
-                                        ->format('Y-m-d g:i A'),
+                        ->setTimezone('America/La_Paz')
+                        ->format('Y-m-d g:i A'),
                 ];
             });
 
         return Inertia::render(
             'accountability/DetailAccountabilityNew',
             [
-                'profile'        => $profile,
+                'profile' => $profile,
                 'accountability' => $accountability,
-                'documents'      => $documents,
-                'audits'         => $audits,
+                'documents' => $documents,
+                'audits' => $audits,
             ]
         );
     }
@@ -517,11 +517,14 @@ SQL;
         }
 
         try {
+            $origin_url = config('services.siat.origin');
+            $api_url = config('services.siat.api');
+
             $response = Http::withoutVerifying()->withHeaders([
                 'Accept' => 'application/json, text/plain, */*',
-                'Origin' => 'https://siat.impuestos.gob.bo',
-                'Referer' => 'https://siat.impuestos.gob.bo/',
-            ])->put('https://siatrest.impuestos.gob.bo/sre-sfe-shared-v2-rest/consulta/factura', [
+                'Origin' => $origin_url,
+                'Referer' => $origin_url . '/',
+            ])->put($api_url, [
                         'cuf' => $cuf,
                         'nitEmisor' => (int) $nit,
                         'numeroFactura' => (int) $numero,

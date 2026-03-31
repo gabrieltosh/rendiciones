@@ -35,8 +35,8 @@
                                     ? router.visit(route('panel.accountability.authorization.pending-export'))
                                     : router.visit(route('panel.accountability.authorization.index'))"
                             />
-                            <template v-if="!isAuthorized">
                                 <q-btn
+                                    v-if="accountability.status !== 'Anulado'"
                                     color="grey"
                                     label="Anular"
                                     size="12px"
@@ -45,6 +45,7 @@
                                     aria-label="Anular rendicion"
                                     @click="HandleCancelStatus('Anulado')"
                                 />
+                            <template v-if="!isAuthorized">
                                 <q-btn
                                     color="negative"
                                     label="Rechazar"
