@@ -21,7 +21,7 @@ use App\Http\Requests\Accountability\AccountabilityRequest;
 use DB;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Http;
-use Throwable ;
+use Throwable;
 use App\Models\Management;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Config;
@@ -30,22 +30,25 @@ use App\Notifications\Accountability\StatusAccountabilityNotification;
 use App\Models\AccountabilityField;
 use App\Models\User;
 use App\Models\Audit;
+use Log;
+
 class AccountabilityController extends Controller
 {
-    public function HandleGetReportAccountability($accountability_id){
-        $params=Management::where('group','company')->get();
-        $company=[
-            'company_name'=>$params->where('name','company_name')->first()->value,
-            'company_location'=>$params->where('name','company_location')->first()->value,
-            'nit'=>$params->where('name','nit')->first()->value,
-            'logo'=>$params->where('name','logo')->first()->value,
+    public function HandleGetReportAccountability($accountability_id)
+    {
+        $params = Management::where('group', 'company')->get();
+        $company = [
+            'company_name' => $params->where('name', 'company_name')->first()->value,
+            'company_location' => $params->where('name', 'company_location')->first()->value,
+            'nit' => $params->where('name', 'nit')->first()->value,
+            'logo' => $params->where('name', 'logo')->first()->value,
         ];
-        $data=Accountability::with('profile','user','detail.document')
-                    ->where('id',$accountability_id)
-                    ->first();
-        $pdf = Pdf::loadView('pdf.accountability_detail',[
-            'data'=>$data,
-            'company'=>$company
+        $data = Accountability::with('profile', 'user', 'detail.document')
+            ->where('id', $accountability_id)
+            ->first();
+        $pdf = Pdf::loadView('pdf.accountability_detail', [
+            'data' => $data,
+            'company' => $company
         ]);
         $pdf->setPaper('letter', 'portrait');
         return $pdf->stream();
@@ -65,7 +68,7 @@ class AccountabilityController extends Controller
         //$operation = $document_line->document->type_calculation == 'Grossing Up' ? 1 : -1;
 
         foreach ($document_line->document->field as $field) {
-            $amount_line = $document_line->amount+($field->document_field->type_calculation == 'Credito' ? 1 : -1)* $field->value;
+            $amount_line = $document_line->amount + ($field->document_field->type_calculation == 'Credito' ? 1 : -1) * $field->value;
             $detail_lines[] = [
                 'AccountCode' => $field->account,
                 'Debit' => $field->document_field->type_calculation == 'Credito' ? 0 : $field->value,
@@ -105,24 +108,25 @@ class AccountabilityController extends Controller
 
         return array_merge($journal, $detail_lines);
     }
-    public function HandleGetReport($accountability_id){
+    public function HandleGetReport($accountability_id)
+    {
         $journal_entry_lines = array();
         $management = Management::where('group', 'accountability_detail')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $documents = AccountabilityDetail::with('document.detail','document.field.document_field')->where('accountability_id', $accountability_id)->orderBy('id', 'asc')->get();
-        $exchange=DB::connection('sap')
-                    ->table('ORTT as T1')
-                    ->select('Rate')
-                    ->where('Currency','USD')
-                    ->where('RateDate',$accountability->end_date)
-                    ->first();
+        $documents = AccountabilityDetail::with('document.detail', 'document.field.document_field')->where('accountability_id', $accountability_id)->orderBy('id', 'asc')->get();
+        $exchange = DB::connection('sap')
+            ->table('ORTT as T1')
+            ->select('Rate')
+            ->where('Currency', 'USD')
+            ->where('RateDate', $accountability->end_date)
+            ->first();
         foreach ($documents as $document) {
             foreach ($document->document->detail as $key => $value) {
-                $value->account_name=DB::connection('sap')
-                                    ->table('OACT as T1')
-                                    ->select('T1.AcctCode','T1.AcctName')
-                                    ->where('T1.AcctCode',$value->account)
-                                    ->first()->AcctName;
+                $value->account_name = DB::connection('sap')
+                    ->table('OACT as T1')
+                    ->select('T1.AcctCode', 'T1.AcctName')
+                    ->where('T1.AcctCode', $value->account)
+                    ->first()->AcctName;
             }
         }
         foreach ($documents as $document) {
@@ -150,10 +154,10 @@ class AccountabilityController extends Controller
         ];
         $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
 
-        $pdf = Pdf::loadView('pdf.accountability',[
-            'accountability'=>$accountability,
-            'documents'=>$journal_entry_lines,
-            'exchange'=>isset($exchange->Rate)?$exchange->Rate:0
+        $pdf = Pdf::loadView('pdf.accountability', [
+            'accountability' => $accountability,
+            'documents' => $journal_entry_lines,
+            'exchange' => isset($exchange->Rate) ? $exchange->Rate : 0
         ]);
         return $pdf->stream();
     }
@@ -162,7 +166,7 @@ class AccountabilityController extends Controller
         $journal = [];
         $detail_lines = [];
         $total = 0;
-        $amount_line=$document_line->amount;
+        $amount_line = $document_line->amount;
         //$exento_percentage = $document_line->document->exento / 100;
         $rate_percentage = $document_line->document->tasas / 100;
         $ice_percentage = $document_line->document->ice / 100;
@@ -173,7 +177,7 @@ class AccountabilityController extends Controller
         // $operation = $document_line->document->type_calculation == 'Grossing Up' ? 1 : -1;
 
         foreach ($document_line->field as $field) {
-            $amount_line += ($field->document_field->type_calculation == 'Credito' ? 1 : -1)* $field->value;
+            $amount_line += ($field->document_field->type_calculation == 'Credito' ? 1 : -1) * $field->value;
             $detail_lines[] = [
                 'AccountCode' => $field->document_field->account,
                 'Debit' => $field->document_field->type_calculation == 'Credito' ? 0 : $field->value,
@@ -185,14 +189,14 @@ class AccountabilityController extends Controller
         $total_ice = $document_line->ice_status ? $document_line->ice : $amount_line * $ice_percentage;
         $total_tasas = $document_line->tasas_status ? $document_line->tasas : $amount_line * $rate_percentage;
 
-        $max_exento=0;
+        $max_exento = 0;
         foreach ($document_line->document->detail as $detail) {
             $exento_percentage = $detail->exento / 100;
             $total_excento = $document_line->exento_status ? $document_line->exento : $amount_line * $exento_percentage;
-            $max_exento=$total_excento>$max_exento?$total_excento:$max_exento;
+            $max_exento = $total_excento > $max_exento ? $total_excento : $max_exento;
 
             //$amount = $amount_line - $total_excento - $total_tasas - $total_ice;
-            $amount = ($total_excento==0?$amount_line:$total_excento) + $total_tasas + $total_ice;
+            $amount = ($total_excento == 0 ? $amount_line : $total_excento) + $total_tasas + $total_ice;
 
             $operation = $detail->type_calculation == 'Grossing Up' ? 1 : -1;
             $percentage = $detail->percentage / 100;
@@ -242,7 +246,7 @@ class AccountabilityController extends Controller
         $journal_entry_lines = array();
         $management = Management::where('group', 'accountability_detail')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $documents = AccountabilityDetail::with('document.detail','field.document_field')->where('accountability_id', $accountability_id)->orderBy('id', 'desc')->get();
+        $documents = AccountabilityDetail::with('document.detail', 'field.document_field')->where('accountability_id', $accountability_id)->orderBy('id', 'desc')->get();
         foreach ($documents as $document) {
             //return $this->HandleFormatLine($document,$management);
             $journal_entry_lines = array_merge($journal_entry_lines, $this->HandleFormatLine($document, $management));
@@ -281,6 +285,7 @@ class AccountabilityController extends Controller
         ];
 
         //dd($journal_entries);
+        Log::info('SAP Export Data:', $journal_entries);
 
         $params_sap = Management::where('group', 'accountability')->get();
 
@@ -301,8 +306,8 @@ class AccountabilityController extends Controller
                     ])->post('JournalVouchersService_Add', $journal_entries);
                 if ($response->successful()) {
                     Accountability::findOrFail($accountability_id)->fill([
-                        'status'       => $request->status,
-                        'comments'     => $request->comments,
+                        'status' => $request->status,
+                        'comments' => $request->comments,
                         'sap_exported' => 1,
                     ])->save();
                     Session::flash('message', "Documento autorizado y exportado correctamente");
@@ -334,8 +339,8 @@ class AccountabilityController extends Controller
     public function HandleForceAuthorize($accountability_id, Request $request)
     {
         Accountability::findOrFail($accountability_id)->fill([
-            'status'       => 'Autorizado',
-            'comments'     => $request->comments,
+            'status' => 'Autorizado',
+            'comments' => $request->comments,
             'sap_exported' => 0,
         ])->save();
         $accountability = Accountability::where('id', $accountability_id)->first();
@@ -374,10 +379,10 @@ class AccountabilityController extends Controller
         $accountability->employee = $accountability->employee_code;
         $employees = Employee::where('profile_id', $profile->id)->get();
         return response()->json([
-            'profile'        => $profile,
-            'accounts'       => $accounts,
+            'profile' => $profile,
+            'accounts' => $accounts,
             'accountability' => $accountability,
-            'employees'      => $employees->count() == 0
+            'employees' => $employees->count() == 0
                 ? $this->HandleGetUserEmployee($accountability->user->card_code)
                 : $employees,
         ]);
@@ -400,7 +405,7 @@ class AccountabilityController extends Controller
         $total_debit = 0;
         $total_credit = 0;
         foreach ($journal_entry_lines as $line) {
-            $total_debit  += (float) $line['Debit'];
+            $total_debit += (float) $line['Debit'];
             $total_credit += (float) $line['Credit'];
         }
         $debit = $total_debit - $total_credit;
@@ -411,19 +416,19 @@ class AccountabilityController extends Controller
 
         $last_line[] = [
             'AccountCode' => $accountability->account_code,
-            'Debit'       => 0,
-            'Credit'      => $debit,
-            'ShortName'   => $export_short_name,
-            'LineMemo'    => $accountability->description,
+            'Debit' => 0,
+            'Credit' => $debit,
+            'ShortName' => $export_short_name,
+            'LineMemo' => $accountability->description,
         ];
         $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
         $journal_entries = [
             'JournalVoucher' => [
                 'JournalEntry' => [
-                    'Memo'              => $accountability->description,
-                    'ReferenceDate'     => $accountability->end_date,
-                    'TaxDate'           => $accountability->end_date,
-                    'DueDate'           => $accountability->end_date,
+                    'Memo' => $accountability->description,
+                    'ReferenceDate' => $accountability->end_date,
+                    'TaxDate' => $accountability->end_date,
+                    'DueDate' => $accountability->end_date,
                     'JournalEntryLines' => $journal_entry_lines,
                 ],
             ],
@@ -436,11 +441,11 @@ class AccountabilityController extends Controller
                 ->baseUrl($params_sap->where('name', 'service_layer')->first()->value . '/b1s/v1/')
                 ->post('Login', [
                     'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
-                    'UserName'  => $params_sap->where('name', 'user')->first()->value,
-                    'Password'  => $params_sap->where('name', 'password')->first()->value,
+                    'UserName' => $params_sap->where('name', 'user')->first()->value,
+                    'Password' => $params_sap->where('name', 'password')->first()->value,
                 ]);
             if ($login->successful()) {
-                $session  = $login['SessionId'];
+                $session = $login['SessionId'];
                 $response = Http::baseUrl($params_sap->where('name', 'service_layer')->first()->value . '/b1s/v1/')
                     ->withoutVerifying()
                     ->withHeaders(['Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9'])
@@ -480,7 +485,7 @@ class AccountabilityController extends Controller
             'authorization/IndexAccountabilityNew',
             [
                 'data' => $accountabilities,
-                'authorized'=>$authorized,
+                'authorized' => $authorized,
             ]
         );
     }
@@ -507,12 +512,13 @@ class AccountabilityController extends Controller
             ]
         );
     }
-    public function HandleGetUserEmployee($value){
+    public function HandleGetUserEmployee($value)
+    {
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
-            $db=Config::get('database.connections.hana.database');
-            $sql=
-<<<SQL
+            $db = Config::get('database.connections.hana.database');
+            $sql =
+                <<<SQL
             select
                 T1."CardCode" as "card_code",
                 T1."CardName" as "card_name"
@@ -520,24 +526,25 @@ class AccountabilityController extends Controller
             where T1."CardCode" = '$value'
 SQL;
             return Hana::query($sql);
-        }else{
+        } else {
             return DB::connection('sap')
-                    ->table('OCRD')
-                    ->select(
-                        'CardCode as card_code',
-                        'CardName as card_name'
-                    )
-                    ->where('CardCode', $value)
-                    ->get();
+                ->table('OCRD')
+                ->select(
+                    'CardCode as card_code',
+                    'CardName as card_name'
+                )
+                ->where('CardCode', $value)
+                ->get();
         }
     }
-    public function HandleGetEmployee($value){
+    public function HandleGetEmployee($value)
+    {
         $params_sap = Management::where('group', 'accountability')->get();
-        $hana=$params_sap->where('name', 'hana_enable')->first()->value == 'SI';
+        $hana = $params_sap->where('name', 'hana_enable')->first()->value == 'SI';
         if ($hana) {
-            $db=Config::get('database.connections.hana.database');
-            $sql=
-<<<SQL
+            $db = Config::get('database.connections.hana.database');
+            $sql =
+                <<<SQL
             select
                 T1."CardCode",
                 T1."CardName"
@@ -545,8 +552,8 @@ SQL;
             where T1."CardCode" = '$value'
 SQL;
             $query = Hana::query($sql);
-            return isset($query[0])?$query[0]:[];
-        }else{
+            return isset($query[0]) ? $query[0] : [];
+        } else {
             return DB::connection('sap')->table('OCRD')->select('CardCode', 'CardName')->where('CardCode', $value)->first();
         }
     }
@@ -554,7 +561,7 @@ SQL;
     {
         $account = GeneralAccounts::where('account_code', $request->account)->first();
         $params_sap = Management::where('group', 'accountability')->get();
-        $hana=$params_sap->where('name', 'hana_enable')->first()->value == 'SI';
+        $hana = $params_sap->where('name', 'hana_enable')->first()->value == 'SI';
         $auth_accountability = Accountability::where('id', $request->id)->first();
         $auth_profile = Profile::where('id', $auth_accountability->profile_id)->first();
 
@@ -598,26 +605,26 @@ SQL;
             ->get()
             ->map(function ($audit) {
                 return [
-                    'id'         => $audit->id,
-                    'event'      => $audit->event,
-                    'user'       => $audit->user ? $audit->user->name : 'Sistema',
+                    'id' => $audit->id,
+                    'event' => $audit->event,
+                    'user' => $audit->user ? $audit->user->name : 'Sistema',
                     'old_values' => $audit->old_values,
                     'new_values' => $audit->new_values,
                     'ip_address' => $audit->ip_address,
                     'created_at' => \Carbon\Carbon::parse($audit->created_at)
-                                        ->setTimezone('America/La_Paz')
-                                        ->format('Y-m-d g:i A'),
+                        ->setTimezone('America/La_Paz')
+                        ->format('Y-m-d g:i A'),
                 ];
             });
 
         return Inertia::render(
             'authorization/DetailAccountabilityNew',
             [
-                'profile'        => $profile,
+                'profile' => $profile,
                 'accountability' => $accountability,
-                'documents'      => $documents,
-                'audits'         => $audits,
-                'from'           => $from,
+                'documents' => $documents,
+                'audits' => $audits,
+                'from' => $from,
             ]
         );
     }
@@ -652,19 +659,19 @@ SQL;
             'rate_zero' => $request->rate_zero,
             'ice' => $request->ice,
             'project_code' => $request->project_code,
-            'distribution_rule_one' => $request->distribution_rule_one['OcrCode']??null,
-            'distribution_rule_second' => $request->distribution_rule_second['OcrCode']??null,
-            'distribution_rule_three' => $request->distribution_rule_three['OcrCode']??null,
-            'distribution_rule_four' => $request->distribution_rule_four['OcrCode']??null,
-            'distribution_rule_five' => $request->distribution_rule_five['OcrCode']??null,
+            'distribution_rule_one' => $request->distribution_rule_one['OcrCode'] ?? null,
+            'distribution_rule_second' => $request->distribution_rule_second['OcrCode'] ?? null,
+            'distribution_rule_three' => $request->distribution_rule_three['OcrCode'] ?? null,
+            'distribution_rule_four' => $request->distribution_rule_four['OcrCode'] ?? null,
+            'distribution_rule_five' => $request->distribution_rule_five['OcrCode'] ?? null,
         ])->save();
-        AccountabilityField::where('accountability_detail_id',$request->id)->delete();
+        AccountabilityField::where('accountability_detail_id', $request->id)->delete();
         foreach ($request->field as $key => $field) {
             AccountabilityField::create([
-                'value'=>$field['value'],
-                'field_id'=>$field['field_id']??$field['id'],
-                'name'=>$field['name'],
-                'accountability_detail_id'=>$request->id
+                'value' => $field['value'],
+                'field_id' => $field['field_id'] ?? $field['id'],
+                'name' => $field['name'],
+                'accountability_detail_id' => $request->id
             ]);
         }
         Session::flash('message', "Documento actualizado correctamente");
@@ -696,11 +703,11 @@ SQL;
             'rate_zero' => $request->rate_zero,
             'ice' => $request->ice,
             'project_code' => $request->project_code,
-            'distribution_rule_one' => $request->distribution_rule_one['OcrCode']??null,
-            'distribution_rule_second' => $request->distribution_rule_second['OcrCode']??null,
-            'distribution_rule_three' => $request->distribution_rule_three['OcrCode']??null,
-            'distribution_rule_four' => $request->distribution_rule_four['OcrCode']??null,
-            'distribution_rule_five' => $request->distribution_rule_five['OcrCode']??null,
+            'distribution_rule_one' => $request->distribution_rule_one['OcrCode'] ?? null,
+            'distribution_rule_second' => $request->distribution_rule_second['OcrCode'] ?? null,
+            'distribution_rule_three' => $request->distribution_rule_three['OcrCode'] ?? null,
+            'distribution_rule_four' => $request->distribution_rule_four['OcrCode'] ?? null,
+            'distribution_rule_five' => $request->distribution_rule_five['OcrCode'] ?? null,
         ]);
         Session::flash('message', "Documento creado correctamente");
         Session::flash('type', 'positive');
@@ -708,7 +715,7 @@ SQL;
     }
     public function HandleCreateDocument($accountability_id)
     {
-        $params=Management::where('group','supplier')->get();
+        $params = Management::where('group', 'supplier')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = DetailAccounts::select(
@@ -725,47 +732,48 @@ SQL;
                 'accountability' => $accountability,
                 'accounts' => $accounts,
                 'documents' => $documents,
-                'suppliers'=>$this->HandleGetSuppliers($params),
+                'suppliers' => $this->HandleGetSuppliers($params),
                 'distribution' => $this->HandleGetDistributions(),
                 'projects' => $this->HandleGetProjects(),
             ]
         );
     }
-    public function HandleGetSuppliers($params){
+    public function HandleGetSuppliers($params)
+    {
         $params_sap = Management::where('group', 'accountability')->get();
-        $business_name =$params->where('name','business_name')->first()->value;
-        $nit=$params->where('name','nit')->first()->value;
+        $business_name = $params->where('name', 'business_name')->first()->value;
+        $nit = $params->where('name', 'nit')->first()->value;
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
-            $db=Config::get('database.connections.hana.database');
-            $sql=
-<<<SQL
+            $db = Config::get('database.connections.hana.database');
+            $sql =
+                <<<SQL
                 select
                     T1."$business_name" as "business_name",
                     T1."$nit" as "nit"
                 from $db.OCRD as T1
 SQL;
             $sap_suppliers = Hana::query($sql);
-        }else{
+        } else {
             $sap_suppliers = DB::connection('sap')
-                        ->table('OCRD')
-                        ->select(
-                            $business_name.' as business_name' ,
-                            $nit.' as nit'
-                        )
-                        ->get()->toArray();
+                ->table('OCRD')
+                ->select(
+                    $business_name . ' as business_name',
+                    $nit . ' as nit'
+                )
+                ->get()->toArray();
         }
-        $bd_suppliers=AccountabilityDetail::select(
-                                                'business_name',
-                                                'nit'
-                                            )
-                                            ->groupBy('business_name','nit')
-                                            ->get()
-                                            ->toArray();
-        return array_merge($sap_suppliers,$bd_suppliers);
+        $bd_suppliers = AccountabilityDetail::select(
+            'business_name',
+            'nit'
+        )
+            ->groupBy('business_name', 'nit')
+            ->get()
+            ->toArray();
+        return array_merge($sap_suppliers, $bd_suppliers);
     }
     public function HandleEditDocument($accountability_id, $document_id)
     {
-        $params=Management::where('group','supplier')->get();
+        $params = Management::where('group', 'supplier')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = DetailAccounts::select(
@@ -776,11 +784,11 @@ SQL;
         $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
         $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
-        $data->distribution_rule_one = $this->HandleGetDistribution( $data->distribution_rule_one, 1);
-        $data->distribution_rule_second = $this->HandleGetDistribution( $data->distribution_rule_second, 2);
-        $data->distribution_rule_three = $this->HandleGetDistribution( $data->distribution_rule_three, 3);
-        $data->distribution_rule_four = $this->HandleGetDistribution( $data->distribution_rule_four, 4);
-        $data->distribution_rule_five = $this->HandleGetDistribution( $data->distribution_rule_five, 5);
+        $data->distribution_rule_one = $this->HandleGetDistribution($data->distribution_rule_one, 1);
+        $data->distribution_rule_second = $this->HandleGetDistribution($data->distribution_rule_second, 2);
+        $data->distribution_rule_three = $this->HandleGetDistribution($data->distribution_rule_three, 3);
+        $data->distribution_rule_four = $this->HandleGetDistribution($data->distribution_rule_four, 4);
+        $data->distribution_rule_five = $this->HandleGetDistribution($data->distribution_rule_five, 5);
 
         return Inertia::render(
             'authorization/Detail/EditDetail',
@@ -789,21 +797,21 @@ SQL;
                 'accountability' => $accountability,
                 'accounts' => $accounts,
                 'documents' => $documents,
-                'suppliers'=>$this->HandleGetSuppliers($params),
+                'suppliers' => $this->HandleGetSuppliers($params),
                 'data' => $data,
                 'distribution' => $this->HandleGetDistributions(),
                 'projects' => $this->HandleGetProjects(),
             ]
         );
     }
-    public function HandleGetDistribution($code,$number)
+    public function HandleGetDistribution($code, $number)
     {
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
             $data = array();
-            $db=Config::get('database.connections.hana.database');
-            $sql=
-<<<SQL
+            $db = Config::get('database.connections.hana.database');
+            $sql =
+                <<<SQL
             select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName",T1."OcrCode"
             from $db.OOCR as T1
             where T1."DimCode" = $number
@@ -812,7 +820,7 @@ SQL;
             order by T1."OcrCode"
 SQL;
             $data = Hana::query($sql);
-            return $data[0]??[];
+            return $data[0] ?? [];
         } else {
             $data = array();
             for ($i = 1; $i <= 5; $i++) {
@@ -831,19 +839,20 @@ SQL;
             return $data;
         }
     }
-    public function HandleGetProjects(){
+    public function HandleGetProjects()
+    {
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
-            $db=Config::get('database.connections.hana.database');
-            $sql=
-<<<SQL
+            $db = Config::get('database.connections.hana.database');
+            $sql =
+                <<<SQL
                 select
                     T1."PrjCode",
                     CONCAT(CONCAT(T1."PrjCode",'-'),T1."PrjName") as "PrjName"
                 from $db.OPRJ as T1
 SQL;
             return Hana::query($sql);
-        }else{
+        } else {
             return DB::connection('sap')
                 ->table('OPRJ as T1')
                 ->select(
@@ -858,10 +867,10 @@ SQL;
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
             $data = array();
-            $db=Config::get('database.connections.hana.database');
+            $db = Config::get('database.connections.hana.database');
             for ($i = 1; $i <= 5; $i++) {
-                $sql=
-<<<SQL
+                $sql =
+                    <<<SQL
                select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName",T1."OcrCode"
                 from $db.OOCR as T1
                 where T1."DimCode" = $i
@@ -895,10 +904,10 @@ SQL;
             'status' => $request->status,
             'comments' => $request->comments,
         ])->save();
-        $accountability=Accountability::where('id',$accountability_id)->first();
-        $user=User::where('id',$accountability->user_id)->first();
-        $params=Management::where('group','accountability')->get();
-        if($params->where('name','notification_email')->first()->value=='SI'){
+        $accountability = Accountability::where('id', $accountability_id)->first();
+        $user = User::where('id', $accountability->user_id)->first();
+        $params = Management::where('group', 'accountability')->get();
+        if ($params->where('name', 'notification_email')->first()->value == 'SI') {
             $user->notify(new StatusAccountabilityNotification($accountability));
         }
         Session::flash('message', "Documento enviado correctamente");
