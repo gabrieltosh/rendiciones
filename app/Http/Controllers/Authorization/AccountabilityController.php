@@ -211,12 +211,8 @@ class AccountabilityController extends Controller
             ];
         }
         $total += $amount_line;
-        $journal[] = [
-            'AccountCode' => $document_line->account,
-            'Debit' => $total,
-            'Credit' => 0,
-            'ShortName' => $document_line->account,
-            'LineMemo' => $document_line->concept,
+        
+        $udfs = [
             'ProjectCode' => $document_line->project_code,
             'CostingCode' => $document_line->distribution_rule_one,
             'CostingCode2' => $document_line->distribution_rule_second,
@@ -238,6 +234,18 @@ class AccountabilityController extends Controller
             $management->where('name', 'ice')->first()->value => $document_line->ice,
             $management->where('name', 'document_type')->first()->value => $document_line->document->type_document_sap
         ];
+
+        $journal[] = array_merge([
+            'AccountCode' => $document_line->account,
+            'Debit' => $total,
+            'Credit' => 0,
+            'ShortName' => $document_line->account,
+            'LineMemo' => $document_line->concept,
+        ], $udfs);
+
+        foreach ($detail_lines as &$d_line) {
+            $d_line = array_merge($d_line, $udfs);
+        }
 
         return array_merge($journal, $detail_lines);
     }
