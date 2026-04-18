@@ -224,7 +224,7 @@
                                                 </q-item-section>
                                                 <q-item-section>
                                                     <q-item-label class="text-caption ellipsis">
-                                                        {{ row.account_name || '-' }}
+                                                        {{ row.account_alias || row.account_name || '-' }}
                                                     </q-item-label>
                                                 </q-item-section>
                                             </q-item>
@@ -338,7 +338,7 @@
                                     </q-td>
                                     <q-td key="account_name" :props="props">
                                         <span class="ellipsis" style="max-width: 180px; display: inline-block;">
-                                            {{ props.row.account_name || '-' }}
+                                            {{ props.row.account_alias || props.row.account_name || '-' }}
                                         </span>
                                     </q-td>
                                     <q-td key="total" :props="props">
@@ -523,6 +523,7 @@ const filteredActiveRows = computed(() => {
         return (
             (row.description && row.description.toLowerCase().includes(needle)) ||
             (row.employee_name && row.employee_name.toLowerCase().includes(needle)) ||
+            (row.account_alias && row.account_alias.toLowerCase().includes(needle)) ||
             (row.account_name && row.account_name.toLowerCase().includes(needle)) ||
             (row.user?.name && row.user.name.toLowerCase().includes(needle)) ||
             (row.id && String(row.id).includes(needle))

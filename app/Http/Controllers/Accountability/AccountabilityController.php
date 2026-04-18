@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AccountabilityDetail;
 use App\Models\GeneralAccounts;
 use App\Models\DetailAccounts;
+use App\Models\AccountAlias;
 use App\Models\Accountability;
 use App\Models\Management;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Config;
 use App\Helpers\Hana;
 use App\Models\User;
+use App\Models\UserAuthorizationCycle;
 use Http;
 use App\Models\Audit;
 class AccountabilityController extends Controller
@@ -53,15 +55,37 @@ class AccountabilityController extends Controller
     public function HandleUpdateStatus($profile_id, $accountability_id, Request $request)
     {
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $user = User::with('user_authorization')->where('id', $accountability->user_id)->first();
-        $authorizations = User::whereIn('id', $user->user_authorization->pluck('auth_user_id'))->get();
+        $user = User::with('user_authorization', 'authorizationCycle.cycle.levels.levelUsers.user')
+            ->where('id', $accountability->user_id)->first();
+
+        // Determine first level of cycle (if assigned) and notify accordingly
+        $cycleRecord = UserAuthorizationCycle::with('cycle.levels.levelUsers.user')
+            ->where('user_id', $user->id)
+            ->first();
+
+        $firstLevel = null;
+        if ($cycleRecord && $cycleRecord->cycle && $cycleRecord->cycle->levels->isNotEmpty()) {
+            $firstLevel = $cycleRecord->cycle->levels->first();
+        }
+
         Accountability::findOrFail($accountability_id)->fill([
-            'status' => $request->status
+            'status'           => $request->status,
+            'current_level_id' => $firstLevel ? $firstLevel->id : null,
         ])->save();
+
         $params = Management::where('group', 'accountability')->get();
         if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-            Notification::send($authorizations, new CreateAccountabilityNotification($accountability));
+            if ($firstLevel) {
+                // Notify cycle level authorizers
+                $levelAuthorizers = User::whereIn('id', $firstLevel->levelUsers->pluck('user_id'))->get();
+                Notification::send($levelAuthorizers, new CreateAccountabilityNotification($accountability));
+            } else {
+                // Legacy: notify direct authorizers
+                $authorizations = User::whereIn('id', $user->user_authorization->pluck('auth_user_id'))->get();
+                Notification::send($authorizations, new CreateAccountabilityNotification($accountability));
+            }
         }
+
         Session::flash('message', "Documento enviado correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
@@ -114,11 +138,16 @@ class AccountabilityController extends Controller
         $params = Management::where('group', 'supplier')->get();
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $accounts = DetailAccounts::select(
-            DB::raw("CONCAT(account_code,'-',account_name) as label"),
-            'account_code',
-            'account_name'
-        )->where('profile_id', $profile->id)->get();
+        $detailRows = DetailAccounts::select('account_code', 'account_name')
+            ->where('profile_id', $profile->id)->get();
+        $aliasMap = AccountAlias::whereIn('acct_code', $detailRows->pluck('account_code'))
+            ->pluck('alias', 'acct_code');
+        $accounts = $detailRows->map(fn($a) => (object)[
+            'account_code' => $a->account_code,
+            'account_name' => $a->account_name,
+            'alias'        => $aliasMap[$a->account_code] ?? null,
+            'label'        => $a->account_code . '-' . ($aliasMap[$a->account_code] ?? $a->account_name),
+        ]);
         $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
         $data->distribution_rule_one = $this->HandleGetDistribution($data->distribution_rule_one, 1);
@@ -230,11 +259,16 @@ SQL;
         $params = Management::where('group', 'supplier')->get();
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $accounts = DetailAccounts::select(
-            DB::raw("CONCAT(account_code,'-',account_name) as label"),
-            'account_code',
-            'account_name'
-        )->where('profile_id', $profile->id)->get();
+        $detailRows = DetailAccounts::select('account_code', 'account_name')
+            ->where('profile_id', $profile->id)->get();
+        $aliasMap = AccountAlias::whereIn('acct_code', $detailRows->pluck('account_code'))
+            ->pluck('alias', 'acct_code');
+        $accounts = $detailRows->map(fn($a) => (object)[
+            'account_code' => $a->account_code,
+            'account_name' => $a->account_name,
+            'alias'        => $aliasMap[$a->account_code] ?? null,
+            'label'        => $a->account_code . '-' . ($aliasMap[$a->account_code] ?? $a->account_name),
+        ]);
         $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         return Inertia::render(
             'accountability/Detail/CreateDetailNew',
@@ -254,6 +288,18 @@ SQL;
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $documents = AccountabilityDetail::where('accountability_id', $accountability_id)->get();
+
+        // Enrich with global aliases
+        $allCodes = collect([$accountability->account_code])
+            ->merge($documents->pluck('account'))
+            ->unique()->filter()->values();
+        $aliasMap = AccountAlias::whereIn('acct_code', $allCodes)->pluck('alias', 'acct_code');
+
+        $accountability->account_alias = $aliasMap[$accountability->account_code] ?? null;
+        $documents = $documents->map(function ($doc) use ($aliasMap) {
+            $doc->account_alias = $aliasMap[$doc->account] ?? null;
+            return $doc;
+        });
 
         $audits = Audit::where('auditable_type', Accountability::class)
             ->where('auditable_id', $accountability_id)
@@ -421,9 +467,10 @@ SQL;
         $profile = Profile::where('id', $profile_id)->first();
         $employees = Employee::where('profile_id', $profile_id)->get();
         $accounts = GeneralAccounts::select(
-            DB::raw("CONCAT(account_code,'-',account_name) as label"),
+            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
             'account_code',
-            'account_name'
+            'account_name',
+            'alias'
         )->where('profile_id', $profile->id)->get();
 
         return Inertia::render(
@@ -580,9 +627,10 @@ SQL;
         Session::put('title', 'Crear Rendición');
         $profile = Profile::where('id', $profile_id)->first();
         $accounts = GeneralAccounts::select(
-            DB::raw("CONCAT(account_code,'-',account_name) as label"),
+            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
             'account_code',
-            'account_name'
+            'account_name',
+            'alias'
         )->where('profile_id', $profile->id)->get();
         $accountability = Accountability::where('id', $acc_id)->first();
         $accountability->account = $accountability->account_code;

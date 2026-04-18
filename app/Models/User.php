@@ -70,6 +70,9 @@ class User extends Authenticatable implements Auditable
     public function user_authorization(){
         return $this->hasMany(UserAuthorization::class,'user_id','id');
     }
+    public function authorizationCycle(){
+        return $this->hasOne(UserAuthorizationCycle::class,'user_id','id');
+    }
 
     public function area(){
         return $this->belongsTo(Area::class,'area_id','id');

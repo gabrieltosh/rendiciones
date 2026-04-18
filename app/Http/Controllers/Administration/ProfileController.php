@@ -20,6 +20,7 @@ use App\Models\DocumentField;
 use Illuminate\Database\Query\JoinClause;
 use App\Helpers\Hana;
 use Config;
+use App\Models\AccountAlias;
 class ProfileController extends Controller
 {
     public function HandleGetAccounts()
@@ -33,7 +34,8 @@ class ProfileController extends Controller
                 T1."AcctName",
                 T1."AcctCode",
                 T1."FatherNum",
-                T1."Levels"
+                T1."Levels",
+                T1."LocManTran"
             from $db.OACT as T1
             where T1."Levels" in (1,2,3,4,5,6,7,8,9,10)
             order by T1."Levels",T1."FatherNum"
@@ -66,7 +68,8 @@ SQL;
                     'T1.AcctName',
                     'T1.AcctCode',
                     'T1.FatherNum',
-                    'T1.Levels'
+                    'T1.Levels',
+                    'T1.LocManTran'
                 )
                 ->whereIn('T1.Levels', range(1, 10))
                 ->orderBy('T1.Levels')
@@ -271,7 +274,8 @@ SQL;
                 select
                     T1."AcctName",
                     T1."AcctCode",
-                    T1."FormatCode"
+                    T1."FormatCode",
+                    T1."LocManTran"
                 from $db.OACT as T1
                 where T1."AcctCode" in ($accounts_string)
 SQL;
@@ -282,7 +286,8 @@ SQL;
                 ->select(
                     'T1.AcctName',
                     'T1.AcctCode',
-                    'T1.FormatCode'
+                    'T1.FormatCode',
+                    'T1.LocManTran'
                 )
                 ->whereIn('T1.AcctCode', $accounts)
                 ->get();
@@ -651,13 +656,13 @@ SQL;
         ])->first();
         $profile->detail = DB::table('detail_accounts as T1')
             ->select(
-                DB::raw("CONCAT(T1.account_code,'-',T1.account_name) as label")
+                DB::raw("CONCAT(T1.account_code,'-',ISNULL(T1.alias, T1.account_name)) as label")
             )
             ->where('profile_id', $id)
             ->pluck('label');
         $profile->general = DB::table('general_accounts as T1')
             ->select(
-                DB::raw("CONCAT(T1.account_code,'-',T1.account_name) as label")
+                DB::raw("CONCAT(T1.account_code,'-',ISNULL(T1.alias, T1.account_name)) as label")
             )
             ->where('profile_id', $id)
             ->pluck('label');
@@ -677,7 +682,8 @@ SQL;
             'currencies' => $this->HandleGetCurrencies(),
             'accounts_document' => $this->HandleGetAccountsDocument(),
             'employees' => $this->HandleGetEmployees(),
-            'document_types'=>$this->HandleGetDocumentType($field_document_type->value)
+            'document_types'=>$this->HandleGetDocumentType($field_document_type->value),
+            'alias_map' => AccountAlias::all()->pluck('alias', 'acct_code'),
         ]);
     }
     public function HandleDeleteProfile($id)
@@ -844,7 +850,8 @@ SQL;
             'currencies' => $this->HandleGetCurrencies(),
             'accounts_document' => $this->HandleGetAccountsDocument(),
             'employees' => $this->HandleGetEmployees(),
-            'document_types'=>$this->HandleGetDocumentType($field_document_type->value)
+            'document_types'=>$this->HandleGetDocumentType($field_document_type->value),
+            'alias_map' => AccountAlias::all()->pluck('alias', 'acct_code'),
         ]);
     }
     public function HandleIndexProfile()

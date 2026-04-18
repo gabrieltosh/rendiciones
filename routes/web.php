@@ -10,6 +10,8 @@ use App\Http\Controllers\Administration\DocumentController;
 use App\Http\Controllers\Administration\SupplierController;
 use App\Http\Controllers\Administration\AreaController;
 use App\Http\Controllers\Administration\ReportController;
+use App\Http\Controllers\Administration\AuthorizationCycleController;
+use App\Http\Controllers\Administration\AccountAliasController;
 use App\Http\Controllers\Accountability\ProfileController as AccountabilityProfileController;
 use App\Http\Controllers\Accountability\AccountabilityController;
 use App\Http\Controllers\Authorization\AccountabilityController as AuthAccountabilityController;
@@ -90,6 +92,24 @@ Route::middleware('auth')->group(function() {
                 Route::get('create','HandleCreateSupplier')->name('create');
             });
             Route::get('report/audit-log', [ReportController::class, 'HandleIndexAuditLog'])->name('report.audit-log');
+
+            Route::name('account-alias.')->prefix('account-alias')->controller(AccountAliasController::class)->group(function () {
+                Route::get('', 'HandleIndexAccountAlias')->name('index');
+                Route::put('{acct_code}', 'HandleUpdateAlias')->name('update')->where('acct_code', '.+');
+                Route::delete('{acct_code}', 'HandleDeleteAlias')->name('delete')->where('acct_code', '.+');
+                Route::post('import', 'HandleImportAliases')->name('import');
+                Route::get('template', 'HandleDownloadTemplate')->name('template');
+            });
+
+            Route::delete('{id}/authorization-cycle', [AuthorizationCycleController::class, 'HandleDeleteAuthorizationCycle'])->name('authorization-cycle.delete');
+            Route::name('authorization-cycle.')->prefix('authorization-cycle')->controller(AuthorizationCycleController::class)->group(function () {
+                Route::get('', 'HandleIndexAuthorizationCycle')->name('index');
+                Route::get('create', 'HandleCreateAuthorizationCycle')->name('create');
+                Route::post('', 'HandleStoreAuthorizationCycle')->name('store');
+                Route::post('quick', 'HandleStoreQuickCycle')->name('quick-store');
+                Route::get('{id}/edit', 'HandleEditAuthorizationCycle')->name('edit');
+                Route::put('', 'HandleUpdateAuthorizationCycle')->name('update');
+            });
         });
 
         // ── Administrador + Autorizador ──────────────────────────────────────

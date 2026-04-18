@@ -58,11 +58,11 @@
                                 <q-btn
                                     color="positive"
                                     icon="check"
-                                    label="Autorizar"
+                                    :label="authorizeLabel"
                                     size="12px"
                                     no-caps
                                     unelevated
-                                    aria-label="Autorizar rendicion"
+                                    :aria-label="authorizeLabel"
                                     @click="HandleAuthorizeStatus('Autorizado')"
                                 />
                             </template>
@@ -138,7 +138,12 @@
                             <div class="row q-col-gutter-md">
                                 <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="text-caption text-grey">Cuenta</div>
-                                    <div class="text-caption">{{ accountability.account_name || '-' }}</div>
+                                    <div class="text-caption text-weight-medium">
+                                        {{ accountability.account_alias || accountability.account_name || '-' }}
+                                    </div>
+                                    <div v-if="accountability.account_alias" class="text-caption text-grey">
+                                        {{ accountability.account_name }}
+                                    </div>
                                 </div>
                                 <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="text-caption text-grey">Empleado</div>
@@ -206,6 +211,75 @@
                                     </div>
                                 </q-timeline-entry>
                             </q-timeline>
+                        </q-card-section>
+                    </q-card>
+                </q-expansion-item>
+
+                <!-- Ciclo de Autorización -->
+                <q-expansion-item
+                    v-if="cycleChain"
+                    class="card-form q-mb-md overflow-hidden rounded-borders"
+                    icon="account_tree"
+                    label="Ciclo de Autorización"
+                    header-class="text-subtitle2 text-weight-medium"
+                    dense
+                    default-opened
+                >
+                    <q-card>
+                        <q-card-section>
+                            <div class="text-caption text-grey q-mb-md">{{ cycleChain.cycle_name }}</div>
+                            <div class="row q-col-gutter-sm">
+                                <div
+                                    v-for="level in cycleChain.levels"
+                                    :key="level.id"
+                                    class="col-xs-12 col-sm-6 col-md-4"
+                                >
+                                    <q-card flat bordered :class="getLevelCardClass(level)">
+                                        <q-card-section class="q-py-sm q-px-md">
+                                            <div class="row items-center q-gutter-xs no-wrap q-mb-xs">
+                                                <q-badge color="primary" :label="level.order" rounded />
+                                                <span class="text-body2 text-weight-medium">{{ level.name }}</span>
+                                                <q-space />
+                                                <q-icon
+                                                    v-if="level.approvals.length > 0 && level.approvals[0].status === 'aprobado'"
+                                                    name="check_circle"
+                                                    color="positive"
+                                                    size="18px"
+                                                />
+                                                <q-icon
+                                                    v-else-if="level.approvals.length > 0 && level.approvals[0].status === 'rechazado'"
+                                                    name="cancel"
+                                                    color="negative"
+                                                    size="18px"
+                                                />
+                                                <q-icon
+                                                    v-else-if="cycleChain.current_level_id === level.id"
+                                                    name="schedule"
+                                                    color="orange"
+                                                    size="18px"
+                                                />
+                                            </div>
+                                            <div class="text-caption text-grey">
+                                                Autorizadores:
+                                                <span v-for="(u, ui) in level.users" :key="u.id">
+                                                    {{ u.name }}<span v-if="ui < level.users.length - 1">, </span>
+                                                </span>
+                                            </div>
+                                            <div v-if="level.approvals.length > 0" class="q-mt-xs">
+                                                <div
+                                                    v-for="ap in level.approvals"
+                                                    :key="ap.acted_at"
+                                                    class="text-caption"
+                                                    :class="ap.status === 'aprobado' ? 'text-positive' : 'text-negative'"
+                                                >
+                                                    {{ ap.user }} &mdash; {{ ap.acted_at }}
+                                                    <span v-if="ap.comments"> ({{ ap.comments }})</span>
+                                                </div>
+                                            </div>
+                                        </q-card-section>
+                                    </q-card>
+                                </div>
+                            </div>
                         </q-card-section>
                     </q-card>
                 </q-expansion-item>
@@ -316,7 +390,9 @@
                                             <div class="text-body2 text-weight-medium stat-number">
                                                 Bs {{ doc.amount || 0 }}
                                             </div>
-                                            <div class="text-caption text-grey">{{ doc.account || '' }}</div>
+                                            <div class="text-caption text-grey">
+                                                {{ doc.account_alias || doc.account || '' }}
+                                            </div>
                                         </div>
 
                                         <!-- Actions -->
@@ -629,6 +705,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    cycleChain: {
+        type: Object,
+        default: null,
+    },
 });
 
 const $q = useQuasar();
@@ -636,6 +716,7 @@ const page = usePage();
 const accountability = page.props.accountability;
 const documents = ref(page.props.documents);
 const audits = page.props.audits ?? [];
+const cycleChain = page.props.cycleChain ?? null;
 
 const FIELD_LABELS = {
     status:           'Estado',
@@ -677,6 +758,29 @@ const loadingFactura = ref(null);
 const isAuthorized = computed(() => {
     return accountability.status === "Autorizado";
 });
+
+// True if the accountability is using a cycle AND the current level has a next one
+const hasNextLevel = computed(() => {
+    if (!cycleChain || !cycleChain.current_level_id) return false;
+    const levels = cycleChain.levels;
+    const currentIdx = levels.findIndex((l) => l.id === cycleChain.current_level_id);
+    return currentIdx !== -1 && currentIdx < levels.length - 1;
+});
+
+const authorizeLabel = computed(() => {
+    return hasNextLevel.value ? "Aprobar y Avanzar" : "Autorizar";
+});
+
+function getLevelCardClass(level) {
+    if (!cycleChain) return "";
+    if (level.approvals.length > 0) {
+        return level.approvals[0].status === "aprobado"
+            ? "bg-green-1"
+            : "bg-red-1";
+    }
+    if (cycleChain.current_level_id === level.id) return "bg-orange-1";
+    return "";
+}
 
 const statusColor = computed(() => {
     const colors = {
@@ -842,11 +946,14 @@ function HandleRejectStatus(status) {
 }
 
 function HandleAuthorizeStatus(status) {
+    const isIntermediate = hasNextLevel.value;
     $q.dialog({
-        title: "Autorizar Rendicion",
-        message: "¿Esta seguro de autorizar esta rendicion? Se exportara a SAP.",
+        title: isIntermediate ? "Aprobar Nivel" : "Autorizar Rendicion",
+        message: isIntermediate
+            ? "¿Está seguro de aprobar este nivel? La rendición avanzará al siguiente nivel de autorización."
+            : "¿Esta seguro de autorizar esta rendicion? Se exportara a SAP.",
         cancel: { label: "Cancelar", flat: true, noCaps: true },
-        ok: { label: "Autorizar", color: "positive", noCaps: true },
+        ok: { label: isIntermediate ? "Aprobar y Avanzar" : "Autorizar", color: "positive", noCaps: true },
         persistent: true,
     }).onOk(() => {
         router.post(

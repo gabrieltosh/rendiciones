@@ -197,47 +197,83 @@
 
                 <!-- Seccion: Datos Contables -->
                 <q-slide-transition>
-                    <q-card v-if="Object.keys(document).length > 0" class="q-pa-lg card-form q-mb-md">
-                        <div class="text-subtitle1 text-weight-medium q-mb-md">Datos Contables</div>
-                        <div class="row q-col-gutter-md">
-                            <div class="col-xs-12 col-sm-6">
-                                <div class="form-label">Proyecto</div>
-                                <q-select class="input-theme" dense outlined :options="options.projects"
-                                    v-model="form.project_code" option-value="PrjCode" option-label="PrjName"
-                                    emit-value map-options use-input input-debounce="0"
-                                    @filter="HandleFilterProjects" clearable />
+                    <q-card v-if="Object.keys(document).length > 0" class="card-form q-mb-md">
+
+                        <!-- Header clickeable -->
+                        <q-card-section
+                            class="q-py-sm cursor-pointer"
+                            role="button"
+                            :aria-expanded="costCenterExpanded"
+                            aria-controls="datos-contables-body"
+                            @click="costCenterExpanded = !costCenterExpanded"
+                            @keydown.enter.space.prevent="costCenterExpanded = !costCenterExpanded"
+                            tabindex="0"
+                        >
+                            <div class="row items-center no-wrap">
+                                <div class="col">
+                                    <div class="text-subtitle1 text-weight-medium">Datos Contables</div>
+                                    <div v-if="!costCenterExpanded && hasCostCenterData"
+                                        class="text-caption text-grey q-mt-xs">
+                                        {{ costCenterSummary }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <q-icon
+                                        :name="costCenterExpanded ? 'expand_less' : 'expand_more'"
+                                        color="grey-6"
+                                    />
+                                </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6">
-                                <div class="form-label">Centro de Costo 1</div>
-                                <q-select class="input-theme" dense outlined :options="options.distribution[1]"
-                                    v-model="form.distribution_rule_one" option-value="PrcCode" option-label="Name"
-                                    emit-value map-options clearable />
+                        </q-card-section>
+
+                        <!-- Contenido colapsable -->
+                        <q-slide-transition>
+                            <div v-show="costCenterExpanded" id="datos-contables-body">
+                                <q-separator />
+                                <q-card-section class="q-pa-lg">
+                                    <div class="row q-col-gutter-md">
+                                        <div class="col-xs-12 col-sm-6">
+                                            <div class="form-label">Proyecto</div>
+                                            <q-select class="input-theme" dense outlined :options="options.projects"
+                                                v-model="form.project_code" option-value="PrjCode" option-label="PrjName"
+                                                emit-value map-options use-input input-debounce="0"
+                                                @filter="HandleFilterProjects" clearable />
+                                        </div>
+                                        <div class="col-xs-12 col-sm-6">
+                                            <div class="form-label">Centro de Costo 1</div>
+                                            <q-select class="input-theme" dense outlined :options="options.distribution[1]"
+                                                v-model="form.distribution_rule_one" option-value="PrcCode"
+                                                option-label="Name" emit-value map-options clearable />
+                                        </div>
+                                        <div class="col-xs-12 col-sm-6">
+                                            <div class="form-label">Centro de Costo 2</div>
+                                            <q-select class="input-theme" dense outlined :options="options.distribution[2]"
+                                                v-model="form.distribution_rule_second" option-value="PrcCode"
+                                                option-label="Name" emit-value map-options clearable />
+                                        </div>
+                                        <div class="col-xs-12 col-sm-6">
+                                            <div class="form-label">Centro de Costo 3</div>
+                                            <q-select class="input-theme" dense outlined :options="options.distribution[3]"
+                                                v-model="form.distribution_rule_three" option-value="PrcCode"
+                                                option-label="Name" emit-value map-options clearable />
+                                        </div>
+                                        <div class="col-xs-12 col-sm-6">
+                                            <div class="form-label">Centro de Costo 4</div>
+                                            <q-select class="input-theme" dense outlined :options="options.distribution[4]"
+                                                v-model="form.distribution_rule_four" option-value="PrcCode"
+                                                option-label="Name" emit-value map-options clearable />
+                                        </div>
+                                        <div class="col-xs-12 col-sm-6">
+                                            <div class="form-label">Centro de Costo 5</div>
+                                            <q-select class="input-theme" dense outlined :options="options.distribution[5]"
+                                                v-model="form.distribution_rule_five" option-value="PrcCode"
+                                                option-label="Name" emit-value map-options clearable />
+                                        </div>
+                                    </div>
+                                </q-card-section>
                             </div>
-                            <div class="col-xs-12 col-sm-6">
-                                <div class="form-label">Centro de Costo 2</div>
-                                <q-select class="input-theme" dense outlined :options="options.distribution[2]"
-                                    v-model="form.distribution_rule_second" option-value="PrcCode"
-                                    option-label="Name" emit-value map-options clearable />
-                            </div>
-                            <div class="col-xs-12 col-sm-6">
-                                <div class="form-label">Centro de Costo 3</div>
-                                <q-select class="input-theme" dense outlined :options="options.distribution[3]"
-                                    v-model="form.distribution_rule_three" option-value="PrcCode"
-                                    option-label="Name" emit-value map-options clearable />
-                            </div>
-                            <div class="col-xs-12 col-sm-6">
-                                <div class="form-label">Centro de Costo 4</div>
-                                <q-select class="input-theme" dense outlined :options="options.distribution[4]"
-                                    v-model="form.distribution_rule_four" option-value="PrcCode" option-label="Name"
-                                    emit-value map-options clearable />
-                            </div>
-                            <div class="col-xs-12 col-sm-6">
-                                <div class="form-label">Centro de Costo 5</div>
-                                <q-select class="input-theme" dense outlined :options="options.distribution[5]"
-                                    v-model="form.distribution_rule_five" option-value="PrcCode" option-label="Name"
-                                    emit-value map-options clearable />
-                            </div>
-                        </div>
+                        </q-slide-transition>
+
                     </q-card>
                 </q-slide-transition>
 
@@ -601,6 +637,26 @@ const prefersReducedMotion = computed(() => {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 });
 
+const costCenterExpanded = ref(true);
+
+const hasCostCenterData = computed(() =>
+    !!(form.value.distribution_rule_one  ||
+       form.value.distribution_rule_second ||
+       form.value.distribution_rule_three  ||
+       form.value.distribution_rule_four   ||
+       form.value.distribution_rule_five)
+);
+
+const costCenterSummary = computed(() =>
+    [
+        form.value.distribution_rule_one,
+        form.value.distribution_rule_second,
+        form.value.distribution_rule_three,
+        form.value.distribution_rule_four,
+        form.value.distribution_rule_five,
+    ].filter(Boolean).join(' · ')
+);
+
 const form = ref({
     account: null,
     account_name: null,
@@ -689,11 +745,15 @@ function HandleFindDocument() {
 }
 
 onMounted(() => {
-    form.value.distribution_rule_one = page.props.auth.user.distribution_rule_one;
+    form.value.distribution_rule_one    = page.props.auth.user.distribution_rule_one;
     form.value.distribution_rule_second = page.props.auth.user.distribution_rule_second;
-    form.value.distribution_rule_three = page.props.auth.user.distribution_rule_three;
-    form.value.distribution_rule_four = page.props.auth.user.distribution_rule_four;
-    form.value.distribution_rule_five = page.props.auth.user.distribution_rule_five;
+    form.value.distribution_rule_three  = page.props.auth.user.distribution_rule_three;
+    form.value.distribution_rule_four   = page.props.auth.user.distribution_rule_four;
+    form.value.distribution_rule_five   = page.props.auth.user.distribution_rule_five;
+
+    if (hasCostCenterData.value) {
+        costCenterExpanded.value = false;
+    }
 });
 
 function onQrDetect(detectedCodes) {

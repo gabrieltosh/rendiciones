@@ -182,6 +182,42 @@
                                 >
                             </q-item-section>
                         </q-item>
+                        <q-item
+                            class="cursor-pointer q-ml-sm"
+                            clickable
+                            @click="router.visit(route('panel.authorization-cycle.index'))"
+                        >
+                            <q-item-section avatar>
+                                <q-avatar
+                                    class="submenu-icon-inactive"
+                                    icon="hdr_weak"
+                                >
+                                </q-avatar>
+                            </q-item-section>
+                            <q-item-section>
+                                <q-item-label class="text-menu"
+                                    >Ciclos de Autorización</q-item-label
+                                >
+                            </q-item-section>
+                        </q-item>
+                        <q-item
+                            class="cursor-pointer q-ml-sm"
+                            clickable
+                            @click="router.visit(route('panel.account-alias.index'))"
+                        >
+                            <q-item-section avatar>
+                                <q-avatar
+                                    class="submenu-icon-inactive"
+                                    icon="hdr_weak"
+                                >
+                                </q-avatar>
+                            </q-item-section>
+                            <q-item-section>
+                                <q-item-label class="text-menu"
+                                    >Alias de Cuentas</q-item-label
+                                >
+                            </q-item-section>
+                        </q-item>
                     </q-expansion-item>
                     <q-item
                         v-if="isAdminOrAutorizador"

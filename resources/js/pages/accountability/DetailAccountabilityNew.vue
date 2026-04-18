@@ -74,7 +74,12 @@
                             <div class="row q-col-gutter-md">
                                 <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="text-caption text-grey">Cuenta</div>
-                                    <div class="text-caption">{{ accountability.account_name || '-' }}</div>
+                                    <div class="text-caption text-weight-medium">
+                                        {{ accountability.account_alias || accountability.account_name || '-' }}
+                                    </div>
+                                    <div v-if="accountability.account_alias" class="text-caption text-grey">
+                                        {{ accountability.account_name }}
+                                    </div>
                                 </div>
                                 <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="text-caption text-grey">Empleado</div>
@@ -221,7 +226,9 @@
                                             <div class="text-body2 text-weight-medium stat-number">
                                                 Bs {{ doc.amount || 0 }}
                                             </div>
-                                            <div class="text-caption text-grey">{{ doc.account || '' }}</div>
+                                            <div class="text-caption text-grey">
+                                                {{ doc.account_alias || doc.account || '' }}
+                                            </div>
                                         </div>
 
                                         <!-- Actions -->

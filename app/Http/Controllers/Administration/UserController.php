@@ -15,6 +15,8 @@ use Inertia\Inertia;
 use DB;
 use App\Models\Management;
 use App\Models\Area;
+use App\Models\AuthorizationCycle;
+use App\Models\UserAuthorizationCycle;
 use App\Helpers\Hana;
 use Config;
 use Hash;
@@ -28,7 +30,7 @@ class UserController extends Controller
             'username' => $request->username,
             'type' => $request->type,
             'distribution_rule_one' => $request->distribution_rule_one,
-            'distribution_rule_second' => $request->distribution_rule_two,
+            'distribution_rule_second' => $request->distribution_rule_second,
             'distribution_rule_three' => $request->distribution_rule_three,
             'distribution_rule_four' => $request->distribution_rule_four,
             'distribution_rule_five' => $request->distribution_rule_five,
@@ -49,6 +51,12 @@ class UserController extends Controller
             UserAuthorization::create([
                 'user_id' => $user->id,
                 'auth_user_id' => $id
+            ]);
+        }
+        if ($request->cycle_id) {
+            UserAuthorizationCycle::create([
+                'user_id'  => $user->id,
+                'cycle_id' => $request->cycle_id,
             ]);
         }
         Session::flash('message', "Usuario creado correctamente");
@@ -106,6 +114,16 @@ class UserController extends Controller
                 'auth_user_id' => $auth_user_id
             ]);
         }
+
+        // Update cycle assignment
+        UserAuthorizationCycle::where('user_id', $request->id)->delete();
+        if ($request->cycle_id) {
+            UserAuthorizationCycle::create([
+                'user_id'  => $request->id,
+                'cycle_id' => $request->cycle_id,
+            ]);
+        }
+
         if(is_null($request->password)){
             User::findOrFail($request->id)->fill([
                 'name' => $request->name,
@@ -172,15 +190,36 @@ class UserController extends Controller
             ->where('user_id', $user->id)
             ->get()
             ->pluck('label');
+        $userCycle = UserAuthorizationCycle::where('user_id', $user->id)->first();
+        $user->cycle_id = $userCycle ? (int) $userCycle->cycle_id : null;
         $areas = Area::select('id as value', 'name as label')->orderBy('name')->get();
+        $usersForCycle = User::select('id as value', 'name as label')
+            ->whereIn('type', ['Administrador', 'Autorizador'])
+            ->orderBy('name')
+            ->get();
+        $cycles = AuthorizationCycle::with(['levels.users' => function ($q) {
+            $q->select('users.id', 'users.name');
+        }])->where('is_active', true)->get()->map(function ($c) {
+            return [
+                'value'  => (int) $c->id,
+                'label'  => $c->name,
+                'levels' => $c->levels->map(fn($l) => [
+                    'order' => $l->order,
+                    'name'  => $l->name,
+                    'users' => $l->users->pluck('name'),
+                ]),
+            ];
+        });
         return Inertia::render(
             'administration/users/EditUser',
             [
-                'user' => $user,
-                'profiles' => $profiles,
-                'distribution' => $this->HandleGetDistributions(),
-                'users' => $users,
-                'areas' => $areas,
+                'user'          => $user,
+                'profiles'      => $profiles,
+                'distribution'  => $this->HandleGetDistributions(),
+                'users'         => $users,
+                'areas'         => $areas,
+                'cycles'        => $cycles,
+                'usersForCycle' => $usersForCycle,
             ]
         );
     }
@@ -208,13 +247,32 @@ class UserController extends Controller
             DB::raw("CONCAT(id,'-',name) as label"),
         )->get();
         $areas = Area::select('id as value', 'name as label')->orderBy('name')->get();
+        $cycles = AuthorizationCycle::with(['levels.users' => function ($q) {
+            $q->select('users.id', 'users.name');
+        }])->where('is_active', true)->get()->map(function ($c) {
+            return [
+                'value'  => (int) $c->id,
+                'label'  => $c->name,
+                'levels' => $c->levels->map(fn($l) => [
+                    'order' => $l->order,
+                    'name'  => $l->name,
+                    'users' => $l->users->pluck('name'),
+                ]),
+            ];
+        });
+        $usersForCycle = User::select('id as value', 'name as label')
+            ->whereIn('type', ['Administrador', 'Autorizador'])
+            ->orderBy('name')
+            ->get();
         return Inertia::render(
             'administration/users/CreateUser',
             [
-                'profiles' => $profiles,
-                'distribution' => $this->HandleGetDistributions(),
-                'users' => $users,
-                'areas' => $areas,
+                'profiles'      => $profiles,
+                'distribution'  => $this->HandleGetDistributions(),
+                'users'         => $users,
+                'areas'         => $areas,
+                'cycles'        => $cycles,
+                'usersForCycle' => $usersForCycle,
             ]
         );
     }
@@ -229,33 +287,33 @@ class UserController extends Controller
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
             $data = array();
-            $db=Config::get('database.connections.hana.database');
+            $db = Config::get('database.connections.hana.database');
             for ($i = 1; $i <= 5; $i++) {
-                $sql=
-<<<SQL
-                select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName" as PrcName,T1."OcrCode" as PrcCode
-                from $db.OOCR as T1
-                where T1."DimCode" = $i
-                and T1."Locked" = 'N'
-                Order by T1."OcrCode" asc
+                $sql = <<<SQL
+                    select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name",
+                           T1."OcrName" as "PrcName",
+                           T1."OcrCode" as "PrcCode"
+                    from {$db}.OOCR as T1
+                    where T1."DimCode" = {$i}
+                    and T1."Active" = 'Y'
+                    order by T1."OcrCode" asc
 SQL;
-                $data[$i] = Hana::query($sql);
+                $data[$i] = collect(Hana::query($sql))->map(fn($row) => (object) $row)->values()->all();
             }
             return $data;
         } else {
             $data = array();
             for ($i = 1; $i <= 5; $i++) {
-                $data[$i] =
-                    DB::connection('sap')
-                        ->table('OOCR as T1')
-                        ->select(
-                            DB::raw("CONCAT(T1.OcrCode,'-',T1.OcrName) as Name"),
-                            'T1.OcrCode as PrcCode',
-                            'T1.OcrName as PrcName'
-                        )
-                        ->where('T1.DimCode', $i)
-                        ->where('T1.Locked', 'N')
-                        ->get();
+                $data[$i] = DB::connection('sap')
+                    ->table('OPRC as T1')
+                    ->select(
+                        DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
+                        DB::raw('T1.PrcCode'),
+                        DB::raw('T1.PrcName')
+                    )
+                    ->where('T1.DimCode', $i)
+                    ->where('T1.Locked', 'N')
+                    ->get();
             }
             return $data;
         }

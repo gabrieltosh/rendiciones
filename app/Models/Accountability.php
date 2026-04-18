@@ -29,10 +29,12 @@ class Accountability extends Model implements Auditable
         'end_date',
         'comments',
         'sap_exported',
+        'current_level_id',
     ];
 
     protected $casts = [
         'sap_exported' => 'boolean',
+        'current_level_id' => 'integer',
     ];
     public function createdAt(): Attribute
     {
@@ -50,5 +52,11 @@ class Accountability extends Model implements Auditable
     }
     public function detail(){
         return $this->hasMany(AccountabilityDetail::class,'accountability_id','id');
+    }
+    public function currentLevel(){
+        return $this->belongsTo(AuthorizationCycleLevel::class,'current_level_id','id');
+    }
+    public function levelApprovals(){
+        return $this->hasMany(AccountabilityLevelApproval::class,'accountability_id','id');
     }
 }

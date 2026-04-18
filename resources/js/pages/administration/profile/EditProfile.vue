@@ -58,125 +58,7 @@
                             </div>
                         </q-card>
                     </q-step>
-                    <q-step :name="2" title="Cuentas Cabecera" icon="assignment" :done="step > 2">
-                        <q-card class="q-px-lg q-py-sm q-ma-sm card-form q-mt-md">
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="row q-py-sm">
-                                        <div class="col-sm-6">
-                                            <h5 class="title-form">
-                                                Asignar Cuentas Detalle
-                                            </h5>
-                                        </div>
-                                        <div class="col-sm-6 text-right q-gutter-sm">
-                                            <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
-                                                router.visit(
-                                                    route(
-                                                        'panel.profile.index'
-                                                    )
-                                                )
-                                                " flat />
-                                            <q-btn flat color="primary" @click="
-                                                $refs.stepper.previous()
-                                                " label="Atras" no-caps size="12px" />
-                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps
-                                                size="12px" label="Continuar" />
-                                            <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
-                                                label="Actualizar" />
-                                        </div>
-                                    </div>
-                                    <q-separator />
-                                </div>
-                                <div class="col-sm-6">
-                                    <h5 class="title-tree text-center">
-                                        Lista de Cuentas Contables
-                                    </h5>
-                                    <q-input outlined dense color="primary" placeholder="Buscar…" v-model="filter2"
-                                        clearable class="input-theme" name="search_general" autocomplete="off" aria-label="Buscar cuentas cabecera"></q-input>
-                                    <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
-                                        v-model:ticked="form.general" :filter="filter2"
-                                        :filter-method="HandleFilterAccounts">
-                                        <template v-slot:default-header="prop">
-                                            <div class="tree-label">
-                                                {{ prop.node.label }}
-                                            </div>
-                                        </template>
-                                    </q-tree>
-                                </div>
-                                <q-separator spaced inset vertical />
-                                <div class="col-sm-5">
-                                    <h5 class="title-tree text-center">
-                                        Cuentas Seleccionadas
-                                    </h5>
-                                    <ul class="q-ma-none">
-                                        <div v-for="tick in form.general" :key="`ticked-${tick}`" class="tree-label">
-                                            <li>{{ tick }}</li>
-                                        </div>
-                                    </ul>
-                                </div>
-                            </div>
-                        </q-card>
-                    </q-step>
-                    <q-step :name="3" title="Cuentas Detalle" icon="assignment" :done="step > 3">
-                        <q-card class="q-px-lg q-py-sm q-ma-sm card-form q-mt-md">
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="row q-py-sm">
-                                        <div class="col-sm-6">
-                                            <h5 class="title-form">
-                                                Asignar Cuentas Cabecera
-                                            </h5>
-                                        </div>
-                                        <div class="col-sm-6 text-right q-gutter-sm">
-                                            <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
-                                                router.visit(
-                                                    route(
-                                                        'panel.profile.index'
-                                                    )
-                                                )
-                                                " flat />
-                                            <q-btn flat color="primary" @click="
-                                                $refs.stepper.previous()
-                                                " label="Atras" no-caps size="12px" class="q-ml-sm" />
-                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps
-                                                size="12px" label="Continuar" />
-                                            <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
-                                                label="Actualizar" />
-                                        </div>
-                                    </div>
-                                    <q-separator />
-                                </div>
-                                <div class="col-sm-6">
-                                    <h5 class="title-tree text-center">
-                                        Lista de Cuentas Contables
-                                    </h5>
-                                    <q-input outlined dense color="primary" placeholder="Buscar…" v-model="filter"
-                                        class="input-theme" clearable name="search_detail" autocomplete="off" aria-label="Buscar cuentas detalle"></q-input>
-                                    <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
-                                        v-model:ticked="form.detail" :filter="filter"
-                                        :filter-method="HandleFilterAccounts">
-                                        <template v-slot:default-header="prop">
-                                            <div class="tree-label">
-                                                {{ prop.node.label }}
-                                            </div>
-                                        </template>
-                                    </q-tree>
-                                </div>
-                                <q-separator spaced inset vertical />
-                                <div class="col-sm-5">
-                                    <h5 class="title-tree text-center">
-                                        Cuentas Seleccionadas
-                                    </h5>
-                                    <ul class="q-ma-none">
-                                        <div v-for="tick in form.detail" :key="`ticked-${tick}`" class="tree-label">
-                                            <li>{{ tick }}</li>
-                                        </div>
-                                    </ul>
-                                </div>
-                            </div>
-                        </q-card>
-                    </q-step>
-                    <q-step :name="4" title="Empleados" icon="eva-people-outline" :done="step > 4">
+                    <q-step :name="2" title="Empleados" icon="eva-people-outline" :done="step > 2">
                         <q-card class="q-px-lg q-py-sm q-ma-sm card-form q-mt-md">
                             <div class="row">
                                 <div class="col-12">
@@ -243,6 +125,132 @@
                                 </template>
                                 <div v-else class="col-12 q-py-md text-grey-6" style="font-size:13px">
                                     Este perfil no requiere asignación de empleado.
+                                </div>
+                            </div>
+                        </q-card>
+                    </q-step>
+                    <q-step :name="3" title="Cuentas Cabecera" icon="assignment" :done="step > 3">
+                        <q-card class="q-px-lg q-py-sm q-ma-sm card-form q-mt-md">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="row q-py-sm">
+                                        <div class="col-sm-6">
+                                            <h5 class="title-form">
+                                                Asignar Cuentas Cabecera
+                                            </h5>
+                                        </div>
+                                        <div class="col-sm-6 text-right q-gutter-sm">
+                                            <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
+                                                router.visit(
+                                                    route(
+                                                        'panel.profile.index'
+                                                    )
+                                                )
+                                                " flat />
+                                            <q-btn flat color="primary" @click="
+                                                $refs.stepper.previous()
+                                                " label="Atras" no-caps size="12px" />
+                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps
+                                                size="12px" label="Continuar" />
+                                            <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
+                                                label="Actualizar" />
+                                        </div>
+                                    </div>
+                                    <q-separator />
+                                </div>
+                                <div class="col-sm-6">
+                                    <h5 class="title-tree text-center">
+                                        Lista de Cuentas Contables
+                                    </h5>
+                                    <q-input outlined dense color="primary" placeholder="Buscar…" v-model="filter2"
+                                        clearable class="input-theme" name="search_general" autocomplete="off" aria-label="Buscar cuentas cabecera"></q-input>
+                                    <q-tree :nodes="accountsForCabecera" node-key="label" tick-strategy="leaf"
+                                        v-model:ticked="form.general" :filter="filter2"
+                                        :filter-method="HandleFilterAccounts">
+                                        <template v-slot:default-header="prop">
+                                            <div class="tree-label row items-center q-gutter-xs no-wrap">
+                                                <span>{{ prop.node.label }}</span>
+                                                <q-badge v-if="aliasMap[prop.node.AcctCode]" color="orange-7" dense class="q-px-xs">
+                                                    <q-tooltip>Alias: {{ aliasMap[prop.node.AcctCode] }}</q-tooltip>
+                                                    alias
+                                                </q-badge>
+                                            </div>
+                                        </template>
+                                    </q-tree>
+                                </div>
+                                <q-separator spaced inset vertical />
+                                <div class="col-sm-5">
+                                    <h5 class="title-tree text-center">
+                                        Cuentas Seleccionadas
+                                    </h5>
+                                    <ul class="q-ma-none">
+                                        <div v-for="tick in form.general" :key="`ticked-${tick}`" class="tree-label">
+                                            <li>{{ tick }}</li>
+                                        </div>
+                                    </ul>
+                                </div>
+                            </div>
+                        </q-card>
+                    </q-step>
+                    <q-step :name="4" title="Cuentas Detalle" icon="assignment" :done="step > 4">
+                        <q-card class="q-px-lg q-py-sm q-ma-sm card-form q-mt-md">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="row q-py-sm">
+                                        <div class="col-sm-6">
+                                            <h5 class="title-form">
+                                                Asignar Cuentas Detalle
+                                            </h5>
+                                        </div>
+                                        <div class="col-sm-6 text-right q-gutter-sm">
+                                            <q-btn color="secondary" label="Cancelar" size="12px" no-caps @click="
+                                                router.visit(
+                                                    route(
+                                                        'panel.profile.index'
+                                                    )
+                                                )
+                                                " flat />
+                                            <q-btn flat color="primary" @click="
+                                                $refs.stepper.previous()
+                                                " label="Atras" no-caps size="12px" class="q-ml-sm" />
+                                            <q-btn @click="$refs.stepper.next()" outline color="primary" no-caps
+                                                size="12px" label="Continuar" />
+                                            <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
+                                                label="Actualizar" />
+                                        </div>
+                                    </div>
+                                    <q-separator />
+                                </div>
+                                <div class="col-sm-6">
+                                    <h5 class="title-tree text-center">
+                                        Lista de Cuentas Contables
+                                    </h5>
+                                    <q-input outlined dense color="primary" placeholder="Buscar…" v-model="filter"
+                                        class="input-theme" clearable name="search_detail" autocomplete="off" aria-label="Buscar cuentas detalle"></q-input>
+                                    <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
+                                        v-model:ticked="form.detail" :filter="filter"
+                                        :filter-method="HandleFilterAccounts">
+                                        <template v-slot:default-header="prop">
+                                            <div class="tree-label row items-center q-gutter-xs no-wrap">
+                                                <span>{{ prop.node.label }}</span>
+                                                <q-badge v-if="aliasMap[prop.node.AcctCode]" color="orange-7" dense class="q-px-xs">
+                                                    <q-tooltip>Alias: {{ aliasMap[prop.node.AcctCode] }}</q-tooltip>
+                                                    alias
+                                                </q-badge>
+                                            </div>
+                                        </template>
+                                    </q-tree>
+                                </div>
+                                <q-separator spaced inset vertical />
+                                <div class="col-sm-5">
+                                    <h5 class="title-tree text-center">
+                                        Cuentas Seleccionadas
+                                    </h5>
+                                    <ul class="q-ma-none">
+                                        <div v-for="tick in form.detail" :key="`ticked-${tick}`" class="tree-label">
+                                            <li>{{ tick }}</li>
+                                        </div>
+                                    </ul>
                                 </div>
                             </div>
                         </q-card>
@@ -712,7 +720,7 @@
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
@@ -730,6 +738,7 @@ let type = ref(page.props.flash.type);
 let accounts = ref(page.props.accounts);
 let currencies = ref(page.props.currencies);
 let employees = ref(page.props.employees);
+const aliasMap = page.props.alias_map ?? {};
 
 let options = ref({
     type_calculation: page.props.type_calculation,
@@ -769,6 +778,28 @@ function HandleStoreForm() {
         .onCancel(() => { })
         .onDismiss(() => { });
 }
+function filterTreeByLocManTran(nodes, locManTran) {
+    return nodes.reduce((acc, node) => {
+        const children = node.children?.length
+            ? filterTreeByLocManTran(node.children, locManTran)
+            : [];
+        if (children.length > 0) {
+            acc.push({ ...node, children });
+        } else if (!node.children?.length && node.LocManTran === locManTran) {
+            acc.push(node);
+        }
+        return acc;
+    }, []);
+}
+
+const accountsForCabecera = computed(() =>
+    filterTreeByLocManTran(accounts.value, form.value.sin_empleado ? 'N' : 'Y')
+);
+
+watch(() => form.value.sin_empleado, () => {
+    form.value.general = [];
+});
+
 function HandleFilterAccounts(node, filter) {
     const filt = filter.toLowerCase();
     return node.label && node.label.toLowerCase().indexOf(filt) > -1;

@@ -27,9 +27,12 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Config;
 use App\Helpers\Hana;
 use App\Notifications\Accountability\StatusAccountabilityNotification;
+use App\Notifications\Accountability\CreateAccountabilityNotification;
 use App\Models\AccountabilityField;
 use App\Models\User;
 use App\Models\Audit;
+use App\Models\AccountabilityLevelApproval;
+use App\Models\AuthorizationCycleLevel;
 use Log;
 
 class AccountabilityController extends Controller
@@ -211,7 +214,7 @@ class AccountabilityController extends Controller
             ];
         }
         $total += $amount_line;
-        
+
         $udfs = [
             'ProjectCode' => $document_line->project_code,
             'CostingCode' => $document_line->distribution_rule_one,
@@ -249,14 +252,93 @@ class AccountabilityController extends Controller
 
         return array_merge($journal, $detail_lines);
     }
+    private function HandleRecordApproval($accountability_id, $level_id, $user_id, $status, $comments = null)
+    {
+        AccountabilityLevelApproval::create([
+            'accountability_id' => $accountability_id,
+            'level_id'          => $level_id,
+            'user_id'           => $user_id,
+            'status'            => $status,
+            'comments'          => $comments,
+            'acted_at'          => now(),
+        ]);
+    }
+
+    private function HandleAdvanceOrFinalize($accountability, $request, $sapExported, $redirectOnFinish)
+    {
+        $currentLevel = $accountability->current_level_id
+            ? AuthorizationCycleLevel::find($accountability->current_level_id)
+            : null;
+
+        // Record approval when using cycle system
+        if ($currentLevel) {
+            $this->HandleRecordApproval(
+                $accountability->id,
+                $currentLevel->id,
+                $request->user()->id,
+                'aprobado',
+                $request->comments
+            );
+            $nextLevel = $currentLevel->nextLevel();
+            if ($nextLevel) {
+                // Advance to next level
+                $accountability->fill([
+                    'current_level_id' => $nextLevel->id,
+                ])->save();
+
+                // Notify next level authorizers
+                $params = Management::where('group', 'accountability')->get();
+                if ($params->where('name', 'notification_email')->first()->value == 'SI') {
+                    $nextUsers = $nextLevel->users;
+                    foreach ($nextUsers as $nextUser) {
+                        $nextUser->notify(new CreateAccountabilityNotification($accountability));
+                    }
+                }
+
+                $levelName = $nextLevel->name;
+                Session::flash('message', "Nivel aprobado. La rendición avanzó al nivel: {$levelName}");
+                Session::flash('type', 'positive');
+                return Redirect::route('panel.accountability.authorization.index');
+            }
+        }
+
+        // No more levels (or legacy system) — fully authorize
+        $accountability->fill([
+            'status'      => 'Autorizado',
+            'comments'    => $request->comments,
+            'sap_exported' => $sapExported,
+            'current_level_id' => null,
+        ])->save();
+
+        $user = User::find($accountability->user_id);
+        $params = Management::where('group', 'accountability')->get();
+        if ($params->where('name', 'notification_email')->first()->value == 'SI') {
+            $user->notify(new StatusAccountabilityNotification($accountability->fresh()));
+        }
+
+        return $redirectOnFinish;
+    }
+
     public function HandleExportSAP($accountability_id, Request $request)
     {
         $journal_entry_lines = array();
         $management = Management::where('group', 'accountability_detail')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
+
+        // If cycle system: check if there's a next level before attempting SAP export
+        $currentLevel = $accountability->current_level_id
+            ? AuthorizationCycleLevel::find($accountability->current_level_id)
+            : null;
+
+        if ($currentLevel && $currentLevel->nextLevel()) {
+            // Not the last level — just advance, no SAP export yet
+            return $this->HandleAdvanceOrFinalize($accountability, $request, 0,
+                Redirect::route('panel.accountability.authorization.index'));
+        }
+
+        // Last level or legacy: attempt SAP export
         $documents = AccountabilityDetail::with('document.detail', 'field.document_field')->where('accountability_id', $accountability_id)->orderBy('id', 'desc')->get();
         foreach ($documents as $document) {
-            //return $this->HandleFormatLine($document,$management);
             $journal_entry_lines = array_merge($journal_entry_lines, $this->HandleFormatLine($document, $management));
         }
 
@@ -266,7 +348,6 @@ class AccountabilityController extends Controller
             $total_debit += (float) $line['Debit'];
             $total_credit += (float) $line['Credit'];
         }
-        //return $total_debit;
         $debit = $total_debit - $total_credit;
         $export_profile = Profile::where('id', $accountability->profile_id)->first();
         $export_short_name = ($export_profile && $export_profile->sin_empleado)
@@ -280,19 +361,24 @@ class AccountabilityController extends Controller
             'LineMemo' => $accountability->description,
         ];
         $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
+        $exportUser = User::find($accountability->user_id);
+        $userFieldKey = $management->where('name', 'user_field')->first()?->value;
+        $journalEntry = [
+            'Memo' => $accountability->description,
+            'ReferenceDate' => $accountability->end_date,
+            'TaxDate' => $accountability->end_date,
+            'DueDate' => $accountability->end_date,
+            'JournalEntryLines' => $journal_entry_lines,
+        ];
+        if ($userFieldKey) {
+            $journalEntry[$userFieldKey] = $exportUser->name;
+        }
         $journal_entries = [
             'JournalVoucher' => [
-                'JournalEntry' => [
-                    'Memo' => $accountability->description,
-                    'ReferenceDate' => $accountability->end_date,
-                    'TaxDate' => $accountability->end_date,
-                    'DueDate' => $accountability->end_date,
-                    'JournalEntryLines' => $journal_entry_lines
-                ]
-            ]
+                'JournalEntry' => $journalEntry,
+            ],
         ];
 
-        //dd($journal_entries);
         Log::info('SAP Export Data:', $journal_entries);
 
         $params_sap = Management::where('group', 'accountability')->get();
@@ -313,18 +399,27 @@ class AccountabilityController extends Controller
                         'Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9',
                     ])->post('JournalVouchersService_Add', $journal_entries);
                 if ($response->successful()) {
-                    Accountability::findOrFail($accountability_id)->fill([
-                        'status' => $request->status,
-                        'comments' => $request->comments,
-                        'sap_exported' => 1,
+                    if ($currentLevel) {
+                        $this->HandleRecordApproval(
+                            $accountability->id,
+                            $currentLevel->id,
+                            $request->user()->id,
+                            'aprobado',
+                            $request->comments
+                        );
+                    }
+                    $accountability->fill([
+                        'status'           => 'Autorizado',
+                        'comments'         => $request->comments,
+                        'sap_exported'     => 1,
+                        'current_level_id' => null,
                     ])->save();
                     Session::flash('message', "Documento autorizado y exportado correctamente");
                     Session::flash('type', 'positive');
-                    $accountability = Accountability::where('id', $accountability_id)->first();
-                    $user = User::where('id', $accountability->user_id)->first();
+                    $user = User::find($accountability->user_id);
                     $params = Management::where('group', 'accountability')->get();
                     if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-                        $user->notify(new StatusAccountabilityNotification($accountability));
+                        $user->notify(new StatusAccountabilityNotification($accountability->fresh()));
                     }
                     return Redirect::route('panel.accountability.authorization.index');
                 } else {
@@ -346,20 +441,16 @@ class AccountabilityController extends Controller
 
     public function HandleForceAuthorize($accountability_id, Request $request)
     {
-        Accountability::findOrFail($accountability_id)->fill([
-            'status' => 'Autorizado',
-            'comments' => $request->comments,
-            'sap_exported' => 0,
-        ])->save();
-        $accountability = Accountability::where('id', $accountability_id)->first();
-        $user = User::where('id', $accountability->user_id)->first();
-        $params = Management::where('group', 'accountability')->get();
-        if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-            $user->notify(new StatusAccountabilityNotification($accountability));
-        }
-        Session::flash('message', "Rendición autorizada. Pendiente de exportación a SAP");
-        Session::flash('type', 'warning');
-        return Redirect::route('panel.accountability.authorization.index');
+        $accountability = Accountability::findOrFail($accountability_id);
+        return $this->HandleAdvanceOrFinalize(
+            $accountability,
+            $request,
+            0,
+            Redirect::route('panel.accountability.authorization.index')->with([
+                'message' => "Rendición autorizada. Pendiente de exportación a SAP",
+                'type'    => 'warning',
+            ])
+        );
     }
 
     public function HandleIndexPendingExport(Request $request)
@@ -379,9 +470,10 @@ class AccountabilityController extends Controller
         $accountability = Accountability::with('user')->where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = GeneralAccounts::select(
-            DB::raw("CONCAT(account_code,'-',account_name) as label"),
+            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
             'account_code',
-            'account_name'
+            'account_name',
+            'alias'
         )->where('profile_id', $profile->id)->get();
         $accountability->account = $accountability->account_code;
         $accountability->employee = $accountability->employee_code;
@@ -479,21 +571,61 @@ class AccountabilityController extends Controller
     public function HandleIndexAccountability(Request $request)
     {
         Session::put('title', 'Lista Rendiciones');
-        $users = UserAuthorization::where('auth_user_id', $request->user()->id)->get()->pluck('user_id');
-        $accountabilities = Accountability::with('user', 'profile')
+        $authUserId = $request->user()->id;
+
+        // New system: accountabilities where current user is in the current level
+        $levelIds = AuthorizationCycleLevel::whereHas('levelUsers', function ($q) use ($authUserId) {
+            $q->where('user_id', $authUserId);
+        })->pluck('id');
+
+        // Legacy system: accountabilities with no cycle (current_level_id is null)
+        $legacyUserIds = UserAuthorization::where('auth_user_id', $authUserId)->pluck('user_id');
+
+        $accountabilities = Accountability::with('user', 'profile', 'currentLevel.cycle')
             ->where('status', 'Pendiente')
-            ->whereIn('user_id', $users)
+            ->where(function ($q) use ($levelIds, $legacyUserIds) {
+                $q->whereIn('current_level_id', $levelIds)
+                  ->orWhere(function ($q2) use ($legacyUserIds) {
+                      $q2->whereNull('current_level_id')
+                         ->whereIn('user_id', $legacyUserIds);
+                  });
+            })
             ->get();
 
-        $authorized = Accountability::with('user', 'profile')
+        $authorized = Accountability::with('user', 'profile', 'currentLevel.cycle')
             ->where('status', 'Autorizado')
-            ->whereIn('user_id', $users)
+            ->where(function ($q) use ($levelIds, $legacyUserIds, $authUserId) {
+                $q->whereHas('levelApprovals', function ($q2) use ($authUserId) {
+                    $q2->where('user_id', $authUserId);
+                })->orWhere(function ($q2) use ($legacyUserIds) {
+                    $q2->whereIn('user_id', $legacyUserIds);
+                });
+            })
             ->get();
+
+        // Enrich both collections with general_accounts alias
+        $all = $accountabilities->merge($authorized);
+        $profileIds  = $all->pluck('profile_id')->unique()->values();
+        $accountCodes = $all->pluck('account_code')->unique()->values();
+
+        $aliasMap = GeneralAccounts::whereIn('profile_id', $profileIds)
+            ->whereIn('account_code', $accountCodes)
+            ->select('profile_id', 'account_code', 'alias')
+            ->get()
+            ->keyBy(fn($g) => $g->profile_id . '|' . $g->account_code);
+
+        $enrich = function ($collection) use ($aliasMap) {
+            return $collection->map(function ($a) use ($aliasMap) {
+                $a->account_alias = $aliasMap[$a->profile_id . '|' . $a->account_code]->alias ?? null;
+                return $a;
+            });
+        };
+
         return Inertia::render(
             'authorization/IndexAccountabilityNew',
             [
-                'data' => $accountabilities,
-                'authorized' => $authorized,
+                'data'       => $enrich($accountabilities),
+                'authorized' => $enrich($authorized),
             ]
         );
     }
@@ -503,9 +635,10 @@ class AccountabilityController extends Controller
         $accountability = Accountability::with('user')->where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = GeneralAccounts::select(
-            DB::raw("CONCAT(account_code,'-',account_name) as label"),
+            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
             'account_code',
-            'account_name'
+            'account_name',
+            'alias'
         )->where('profile_id', $profile->id)->get();
         $accountability->account = $accountability->account_code;
         $accountability->employee = $accountability->employee_code;
@@ -606,6 +739,21 @@ SQL;
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $documents = AccountabilityDetail::where('accountability_id', $accountability_id)->get();
 
+        // Enrich with aliases
+        $generalAlias = GeneralAccounts::where('profile_id', $profile->id)
+            ->where('account_code', $accountability->account_code)
+            ->value('alias');
+        $accountability->account_alias = $generalAlias;
+
+        $detailAliasCodes = $documents->pluck('account')->unique()->values();
+        $detailAliasMap = DetailAccounts::where('profile_id', $profile->id)
+            ->whereIn('account_code', $detailAliasCodes)
+            ->pluck('alias', 'account_code');
+        $documents = $documents->map(function ($doc) use ($detailAliasMap) {
+            $doc->account_alias = $detailAliasMap[$doc->account] ?? null;
+            return $doc;
+        });
+
         $audits = Audit::where('auditable_type', Accountability::class)
             ->where('auditable_id', $accountability_id)
             ->with('user')
@@ -625,6 +773,63 @@ SQL;
                 ];
             });
 
+        // Build cycle approval chain for display
+        $cycleChain = null;
+        if ($accountability->current_level_id) {
+            $currentLevel = AuthorizationCycleLevel::with('cycle.levels.users', 'users')->find($accountability->current_level_id);
+            if ($currentLevel) {
+                $approvals = AccountabilityLevelApproval::with('user', 'level')
+                    ->where('accountability_id', $accountability_id)
+                    ->get();
+                $cycleChain = [
+                    'cycle_name' => $currentLevel->cycle->name,
+                    'current_level_id' => $accountability->current_level_id,
+                    'levels' => $currentLevel->cycle->levels->map(function ($level) use ($approvals) {
+                        $levelApprovals = $approvals->where('level_id', $level->id);
+                        return [
+                            'id'       => $level->id,
+                            'order'    => $level->order,
+                            'name'     => $level->name,
+                            'users'    => $level->users->map(fn($u) => ['id' => $u->id, 'name' => $u->name]),
+                            'approvals' => $levelApprovals->values()->map(fn($a) => [
+                                'user'     => $a->user->name,
+                                'status'   => $a->status,
+                                'comments' => $a->comments,
+                                'acted_at' => \Carbon\Carbon::parse($a->acted_at)->setTimezone('America/La_Paz')->format('Y-m-d g:i A'),
+                            ]),
+                        ];
+                    }),
+                ];
+            }
+        } elseif ($accountability->status === 'Autorizado') {
+            // Show completed chain for already-authorized with cycle
+            $approvals = AccountabilityLevelApproval::with('user', 'level.cycle')
+                ->where('accountability_id', $accountability_id)
+                ->get();
+            if ($approvals->isNotEmpty()) {
+                $cycle = $approvals->first()->level->cycle;
+                $cycleChain = [
+                    'cycle_name' => $cycle->name,
+                    'current_level_id' => null,
+                    'levels' => $cycle->levels->map(function ($level) use ($approvals) {
+                        $levelApprovals = $approvals->where('level_id', $level->id);
+                        return [
+                            'id'       => $level->id,
+                            'order'    => $level->order,
+                            'name'     => $level->name,
+                            'users'    => $level->users->map(fn($u) => ['id' => $u->id, 'name' => $u->name]),
+                            'approvals' => $levelApprovals->values()->map(fn($a) => [
+                                'user'     => $a->user->name,
+                                'status'   => $a->status,
+                                'comments' => $a->comments,
+                                'acted_at' => \Carbon\Carbon::parse($a->acted_at)->setTimezone('America/La_Paz')->format('Y-m-d g:i A'),
+                            ]),
+                        ];
+                    }),
+                ];
+            }
+        }
+
         return Inertia::render(
             'authorization/DetailAccountabilityNew',
             [
@@ -633,6 +838,7 @@ SQL;
                 'documents' => $documents,
                 'audits' => $audits,
                 'from' => $from,
+                'cycleChain' => $cycleChain,
             ]
         );
     }
@@ -727,9 +933,10 @@ SQL;
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = DetailAccounts::select(
-            DB::raw("CONCAT(account_code,'-',account_name) as label"),
+            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
             'account_code',
-            'account_name'
+            'account_name',
+            'alias'
         )->where('profile_id', $profile->id)->get();
         $documents = Document::where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
@@ -785,9 +992,10 @@ SQL;
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = DetailAccounts::select(
-            DB::raw("CONCAT(account_code,'-',account_name) as label"),
+            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
             'account_code',
-            'account_name'
+            'account_name',
+            'alias'
         )->where('profile_id', $profile->id)->get();
         $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
@@ -908,15 +1116,29 @@ SQL;
     }
     public function HandleUpdateStatus($accountability_id, Request $request)
     {
-        Accountability::findOrFail($accountability_id)->fill([
-            'status' => $request->status,
-            'comments' => $request->comments,
+        $accountability = Accountability::findOrFail($accountability_id);
+
+        // Record rejection in approvals when using cycle system
+        if ($accountability->current_level_id && $request->status === 'Rechazado') {
+            $this->HandleRecordApproval(
+                $accountability->id,
+                $accountability->current_level_id,
+                $request->user()->id,
+                'rechazado',
+                $request->comments
+            );
+        }
+
+        $accountability->fill([
+            'status'           => $request->status,
+            'comments'         => $request->comments,
+            'current_level_id' => null,
         ])->save();
-        $accountability = Accountability::where('id', $accountability_id)->first();
-        $user = User::where('id', $accountability->user_id)->first();
+
+        $user = User::find($accountability->user_id);
         $params = Management::where('group', 'accountability')->get();
         if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-            $user->notify(new StatusAccountabilityNotification($accountability));
+            $user->notify(new StatusAccountabilityNotification($accountability->fresh()));
         }
         Session::flash('message', "Documento enviado correctamente");
         Session::flash('type', 'positive');
