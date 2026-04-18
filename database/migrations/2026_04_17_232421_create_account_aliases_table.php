@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('account_aliases')) {
+            return;
+        }
         Schema::create('account_aliases', function (Blueprint $table) {
             $table->id();
             $table->string('acct_code')->unique();
