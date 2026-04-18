@@ -8,13 +8,11 @@ return new class extends Migration
     public function up(): void
     {
         DB::table('management')->insert([
-            'group'      => 'accountability_detail',
-            'name'       => 'user_field',
-            'label'      => 'Usuario',
-            'value'      => '',
-            'type'       => 'text',
-            'created_at' => now(),
-            'updated_at' => now(),
+            'group' => 'accountability_detail',
+            'name'  => 'user_field',
+            'label' => 'Usuario',
+            'value' => '',
+            'type'  => 'text',
         ]);
     }
 

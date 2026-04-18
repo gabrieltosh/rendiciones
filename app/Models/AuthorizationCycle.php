@@ -12,7 +12,7 @@ class AuthorizationCycle extends Model
     protected $table = 'authorization_cycles';
     protected $fillable = ['name', 'description', 'is_active'];
     protected $casts = ['is_active' => 'boolean'];
-
+    protected $dateFormat = 'Y-m-d\TH:i:s';
     public function levels()
     {
         return $this->hasMany(AuthorizationCycleLevel::class, 'cycle_id')->orderBy('order');

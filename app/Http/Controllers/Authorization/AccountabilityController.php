@@ -522,15 +522,21 @@ class AccountabilityController extends Controller
             'LineMemo' => $accountability->description,
         ];
         $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
+        $reExportUser = User::find($accountability->user_id);
+        $reExportUserFieldKey = $management->where('name', 'user_field')->first()?->value;
+        $reExportJournalEntry = [
+            'Memo' => $accountability->description,
+            'ReferenceDate' => $accountability->end_date,
+            'TaxDate' => $accountability->end_date,
+            'DueDate' => $accountability->end_date,
+            'JournalEntryLines' => $journal_entry_lines,
+        ];
+        if ($reExportUserFieldKey) {
+            $reExportJournalEntry[$reExportUserFieldKey] = $reExportUser->name;
+        }
         $journal_entries = [
             'JournalVoucher' => [
-                'JournalEntry' => [
-                    'Memo' => $accountability->description,
-                    'ReferenceDate' => $accountability->end_date,
-                    'TaxDate' => $accountability->end_date,
-                    'DueDate' => $accountability->end_date,
-                    'JournalEntryLines' => $journal_entry_lines,
-                ],
+                'JournalEntry' => $reExportJournalEntry,
             ],
         ];
 

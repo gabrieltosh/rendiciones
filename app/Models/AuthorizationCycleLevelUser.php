@@ -11,7 +11,7 @@ class AuthorizationCycleLevelUser extends Model
 
     protected $table = 'authorization_cycle_level_users';
     protected $fillable = ['level_id', 'user_id'];
-
+    protected $dateFormat = 'Y-m-d\TH:i:s';
     public function level()
     {
         return $this->belongsTo(AuthorizationCycleLevel::class, 'level_id');

@@ -11,7 +11,7 @@ class AuthorizationCycleLevel extends Model
 
     protected $table = 'authorization_cycle_levels';
     protected $fillable = ['cycle_id', 'order', 'name'];
-
+    protected $dateFormat = 'Y-m-d\TH:i:s';
     public function cycle()
     {
         return $this->belongsTo(AuthorizationCycle::class, 'cycle_id');

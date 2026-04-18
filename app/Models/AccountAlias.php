@@ -8,4 +8,5 @@ class AccountAlias extends Model
 {
     protected $table = 'account_aliases';
     protected $fillable = ['acct_code', 'alias'];
+    protected $dateFormat = 'Y-m-d\TH:i:s';
 }
