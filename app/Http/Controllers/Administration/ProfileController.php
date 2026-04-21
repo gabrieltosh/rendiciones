@@ -30,9 +30,14 @@ class ProfileController extends Controller
             $db=Config::get('database.connections.hana.database');
             $sql=
 <<<SQL
-            select CONCAT(CONCAT(T1."AcctCode",'-'),T1."AcctName") as "label",
+            select CASE
+                    WHEN T1."FormatCode" IS NULL OR T1."FormatCode" = ''
+                    THEN T1."AcctName"
+                    ELSE CONCAT(CONCAT(T1."FormatCode",'-'),T1."AcctName")
+                   END as "label",
                 T1."AcctName",
                 T1."AcctCode",
+                T1."FormatCode",
                 T1."FatherNum",
                 T1."Levels",
                 T1."LocManTran"
@@ -64,9 +69,10 @@ SQL;
             $accounts = DB::connection('sap')
                 ->table('OACT as T1')
                 ->select(
-                    DB::raw("CONCAT(T1.AcctCode,'-',T1.AcctName) as label"),
+                    DB::raw("CASE WHEN T1.FormatCode IS NULL OR T1.FormatCode = '' THEN T1.AcctName ELSE CONCAT(T1.FormatCode,'-',T1.AcctName) END as label"),
                     'T1.AcctName',
                     'T1.AcctCode',
+                    'T1.FormatCode',
                     'T1.FatherNum',
                     'T1.Levels',
                     'T1.LocManTran'
@@ -107,11 +113,7 @@ SQL;
 
     public function HandleGetAccountFormat($data)
     {
-        $accounts = [];
-        foreach ($data as $value) {
-            $account = explode('-', $value);
-            array_push($accounts, $account[0]);
-        }
+        $accounts = array_values((array) $data);
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
             $db=Config::get('database.connections.hana.database');
@@ -253,12 +255,7 @@ SQL;
     }
     public function HandleGetAccountCode($data)
     {
-        $accounts = [];
-        foreach ($data as $value) {
-            $account = explode('-', $value);
-            array_push($accounts, $account[0]);
-        }
-        return $accounts;
+        return array_values((array) $data);
     }
     public function HandleGetAccountSAP($accounts)
     {
@@ -654,18 +651,12 @@ SQL;
                 )->orderBy('id', 'asc');
             }
         ])->first();
-        $profile->detail = DB::table('detail_accounts as T1')
-            ->select(
-                DB::raw("CONCAT(T1.account_code,'-',ISNULL(T1.alias, T1.account_name)) as label")
-            )
+        $profile->detail = DB::table('detail_accounts')
             ->where('profile_id', $id)
-            ->pluck('label');
-        $profile->general = DB::table('general_accounts as T1')
-            ->select(
-                DB::raw("CONCAT(T1.account_code,'-',ISNULL(T1.alias, T1.account_name)) as label")
-            )
+            ->pluck('account_code');
+        $profile->general = DB::table('general_accounts')
             ->where('profile_id', $id)
-            ->pluck('label');
+            ->pluck('account_code');
 
         $profile->employees = DB::table('employees as T1')
             ->select(
@@ -683,7 +674,9 @@ SQL;
             'accounts_document' => $this->HandleGetAccountsDocument(),
             'employees' => $this->HandleGetEmployees(),
             'document_types'=>$this->HandleGetDocumentType($field_document_type->value),
-            'alias_map' => AccountAlias::all()->pluck('alias', 'acct_code'),
+            'alias_map' => AccountAlias::select('acct_code', 'alias')->get()
+                    ->groupBy('acct_code')
+                    ->map(fn($g) => $g->pluck('alias')->toArray()),
         ]);
     }
     public function HandleDeleteProfile($id)
@@ -851,7 +844,9 @@ SQL;
             'accounts_document' => $this->HandleGetAccountsDocument(),
             'employees' => $this->HandleGetEmployees(),
             'document_types'=>$this->HandleGetDocumentType($field_document_type->value),
-            'alias_map' => AccountAlias::all()->pluck('alias', 'acct_code'),
+            'alias_map' => AccountAlias::select('acct_code', 'alias')->get()
+                    ->groupBy('acct_code')
+                    ->map(fn($g) => $g->pluck('alias')->toArray()),
         ]);
     }
     public function HandleIndexProfile()

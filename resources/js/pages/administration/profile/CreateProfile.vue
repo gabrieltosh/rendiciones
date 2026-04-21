@@ -158,15 +158,15 @@
                                     <q-input outlined dense color="primary" placeholder="Buscar…" v-model="filter"
                                         class="input-theme" name="search_general" autocomplete="off" aria-label="Buscar cuentas cabecera">
                                     </q-input>
-                                    <q-tree :nodes="accountsForCabecera" node-key="label" tick-strategy="leaf"
+                                    <q-tree :nodes="accountsForCabecera" node-key="AcctCode" tick-strategy="leaf"
                                         v-model:ticked="form.general" :filter="filter"
                                         :filter-method="HandleFilterAccounts" :default-expand-all="expand.header">
                                         <template v-slot:default-header="prop">
                                             <div class="tree-label row items-center q-gutter-xs no-wrap">
                                                 <span>{{ prop.node.label }}</span>
-                                                <q-badge v-if="aliasMap[prop.node.AcctCode]" color="orange-7" dense class="q-px-xs">
-                                                    <q-tooltip>Alias: {{ aliasMap[prop.node.AcctCode] }}</q-tooltip>
-                                                    alias
+                                                <q-badge v-if="aliasMap[prop.node.AcctCode]?.length" color="orange-7" dense class="q-px-xs">
+                                                    <q-tooltip>{{ aliasMap[prop.node.AcctCode].join(' · ') }}</q-tooltip>
+                                                    {{ aliasMap[prop.node.AcctCode].length }} alias
                                                 </q-badge>
                                             </div>
                                         </template>
@@ -179,7 +179,7 @@
                                     </h5>
                                     <ul class="q-ma-none">
                                         <div v-for="tick in form.general" :key="`ticked-${tick}`" class="tree-label">
-                                            <li>{{ tick }}</li>
+                                            <li>{{ acctLookup[tick] ?? tick }}</li>
                                         </div>
                                     </ul>
                                 </div>
@@ -219,15 +219,15 @@
                                     </h5>
                                     <q-input outlined dense color="primary" placeholder="Buscar…" v-model="filter2"
                                         class="input-theme" name="search_detail" autocomplete="off" aria-label="Buscar cuentas detalle"></q-input>
-                                    <q-tree :nodes="accounts" node-key="label" tick-strategy="leaf"
+                                    <q-tree :nodes="accounts" node-key="AcctCode" tick-strategy="leaf"
                                         v-model:ticked="form.detail" :filter="filter2"
                                         :filter-method="HandleFilterAccounts" :default-expand-all="expand.header">
                                         <template v-slot:default-header="prop">
                                             <div class="tree-label row items-center q-gutter-xs no-wrap">
                                                 <span>{{ prop.node.label }}</span>
-                                                <q-badge v-if="aliasMap[prop.node.AcctCode]" color="orange-7" dense class="q-px-xs">
-                                                    <q-tooltip>Alias: {{ aliasMap[prop.node.AcctCode] }}</q-tooltip>
-                                                    alias
+                                                <q-badge v-if="aliasMap[prop.node.AcctCode]?.length" color="orange-7" dense class="q-px-xs">
+                                                    <q-tooltip>{{ aliasMap[prop.node.AcctCode].join(' · ') }}</q-tooltip>
+                                                    {{ aliasMap[prop.node.AcctCode].length }} alias
                                                 </q-badge>
                                             </div>
                                         </template>
@@ -240,7 +240,7 @@
                                     </h5>
                                     <ul class="q-ma-none">
                                         <div v-for="tick in form.detail" :key="`ticked-${tick}`" class="tree-label">
-                                            <li>{{ tick }}</li>
+                                            <li>{{ acctLookup[tick] ?? tick }}</li>
                                         </div>
                                     </ul>
                                 </div>
@@ -810,6 +810,15 @@ function filterTreeByLocManTran(nodes, locManTran) {
 const accountsForCabecera = computed(() =>
     filterTreeByLocManTran(accounts.value, form.value.sin_empleado ? 'N' : 'Y')
 );
+
+function buildAcctLookup(nodes, map = {}) {
+    for (const n of nodes) {
+        map[n.AcctCode] = n.FormatCode ? `${n.FormatCode} - ${n.AcctName}` : n.AcctName;
+        if (n.children?.length) buildAcctLookup(n.children, map);
+    }
+    return map;
+}
+const acctLookup = buildAcctLookup(accounts.value);
 
 watch(() => form.value.sin_empleado, () => {
     form.value.general = [];

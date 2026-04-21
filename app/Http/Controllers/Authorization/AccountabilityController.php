@@ -470,8 +470,9 @@ class AccountabilityController extends Controller
         $accountability = Accountability::with('user')->where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = GeneralAccounts::select(
-            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
+            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
             'account_code',
+            'format_code',
             'account_name',
             'alias'
         )->where('profile_id', $profile->id)->get();
@@ -641,8 +642,9 @@ class AccountabilityController extends Controller
         $accountability = Accountability::with('user')->where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = GeneralAccounts::select(
-            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
+            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
             'account_code',
+            'format_code',
             'account_name',
             'alias'
         )->where('profile_id', $profile->id)->get();
@@ -939,8 +941,9 @@ SQL;
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = DetailAccounts::select(
-            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
+            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
             'account_code',
+            'format_code',
             'account_name',
             'alias'
         )->where('profile_id', $profile->id)->get();
@@ -998,8 +1001,9 @@ SQL;
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
         $accounts = DetailAccounts::select(
-            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
+            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
             'account_code',
+            'format_code',
             'account_name',
             'alias'
         )->where('profile_id', $profile->id)->get();

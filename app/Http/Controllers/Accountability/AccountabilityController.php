@@ -138,15 +138,17 @@ class AccountabilityController extends Controller
         $params = Management::where('group', 'supplier')->get();
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $detailRows = DetailAccounts::select('account_code', 'account_name')
+        $detailRows = DetailAccounts::select('account_code', 'format_code', 'account_name', 'alias')
             ->where('profile_id', $profile->id)->get();
         $aliasMap = AccountAlias::whereIn('acct_code', $detailRows->pluck('account_code'))
             ->pluck('alias', 'acct_code');
         $accounts = $detailRows->map(fn($a) => (object)[
             'account_code' => $a->account_code,
             'account_name' => $a->account_name,
-            'alias'        => $aliasMap[$a->account_code] ?? null,
-            'label'        => $a->account_code . '-' . ($aliasMap[$a->account_code] ?? $a->account_name),
+            'alias'        => $a->alias ?? ($aliasMap[$a->account_code] ?? null),
+            'label'        => ($a->format_code
+                                ? $a->format_code . '-'
+                                : '') . ($a->alias ?? ($aliasMap[$a->account_code] ?? $a->account_name)),
         ]);
         $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
@@ -259,15 +261,17 @@ SQL;
         $params = Management::where('group', 'supplier')->get();
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $detailRows = DetailAccounts::select('account_code', 'account_name')
+        $detailRows = DetailAccounts::select('account_code', 'format_code', 'account_name', 'alias')
             ->where('profile_id', $profile->id)->get();
         $aliasMap = AccountAlias::whereIn('acct_code', $detailRows->pluck('account_code'))
             ->pluck('alias', 'acct_code');
         $accounts = $detailRows->map(fn($a) => (object)[
             'account_code' => $a->account_code,
             'account_name' => $a->account_name,
-            'alias'        => $aliasMap[$a->account_code] ?? null,
-            'label'        => $a->account_code . '-' . ($aliasMap[$a->account_code] ?? $a->account_name),
+            'alias'        => $a->alias ?? ($aliasMap[$a->account_code] ?? null),
+            'label'        => ($a->format_code
+                                ? $a->format_code . '-'
+                                : '') . ($a->alias ?? ($aliasMap[$a->account_code] ?? $a->account_name)),
         ]);
         $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         return Inertia::render(
@@ -467,8 +471,9 @@ SQL;
         $profile = Profile::where('id', $profile_id)->first();
         $employees = Employee::where('profile_id', $profile_id)->get();
         $accounts = GeneralAccounts::select(
-            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
+            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
             'account_code',
+            'format_code',
             'account_name',
             'alias'
         )->where('profile_id', $profile->id)->get();
@@ -627,8 +632,9 @@ SQL;
         Session::put('title', 'Crear Rendición');
         $profile = Profile::where('id', $profile_id)->first();
         $accounts = GeneralAccounts::select(
-            DB::raw("CONCAT(account_code,'-',ISNULL(alias, account_name)) as label"),
+            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
             'account_code',
+            'format_code',
             'account_name',
             'alias'
         )->where('profile_id', $profile->id)->get();

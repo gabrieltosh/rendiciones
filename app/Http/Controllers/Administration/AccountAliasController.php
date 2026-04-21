@@ -22,33 +22,57 @@ class AccountAliasController extends Controller
     {
         Session::put('title', 'Alias de Cuentas Contables');
 
-        $aliases = AccountAlias::whereNotNull('alias')->where('alias', '!=', '')->get();
-
-        $sapMap = $this->HandleGetSapNames($aliases->pluck('acct_code')->toArray());
-
-        $aliasedAccounts = $aliases->map(fn($a) => [
-            'acct_code' => $a->acct_code,
-            'acct_name' => $sapMap[$a->acct_code] ?? $a->acct_code,
-            'alias'     => $a->alias,
-        ])->values();
+        $aliases = AccountAlias::whereNotNull('alias')
+            ->where('alias', '!=', '')
+            ->orderBy('acct_code')
+            ->orderBy('id')
+            ->get();
 
         return Inertia::render('administration/account-aliases/IndexAccountAlias', [
-            'aliases'   => $aliasedAccounts,
+            'aliases'   => $aliases,
             'accounts'  => $this->HandleGetAccountsTree(),
-            'alias_map' => $aliases->pluck('alias', 'acct_code'),
+            'alias_map' => $aliases->groupBy('acct_code')
+                ->map(fn($g) => $g->pluck('alias')->toArray()),
         ]);
     }
 
-    public function HandleUpdateAlias(Request $request, $acct_code)
+    public function HandleStoreAlias(Request $request)
     {
-        $request->validate(['alias' => 'nullable|string|max:255']);
+        $request->validate([
+            'acct_code'   => 'required|string|max:255',
+            'format_code' => 'nullable|string|max:255',
+            'acct_name'   => 'nullable|string|max:255',
+            'alias'       => 'required|string|max:255',
+        ]);
 
-        AccountAlias::updateOrCreate(
-            ['acct_code' => $acct_code],
-            ['alias'     => $request->alias ?: null]
-        );
+        AccountAlias::create([
+            'acct_code'   => $request->acct_code,
+            'format_code' => $request->format_code,
+            'acct_name'   => $request->acct_name,
+            'alias'       => $request->alias,
+        ]);
 
-        Session::flash('message', 'Alias guardado correctamente');
+        Session::flash('message', 'Alias creado correctamente');
+        Session::flash('type', 'positive');
+        return back();
+    }
+
+    public function HandleUpdateAlias(Request $request, $id)
+    {
+        $request->validate(['alias' => 'required|string|max:255']);
+
+        AccountAlias::findOrFail($id)->update(['alias' => $request->alias]);
+
+        Session::flash('message', 'Alias actualizado correctamente');
+        Session::flash('type', 'positive');
+        return back();
+    }
+
+    public function HandleDeleteAlias($id)
+    {
+        AccountAlias::findOrFail($id)->delete();
+
+        Session::flash('message', 'Alias eliminado correctamente');
         Session::flash('type', 'positive');
         return back();
     }
@@ -62,37 +86,74 @@ class AccountAliasController extends Controller
         $spreadsheet = IOFactory::load($request->file('file')->getRealPath());
         $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
 
-        $created = 0;
-        $updated = 0;
-        $skipped = 0;
-
+        // Collect FormatCodes from Excel (skip header)
+        $entries = [];
         foreach ($rows as $i => $row) {
-            if ($i === 0) continue; // skip header
-
-            $code  = trim((string) ($row[0] ?? ''));
-            $alias = trim((string) ($row[1] ?? ''));
-
-            if ($code === '') { $skipped++; continue; }
-
-            $existing = AccountAlias::where('acct_code', $code)->first();
-            if ($alias === '') {
-                if ($existing) { $existing->delete(); }
-                $skipped++;
-                continue;
-            }
-
-            if ($existing) {
-                $existing->update(['alias' => $alias]);
-                $updated++;
-            } else {
-                AccountAlias::create(['acct_code' => $code, 'alias' => $alias]);
-                $created++;
-            }
+            if ($i === 0) continue;
+            $formatCode = trim((string) ($row[0] ?? ''));
+            $alias      = trim((string) ($row[1] ?? ''));
+            if ($formatCode === '' || $alias === '') continue;
+            $entries[$formatCode] = $alias;
         }
 
-        Session::flash('message', "Importación completada: {$created} nuevos, {$updated} actualizados, {$skipped} omitidos.");
+        if (empty($entries)) {
+            Session::flash('message', 'No se encontraron filas válidas en el archivo.');
+            Session::flash('type', 'warning');
+            return back();
+        }
+
+        // Bulk lookup in SAP by FormatCode
+        $formatCodes = array_keys($entries);
+        $sapAccounts = $this->HandleGetAccountsByFormatCode($formatCodes);
+
+        $created = 0;
+        $skipped = 0;
+
+        foreach ($entries as $formatCode => $alias) {
+            $sap = $sapAccounts[$formatCode] ?? null;
+            if (!$sap) { $skipped++; continue; }
+
+            AccountAlias::create([
+                'acct_code'   => $sap['AcctCode'],
+                'format_code' => $formatCode,
+                'acct_name'   => $sap['AcctName'],
+                'alias'       => $alias,
+            ]);
+            $created++;
+        }
+
+        Session::flash('message', "Importación completada: {$created} creados, {$skipped} omitidos (código formato no encontrado en SAP).");
         Session::flash('type', 'positive');
         return back();
+    }
+
+    private function HandleGetAccountsByFormatCode(array $formatCodes): array
+    {
+        if (empty($formatCodes)) return [];
+
+        $params = Management::where('group', 'accountability')->get();
+
+        if ($params->where('name', 'hana_enable')->first()?->value == 'SI') {
+            $db        = Config::get('database.connections.hana.database');
+            $formatted = implode(',', array_map(fn($c) => "'" . addslashes($c) . "'", $formatCodes));
+            $sql       = <<<SQL
+                select T1."AcctCode", T1."AcctName", T1."FormatCode"
+                from {$db}.OACT as T1
+                where T1."FormatCode" in ({$formatted})
+SQL;
+            return collect(Hana::query($sql))
+                ->keyBy('FormatCode')
+                ->toArray();
+        }
+
+        return DB::connection('sap')
+            ->table('OACT')
+            ->select('AcctCode', 'AcctName', 'FormatCode')
+            ->whereIn('FormatCode', $formatCodes)
+            ->get()
+            ->keyBy('FormatCode')
+            ->map(fn($r) => (array) $r)
+            ->toArray();
     }
 
     public function HandleDownloadTemplate(): StreamedResponse
@@ -100,15 +161,14 @@ class AccountAliasController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        $sheet->setCellValue('A1', 'Codigo Cuenta');
+        $sheet->setCellValue('A1', 'Código Formato');
         $sheet->setCellValue('B1', 'Alias');
-
         $sheet->getStyle('A1:B1')->getFont()->setBold(true);
         $sheet->getColumnDimension('A')->setWidth(20);
         $sheet->getColumnDimension('B')->setWidth(30);
 
-        $sheet->setCellValue('A2', '1.1.01.001');
-        $sheet->setCellValue('B2', 'Ejemplo de alias');
+        $sheet->setCellValue('A2', '1.01.001');
+        $sheet->setCellValue('B2', 'Caja principal');
 
         $writer = new Xlsx($spreadsheet);
 
@@ -119,41 +179,6 @@ class AccountAliasController extends Controller
         ]);
     }
 
-    public function HandleDeleteAlias($acct_code)
-    {
-        AccountAlias::where('acct_code', $acct_code)->delete();
-
-        Session::flash('message', 'Alias eliminado correctamente');
-        Session::flash('type', 'positive');
-        return back();
-    }
-
-    private function HandleGetSapNames(array $codes): array
-    {
-        if (empty($codes)) return [];
-
-        $params = Management::where('group', 'accountability')->get();
-
-        if ($params->where('name', 'hana_enable')->first()?->value == 'SI') {
-            $db        = Config::get('database.connections.hana.database');
-            $formatted = implode(',', array_map(fn($c) => "'{$c}'", $codes));
-            $sql       = <<<SQL
-                select T1."AcctCode", T1."AcctName"
-                from {$db}.OACT as T1
-                where T1."AcctCode" in ({$formatted})
-SQL;
-            return collect(Hana::query($sql))->pluck('AcctName', 'AcctCode')->toArray();
-        }
-
-        return DB::connection('sap')
-            ->table('OACT')
-            ->select('AcctCode', 'AcctName')
-            ->whereIn('AcctCode', $codes)
-            ->get()
-            ->pluck('AcctName', 'AcctCode')
-            ->toArray();
-    }
-
     private function HandleGetAccountsTree(): array
     {
         $params = Management::where('group', 'accountability')->get();
@@ -161,9 +186,14 @@ SQL;
         if ($params->where('name', 'hana_enable')->first()?->value == 'SI') {
             $db  = Config::get('database.connections.hana.database');
             $sql = <<<SQL
-                select CONCAT(CONCAT(T1."AcctCode",'-'),T1."AcctName") as "label",
+                select CASE
+                        WHEN T1."FormatCode" IS NULL OR T1."FormatCode" = ''
+                        THEN T1."AcctName"
+                        ELSE CONCAT(CONCAT(T1."FormatCode",'-'),T1."AcctName")
+                       END as "label",
                     T1."AcctName",
                     T1."AcctCode",
+                    T1."FormatCode",
                     T1."FatherNum",
                     T1."Levels"
                 from {$db}.OACT as T1
@@ -184,10 +214,10 @@ SQL;
             return $accounts->filter(fn($a) => $a->Levels == 1)->values()->all();
         }
 
-        $accounts       = DB::connection('sap')->table('OACT as T1')
+        $accounts = DB::connection('sap')->table('OACT as T1')
             ->select(
-                DB::raw("CONCAT(T1.AcctCode,'-',T1.AcctName) as label"),
-                'T1.AcctName', 'T1.AcctCode', 'T1.FatherNum', 'T1.Levels'
+                DB::raw("CASE WHEN T1.FormatCode IS NULL OR T1.FormatCode = '' THEN T1.AcctName ELSE CONCAT(T1.FormatCode,'-',T1.AcctName) END as label"),
+                'T1.AcctName', 'T1.AcctCode', 'T1.FormatCode', 'T1.FatherNum', 'T1.Levels'
             )
             ->whereIn('T1.Levels', range(1, 10))
             ->orderBy('T1.Levels')->orderBy('T1.FatherNum')
