@@ -96,8 +96,8 @@ Route::middleware('auth')->group(function() {
             Route::name('account-alias.')->prefix('account-alias')->controller(AccountAliasController::class)->group(function () {
                 Route::get('', 'HandleIndexAccountAlias')->name('index');
                 Route::post('', 'HandleStoreAlias')->name('store');
-                Route::put('{id}', 'HandleUpdateAlias')->name('update');
-                Route::delete('{id}', 'HandleDeleteAlias')->name('delete');
+                Route::put('{id}', 'HandleUpdateAlias')->name('update')->where('id', '[0-9]+');
+                Route::delete('{id}', 'HandleDeleteAlias')->name('delete')->where('id', '[0-9]+');
                 Route::post('import', 'HandleImportAliases')->name('import');
                 Route::get('template', 'HandleDownloadTemplate')->name('template');
             });

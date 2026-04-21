@@ -26,7 +26,11 @@ class AccountAliasController extends Controller
             ->where('alias', '!=', '')
             ->orderBy('acct_code')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(function ($a) {
+                $a->id = (int) $a->id;
+                return $a;
+            });
 
         return Inertia::render('administration/account-aliases/IndexAccountAlias', [
             'aliases'   => $aliases,
