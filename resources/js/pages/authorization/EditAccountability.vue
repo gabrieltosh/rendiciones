@@ -72,7 +72,7 @@
                                 outlined
                                 :options="options.accounts"
                                 v-model="form.account"
-                                option-value="account_code"
+                                option-value="key"
                                 option-label="label"
                                 emit-value
                                 map-options

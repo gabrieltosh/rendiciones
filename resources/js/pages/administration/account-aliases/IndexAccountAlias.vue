@@ -230,7 +230,9 @@ const columns = [
 
 function HandleFilterTree(node, filter) {
     const f = filter.toLowerCase();
-    return node.label?.toLowerCase().includes(f) || node.AcctCode?.toLowerCase().includes(f);
+    return node.label?.toLowerCase().includes(f)
+        || node.AcctCode?.toLowerCase().includes(f)
+        || node.FormatCode?.toLowerCase().includes(f);
 }
 
 function HandleTreeSelect(label) {

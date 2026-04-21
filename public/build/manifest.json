@@ -3,175 +3,175 @@
     "file": "assets/MainLayout-8eb0015b.css",
     "src": "MainLayout.css"
   },
-  "_ClosePopup-ef998bde.js": {
-    "file": "assets/ClosePopup-ef998bde.js",
+  "_ClosePopup-6b25b5d2.js": {
+    "file": "assets/ClosePopup-6b25b5d2.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_MainLayout-2d4ab3aa.js": {
+  "_MainLayout-6b22a9ba.js": {
     "css": [
       "assets/MainLayout-8eb0015b.css"
     ],
-    "file": "assets/MainLayout-2d4ab3aa.js",
+    "file": "assets/MainLayout-6b22a9ba.js",
     "imports": [
       "resources/js/app.js",
-      "_use-quasar-2537cf06.js"
+      "_use-quasar-668a6586.js"
     ]
   },
-  "_QBadge-a62acbea.js": {
-    "file": "assets/QBadge-a62acbea.js",
+  "_QBadge-f4a3b4cd.js": {
+    "file": "assets/QBadge-f4a3b4cd.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_QBanner-9af14bf1.js": {
-    "file": "assets/QBanner-9af14bf1.js",
+  "_QBanner-c696bda7.js": {
+    "file": "assets/QBanner-c696bda7.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_QBar-9a12b57c.js": {
-    "file": "assets/QBar-9a12b57c.js",
+  "_QBar-2d21b166.js": {
+    "file": "assets/QBar-2d21b166.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_QChip-2fc0265b.js": {
-    "file": "assets/QChip-2fc0265b.js",
+  "_QChip-dc77e97d.js": {
+    "file": "assets/QChip-dc77e97d.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_QFile-2ba34df6.js": {
-    "file": "assets/QFile-2ba34df6.js",
+  "_QFile-5d61c6ee.js": {
+    "file": "assets/QFile-5d61c6ee.js",
     "imports": [
-      "_QChip-2fc0265b.js",
+      "_QChip-dc77e97d.js",
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js"
+      "_MainLayout-6b22a9ba.js"
     ]
   },
-  "_QImg-955d8885.js": {
-    "file": "assets/QImg-955d8885.js",
+  "_QImg-9025014a.js": {
+    "file": "assets/QImg-9025014a.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_QMarkupTable-bc8413d3.js": {
-    "file": "assets/QMarkupTable-bc8413d3.js",
+  "_QMarkupTable-6cea9299.js": {
+    "file": "assets/QMarkupTable-6cea9299.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_QPage-cc23aeed.js": {
-    "file": "assets/QPage-cc23aeed.js",
+  "_QPage-882aab8c.js": {
+    "file": "assets/QPage-882aab8c.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_QSelect-7d248ecf.js": {
-    "file": "assets/QSelect-7d248ecf.js",
-    "imports": [
-      "resources/js/app.js",
-      "_QChip-2fc0265b.js",
-      "_use-quasar-2537cf06.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_MainLayout-2d4ab3aa.js"
-    ]
-  },
-  "_QStepper-ce04e653.js": {
-    "file": "assets/QStepper-ce04e653.js",
-    "imports": [
-      "_MainLayout-2d4ab3aa.js",
-      "_use-panel-36e1a8ce.js",
-      "resources/js/app.js"
-    ]
-  },
-  "_QTabPanels-feb33c38.js": {
-    "file": "assets/QTabPanels-feb33c38.js",
-    "imports": [
-      "_use-panel-36e1a8ce.js",
-      "resources/js/app.js"
-    ]
-  },
-  "_QTable-e5ce6864.js": {
-    "file": "assets/QTable-e5ce6864.js",
+  "_QSelect-b53f5f5b.js": {
+    "file": "assets/QSelect-b53f5f5b.js",
     "imports": [
       "resources/js/app.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QSelect-7d248ecf.js",
-      "_use-virtual-scroll-7b699d11.js"
+      "_QChip-dc77e97d.js",
+      "_use-quasar-668a6586.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_MainLayout-6b22a9ba.js"
     ]
   },
-  "_QTabs-336f05ef.js": {
-    "file": "assets/QTabs-336f05ef.js",
+  "_QStepper-f4f625ee.js": {
+    "file": "assets/QStepper-f4f625ee.js",
+    "imports": [
+      "_MainLayout-6b22a9ba.js",
+      "_use-panel-c4f4cd9c.js",
+      "resources/js/app.js"
+    ]
+  },
+  "_QTabPanels-328ae3fa.js": {
+    "file": "assets/QTabPanels-328ae3fa.js",
+    "imports": [
+      "_use-panel-c4f4cd9c.js",
+      "resources/js/app.js"
+    ]
+  },
+  "_QTable-d1cc2fa6.js": {
+    "file": "assets/QTable-d1cc2fa6.js",
     "imports": [
       "resources/js/app.js",
-      "_use-quasar-2537cf06.js",
-      "_use-virtual-scroll-7b699d11.js"
+      "_QVirtualScroll-02742dc2.js",
+      "_QSelect-b53f5f5b.js",
+      "_use-virtual-scroll-3e14198a.js"
     ]
   },
-  "_QTimeline-42d3e270.js": {
-    "file": "assets/QTimeline-42d3e270.js",
+  "_QTabs-d6e5ef08.js": {
+    "file": "assets/QTabs-d6e5ef08.js",
+    "imports": [
+      "resources/js/app.js",
+      "_use-quasar-668a6586.js",
+      "_use-virtual-scroll-3e14198a.js"
+    ]
+  },
+  "_QTimeline-4387044f.js": {
+    "file": "assets/QTimeline-4387044f.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_QTooltip-4a7b4c1e.js": {
-    "file": "assets/QTooltip-4a7b4c1e.js",
+  "_QTooltip-36029d98.js": {
+    "file": "assets/QTooltip-36029d98.js",
     "imports": [
       "resources/js/app.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_MainLayout-2d4ab3aa.js"
+      "_use-virtual-scroll-3e14198a.js",
+      "_MainLayout-6b22a9ba.js"
     ]
   },
-  "_QTree-807e6768.js": {
-    "file": "assets/QTree-807e6768.js",
+  "_QTree-024edb32.js": {
+    "file": "assets/QTree-024edb32.js",
     "imports": [
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js"
+      "_MainLayout-6b22a9ba.js"
     ]
   },
-  "_QVirtualScroll-e8f114cc.js": {
-    "file": "assets/QVirtualScroll-e8f114cc.js",
+  "_QVirtualScroll-02742dc2.js": {
+    "file": "assets/QVirtualScroll-02742dc2.js",
     "imports": [
-      "_use-quasar-2537cf06.js",
-      "_QMarkupTable-bc8413d3.js",
+      "_use-quasar-668a6586.js",
+      "_QMarkupTable-6cea9299.js",
       "resources/js/app.js",
-      "_use-virtual-scroll-7b699d11.js"
+      "_use-virtual-scroll-3e14198a.js"
     ]
   },
   "__plugin-vue_export-helper-c27b6911.js": {
     "file": "assets/_plugin-vue_export-helper-c27b6911.js"
   },
-  "_open-url-710f20a3.js": {
-    "file": "assets/open-url-710f20a3.js",
+  "_open-url-41e6594e.js": {
+    "file": "assets/open-url-41e6594e.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_use-panel-36e1a8ce.js": {
-    "file": "assets/use-panel-36e1a8ce.js",
+  "_use-panel-c4f4cd9c.js": {
+    "file": "assets/use-panel-c4f4cd9c.js",
     "imports": [
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js"
+      "_MainLayout-6b22a9ba.js"
     ]
   },
-  "_use-quasar-2537cf06.js": {
-    "file": "assets/use-quasar-2537cf06.js",
+  "_use-quasar-668a6586.js": {
+    "file": "assets/use-quasar-668a6586.js",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_use-virtual-scroll-7b699d11.js": {
-    "file": "assets/use-virtual-scroll-7b699d11.js",
+  "_use-virtual-scroll-3e14198a.js": {
+    "file": "assets/use-virtual-scroll-3e14198a.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js"
     ]
   },
-  "_vue-qrcode-reader-09c61eba.js": {
-    "file": "assets/vue-qrcode-reader-09c61eba.js",
+  "_vue-qrcode-reader-96d7c4bf.js": {
+    "file": "assets/vue-qrcode-reader-96d7c4bf.js",
     "imports": [
       "resources/js/app.js"
     ]
@@ -267,132 +267,132 @@
       "resources/js/pages/authorization/PendingExport.vue",
       "resources/js/pages/welcome.vue"
     ],
-    "file": "assets/app-629ab0e2.js",
+    "file": "assets/app-2b2576c4.js",
     "isEntry": true,
     "src": "resources/js/app.js"
   },
   "resources/js/pages/accountability/CreateAccountability.vue": {
-    "file": "assets/CreateAccountability-cfd2af78.js",
+    "file": "assets/CreateAccountability-6ac1a8ff.js",
     "imports": [
       "resources/js/app.js",
-      "_use-quasar-2537cf06.js",
-      "_QSelect-7d248ecf.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js"
+      "_use-quasar-668a6586.js",
+      "_QSelect-b53f5f5b.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/CreateAccountability.vue"
   },
   "resources/js/pages/accountability/Detail/CreateDetail.vue": {
-    "file": "assets/CreateDetail-258534f6.js",
+    "file": "assets/CreateDetail-952be02f.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_QStepper-ce04e653.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBar-9a12b57c.js",
-      "_vue-qrcode-reader-09c61eba.js",
-      "_use-quasar-2537cf06.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_use-panel-36e1a8ce.js"
+      "_QSelect-b53f5f5b.js",
+      "_QStepper-f4f625ee.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QTooltip-36029d98.js",
+      "_QBar-2d21b166.js",
+      "_vue-qrcode-reader-96d7c4bf.js",
+      "_use-quasar-668a6586.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_use-panel-c4f4cd9c.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/Detail/CreateDetail.vue"
   },
   "resources/js/pages/accountability/Detail/CreateDetailNew.css": {
-    "file": "assets/CreateDetailNew-22a55d5b.css",
+    "file": "assets/CreateDetailNew-939f7140.css",
     "src": "resources/js/pages/accountability/Detail/CreateDetailNew.css"
   },
   "resources/js/pages/accountability/Detail/CreateDetailNew.vue": {
     "css": [
-      "assets/CreateDetailNew-22a55d5b.css"
+      "assets/CreateDetailNew-939f7140.css"
     ],
-    "file": "assets/CreateDetailNew-0401b212.js",
+    "file": "assets/CreateDetailNew-251cf5ef.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBar-9a12b57c.js",
-      "_use-quasar-2537cf06.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QTabs-336f05ef.js",
-      "_vue-qrcode-reader-09c61eba.js",
-      "_QTabPanels-feb33c38.js",
-      "_QBadge-a62acbea.js",
+      "_QSelect-b53f5f5b.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QTooltip-36029d98.js",
+      "_QBar-2d21b166.js",
+      "_use-quasar-668a6586.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QTabs-d6e5ef08.js",
+      "_vue-qrcode-reader-96d7c4bf.js",
+      "_QTabPanels-328ae3fa.js",
+      "_QBadge-f4a3b4cd.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-panel-36e1a8ce.js"
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-panel-c4f4cd9c.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/Detail/CreateDetailNew.vue"
   },
   "resources/js/pages/accountability/Detail/EditDetail.vue": {
-    "file": "assets/EditDetail-a1932241.js",
+    "file": "assets/EditDetail-973266c4.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_QStepper-ce04e653.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_use-quasar-2537cf06.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_use-panel-36e1a8ce.js"
+      "_QSelect-b53f5f5b.js",
+      "_QStepper-f4f625ee.js",
+      "_MainLayout-6b22a9ba.js",
+      "_use-quasar-668a6586.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_use-panel-c4f4cd9c.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/Detail/EditDetail.vue"
   },
   "resources/js/pages/accountability/Detail/EditDetailNew.css": {
-    "file": "assets/EditDetailNew-36811e53.css",
+    "file": "assets/EditDetailNew-839c5356.css",
     "src": "resources/js/pages/accountability/Detail/EditDetailNew.css"
   },
   "resources/js/pages/accountability/Detail/EditDetailNew.vue": {
     "css": [
-      "assets/EditDetailNew-36811e53.css"
+      "assets/EditDetailNew-839c5356.css"
     ],
-    "file": "assets/EditDetailNew-397859a9.js",
+    "file": "assets/EditDetailNew-401e543c.js",
     "imports": [
       "resources/js/app.js",
-      "_use-quasar-2537cf06.js",
-      "_QSelect-7d248ecf.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBar-9a12b57c.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QTabs-336f05ef.js",
-      "_vue-qrcode-reader-09c61eba.js",
-      "_QTabPanels-feb33c38.js",
-      "_QBadge-a62acbea.js",
+      "_use-quasar-668a6586.js",
+      "_QSelect-b53f5f5b.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QTooltip-36029d98.js",
+      "_QBar-2d21b166.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QTabs-d6e5ef08.js",
+      "_vue-qrcode-reader-96d7c4bf.js",
+      "_QTabPanels-328ae3fa.js",
+      "_QBadge-f4a3b4cd.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-panel-36e1a8ce.js"
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-panel-c4f4cd9c.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/Detail/EditDetailNew.vue"
   },
   "resources/js/pages/accountability/DetailAccountability.vue": {
-    "file": "assets/DetailAccountability-2dad8d62.js",
+    "file": "assets/DetailAccountability-c707a434.js",
     "imports": [
-      "_QBanner-9af14bf1.js",
-      "_QBadge-a62acbea.js",
+      "_QBanner-c696bda7.js",
+      "_QBadge-f4a3b4cd.js",
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_use-quasar-2537cf06.js",
-      "_open-url-710f20a3.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_MainLayout-6b22a9ba.js",
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_use-quasar-668a6586.js",
+      "_open-url-41e6594e.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/DetailAccountability.vue"
@@ -405,52 +405,52 @@
     "css": [
       "assets/DetailAccountabilityNew-eab21441.css"
     ],
-    "file": "assets/DetailAccountabilityNew-70f4c798.js",
+    "file": "assets/DetailAccountabilityNew-c4820fa5.js",
     "imports": [
-      "_QBadge-a62acbea.js",
+      "_QBadge-f4a3b4cd.js",
       "resources/js/app.js",
-      "_QBanner-9af14bf1.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTimeline-42d3e270.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBar-9a12b57c.js",
-      "_use-quasar-2537cf06.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_open-url-710f20a3.js",
+      "_QBanner-c696bda7.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QTimeline-4387044f.js",
+      "_QTooltip-36029d98.js",
+      "_QBar-2d21b166.js",
+      "_use-quasar-668a6586.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_open-url-41e6594e.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QMarkupTable-bc8413d3.js"
+      "_use-virtual-scroll-3e14198a.js",
+      "_QMarkupTable-6cea9299.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/DetailAccountabilityNew.vue"
   },
   "resources/js/pages/accountability/EditAccountability.vue": {
-    "file": "assets/EditAccountability-bb58db2c.js",
+    "file": "assets/EditAccountability-3ea06ac3.js",
     "imports": [
       "resources/js/app.js",
-      "_use-quasar-2537cf06.js",
-      "_QSelect-7d248ecf.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js"
+      "_use-quasar-668a6586.js",
+      "_QSelect-b53f5f5b.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/EditAccountability.vue"
   },
   "resources/js/pages/accountability/IndexAccountability.vue": {
-    "file": "assets/IndexAccountability-c42e8ce2.js",
+    "file": "assets/IndexAccountability-31e27e1e.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_use-quasar-2537cf06.js",
-      "_QBadge-a62acbea.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_use-quasar-668a6586.js",
+      "_QBadge-f4a3b4cd.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/IndexAccountability.vue"
@@ -463,20 +463,20 @@
     "css": [
       "assets/IndexAccountabilityNew-d6a85098.css"
     ],
-    "file": "assets/IndexAccountabilityNew-35b43d2d.js",
+    "file": "assets/IndexAccountabilityNew-939bfef0.js",
     "imports": [
       "resources/js/app.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBadge-a62acbea.js",
-      "_use-quasar-2537cf06.js",
-      "_QTable-e5ce6864.js",
-      "_MainLayout-2d4ab3aa.js",
+      "_QTooltip-36029d98.js",
+      "_QBadge-f4a3b4cd.js",
+      "_use-quasar-668a6586.js",
+      "_QTable-d1cc2fa6.js",
+      "_MainLayout-6b22a9ba.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_use-virtual-scroll-3e14198a.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/IndexAccountabilityNew.vue"
@@ -489,70 +489,70 @@
     "css": [
       "assets/IndexProfiles-a4e75a37.css"
     ],
-    "file": "assets/IndexProfiles-d81dde4d.js",
+    "file": "assets/IndexProfiles-658207b0.js",
     "imports": [
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_use-quasar-2537cf06.js"
+      "_use-quasar-668a6586.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/accountability/IndexProfiles.vue"
   },
   "resources/js/pages/administration/account-aliases/IndexAccountAlias.vue": {
-    "file": "assets/IndexAccountAlias-bf98e86e.js",
+    "file": "assets/IndexAccountAlias-5a1f8ce3.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBadge-a62acbea.js",
-      "_QTree-807e6768.js",
-      "_QFile-2ba34df6.js",
-      "_ClosePopup-ef998bde.js",
-      "_use-quasar-2537cf06.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_QBadge-f4a3b4cd.js",
+      "_QTree-024edb32.js",
+      "_QFile-5d61c6ee.js",
+      "_ClosePopup-6b25b5d2.js",
+      "_use-quasar-668a6586.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/account-aliases/IndexAccountAlias.vue"
   },
   "resources/js/pages/administration/areas/CreateArea.vue": {
-    "file": "assets/CreateArea-7f468bbf.js",
+    "file": "assets/CreateArea-203d75ad.js",
     "imports": [
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_use-quasar-2537cf06.js"
+      "_MainLayout-6b22a9ba.js",
+      "_use-quasar-668a6586.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/areas/CreateArea.vue"
   },
   "resources/js/pages/administration/areas/EditArea.vue": {
-    "file": "assets/EditArea-03ea50eb.js",
+    "file": "assets/EditArea-cb153271.js",
     "imports": [
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_use-quasar-2537cf06.js"
+      "_MainLayout-6b22a9ba.js",
+      "_use-quasar-668a6586.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/areas/EditArea.vue"
   },
   "resources/js/pages/administration/areas/IndexArea.vue": {
-    "file": "assets/IndexArea-6a4e7b02.js",
+    "file": "assets/IndexArea-dd2bbdd3.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_use-quasar-2537cf06.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_use-quasar-668a6586.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/areas/IndexArea.vue"
@@ -565,16 +565,16 @@
     "css": [
       "assets/CreateAuthorizationCycle-7a259c82.css"
     ],
-    "file": "assets/CreateAuthorizationCycle-435a0b01.js",
+    "file": "assets/CreateAuthorizationCycle-fe0bbcec.js",
     "imports": [
       "resources/js/app.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QSelect-7d248ecf.js",
-      "_MainLayout-2d4ab3aa.js",
+      "_QTooltip-36029d98.js",
+      "_QSelect-b53f5f5b.js",
+      "_MainLayout-6b22a9ba.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QChip-2fc0265b.js",
-      "_use-quasar-2537cf06.js"
+      "_use-virtual-scroll-3e14198a.js",
+      "_QChip-dc77e97d.js",
+      "_use-quasar-668a6586.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/authorization-cycles/CreateAuthorizationCycle.vue"
@@ -587,16 +587,16 @@
     "css": [
       "assets/EditAuthorizationCycle-9dea4c25.css"
     ],
-    "file": "assets/EditAuthorizationCycle-2cfad093.js",
+    "file": "assets/EditAuthorizationCycle-ff46a96c.js",
     "imports": [
       "resources/js/app.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QSelect-7d248ecf.js",
-      "_MainLayout-2d4ab3aa.js",
+      "_QTooltip-36029d98.js",
+      "_QSelect-b53f5f5b.js",
+      "_MainLayout-6b22a9ba.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QChip-2fc0265b.js",
-      "_use-quasar-2537cf06.js"
+      "_use-virtual-scroll-3e14198a.js",
+      "_QChip-dc77e97d.js",
+      "_use-quasar-668a6586.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/authorization-cycles/EditAuthorizationCycle.vue"
@@ -609,26 +609,26 @@
     "css": [
       "assets/IndexAuthorizationCycle-606f49ec.css"
     ],
-    "file": "assets/IndexAuthorizationCycle-89979de9.js",
+    "file": "assets/IndexAuthorizationCycle-d54c81ee.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBadge-a62acbea.js",
-      "_QChip-2fc0265b.js",
-      "_use-quasar-2537cf06.js",
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_QBadge-f4a3b4cd.js",
+      "_QChip-dc77e97d.js",
+      "_use-quasar-668a6586.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js"
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/authorization-cycles/IndexAuthorizationCycle.vue"
   },
   "resources/js/pages/administration/documents/CreateDocument.vue": {
-    "file": "assets/CreateDocument-812d6b5b.js",
+    "file": "assets/CreateDocument-4603bd22.js",
     "imports": [
       "__plugin-vue_export-helper-c27b6911.js",
       "resources/js/app.js"
@@ -637,7 +637,7 @@
     "src": "resources/js/pages/administration/documents/CreateDocument.vue"
   },
   "resources/js/pages/administration/documents/EditDocument.vue": {
-    "file": "assets/EditDocument-efa47192.js",
+    "file": "assets/EditDocument-0b8bbd98.js",
     "imports": [
       "__plugin-vue_export-helper-c27b6911.js",
       "resources/js/app.js"
@@ -646,7 +646,7 @@
     "src": "resources/js/pages/administration/documents/EditDocument.vue"
   },
   "resources/js/pages/administration/documents/IndexDocument.vue": {
-    "file": "assets/IndexDocument-ac81af96.js",
+    "file": "assets/IndexDocument-996ed352.js",
     "imports": [
       "__plugin-vue_export-helper-c27b6911.js",
       "resources/js/app.js"
@@ -655,36 +655,36 @@
     "src": "resources/js/pages/administration/documents/IndexDocument.vue"
   },
   "resources/js/pages/administration/management/IndexManagement.vue": {
-    "file": "assets/IndexManagement-b1d9ff6a.js",
+    "file": "assets/IndexManagement-af147bb4.js",
     "imports": [
       "resources/js/app.js",
-      "_QStepper-ce04e653.js",
-      "_QFile-2ba34df6.js",
-      "_QImg-955d8885.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_use-quasar-2537cf06.js",
-      "_use-panel-36e1a8ce.js",
-      "_QChip-2fc0265b.js"
+      "_QStepper-f4f625ee.js",
+      "_QFile-5d61c6ee.js",
+      "_QImg-9025014a.js",
+      "_MainLayout-6b22a9ba.js",
+      "_use-quasar-668a6586.js",
+      "_use-panel-c4f4cd9c.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/management/IndexManagement.vue"
   },
   "resources/js/pages/administration/profile/CreateProfile.vue": {
-    "file": "assets/CreateProfile-b03d20e5.js",
+    "file": "assets/CreateProfile-28838cc2.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_QStepper-ce04e653.js",
-      "_QTree-807e6768.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBadge-a62acbea.js",
-      "_use-quasar-2537cf06.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_ClosePopup-ef998bde.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_use-panel-36e1a8ce.js"
+      "_QSelect-b53f5f5b.js",
+      "_QStepper-f4f625ee.js",
+      "_QTree-024edb32.js",
+      "_QTooltip-36029d98.js",
+      "_QBadge-f4a3b4cd.js",
+      "_use-quasar-668a6586.js",
+      "_QMarkupTable-6cea9299.js",
+      "_ClosePopup-6b25b5d2.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_use-panel-c4f4cd9c.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/profile/CreateProfile.vue"
@@ -697,163 +697,163 @@
     "css": [
       "assets/EditProfile-cf329823.css"
     ],
-    "file": "assets/EditProfile-6061dc2a.js",
+    "file": "assets/EditProfile-23bd51ac.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_QStepper-ce04e653.js",
-      "_QTree-807e6768.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBadge-a62acbea.js",
-      "_use-quasar-2537cf06.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_ClosePopup-ef998bde.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_use-panel-36e1a8ce.js"
+      "_QSelect-b53f5f5b.js",
+      "_QStepper-f4f625ee.js",
+      "_QTree-024edb32.js",
+      "_QTooltip-36029d98.js",
+      "_QBadge-f4a3b4cd.js",
+      "_use-quasar-668a6586.js",
+      "_QMarkupTable-6cea9299.js",
+      "_ClosePopup-6b25b5d2.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_use-panel-c4f4cd9c.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/profile/EditProfile.vue"
   },
   "resources/js/pages/administration/profile/IndexProfile.vue": {
-    "file": "assets/IndexProfile-d9826413.js",
+    "file": "assets/IndexProfile-45e2c73f.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_use-quasar-2537cf06.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_use-quasar-668a6586.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/profile/IndexProfile.vue"
   },
   "resources/js/pages/administration/reports/AuditLog.vue": {
-    "file": "assets/AuditLog-cb2ef151.js",
+    "file": "assets/AuditLog-e2dfe3e4.js",
     "imports": [
-      "_QSelect-7d248ecf.js",
+      "_QSelect-b53f5f5b.js",
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTable-e5ce6864.js",
-      "_QBadge-a62acbea.js",
-      "_QChip-2fc0265b.js",
-      "_use-quasar-2537cf06.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js"
+      "_MainLayout-6b22a9ba.js",
+      "_QTable-d1cc2fa6.js",
+      "_QBadge-f4a3b4cd.js",
+      "_QChip-dc77e97d.js",
+      "_use-quasar-668a6586.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/reports/AuditLog.vue"
   },
   "resources/js/pages/administration/reports/ReportAccountability.vue": {
-    "file": "assets/ReportAccountability-a7c885eb.js",
+    "file": "assets/ReportAccountability-20873503.js",
     "imports": [
-      "_QSelect-7d248ecf.js",
+      "_QSelect-b53f5f5b.js",
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTable-e5ce6864.js",
-      "_QBadge-a62acbea.js",
-      "_QChip-2fc0265b.js",
-      "_use-quasar-2537cf06.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js"
+      "_MainLayout-6b22a9ba.js",
+      "_QTable-d1cc2fa6.js",
+      "_QBadge-f4a3b4cd.js",
+      "_QChip-dc77e97d.js",
+      "_use-quasar-668a6586.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/reports/ReportAccountability.vue"
   },
   "resources/js/pages/administration/suppliers/CreateSupplier.vue": {
-    "file": "assets/CreateSupplier-17f1b917.js",
+    "file": "assets/CreateSupplier-71ccefc6.js",
     "imports": [
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_use-quasar-2537cf06.js"
+      "_MainLayout-6b22a9ba.js",
+      "_use-quasar-668a6586.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/suppliers/CreateSupplier.vue"
   },
   "resources/js/pages/administration/suppliers/EditSupplier.vue": {
-    "file": "assets/EditSupplier-16f83c1b.js",
+    "file": "assets/EditSupplier-82e207da.js",
     "imports": [
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_use-quasar-2537cf06.js"
+      "_MainLayout-6b22a9ba.js",
+      "_use-quasar-668a6586.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/suppliers/EditSupplier.vue"
   },
   "resources/js/pages/administration/suppliers/IndexSupplier.vue": {
-    "file": "assets/IndexSupplier-24d06dcb.js",
+    "file": "assets/IndexSupplier-511a531b.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_use-quasar-2537cf06.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_use-quasar-668a6586.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/suppliers/IndexSupplier.vue"
   },
   "resources/js/pages/administration/users/CreateUser.vue": {
-    "file": "assets/CreateUser-0ae71066.js",
+    "file": "assets/CreateUser-abae54c2.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_QStepper-ce04e653.js",
-      "_QTree-807e6768.js",
-      "_use-quasar-2537cf06.js",
-      "_QChip-2fc0265b.js",
-      "_QBadge-a62acbea.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_ClosePopup-ef998bde.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_use-panel-36e1a8ce.js"
+      "_QSelect-b53f5f5b.js",
+      "_QStepper-f4f625ee.js",
+      "_QTree-024edb32.js",
+      "_use-quasar-668a6586.js",
+      "_QChip-dc77e97d.js",
+      "_QBadge-f4a3b4cd.js",
+      "_MainLayout-6b22a9ba.js",
+      "_ClosePopup-6b25b5d2.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_use-panel-c4f4cd9c.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/users/CreateUser.vue"
   },
   "resources/js/pages/administration/users/EditUser.vue": {
-    "file": "assets/EditUser-96ead5c6.js",
+    "file": "assets/EditUser-7eb1ebe1.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_QStepper-ce04e653.js",
-      "_QTree-807e6768.js",
-      "_use-quasar-2537cf06.js",
-      "_QChip-2fc0265b.js",
-      "_QBadge-a62acbea.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_ClosePopup-ef998bde.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_use-panel-36e1a8ce.js"
+      "_QSelect-b53f5f5b.js",
+      "_QStepper-f4f625ee.js",
+      "_QTree-024edb32.js",
+      "_use-quasar-668a6586.js",
+      "_QChip-dc77e97d.js",
+      "_QBadge-f4a3b4cd.js",
+      "_MainLayout-6b22a9ba.js",
+      "_ClosePopup-6b25b5d2.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_use-panel-c4f4cd9c.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/users/EditUser.vue"
   },
   "resources/js/pages/administration/users/IndexUser.vue": {
-    "file": "assets/IndexUser-eacaba21.js",
+    "file": "assets/IndexUser-f982988e.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBadge-a62acbea.js",
-      "_use-quasar-2537cf06.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_QBadge-f4a3b4cd.js",
+      "_use-quasar-668a6586.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/administration/users/IndexUser.vue"
@@ -866,75 +866,75 @@
     "css": [
       "assets/LoginAuth-e6ffe0f6.css"
     ],
-    "file": "assets/LoginAuth-465f2c1d.js",
+    "file": "assets/LoginAuth-9a0f5b09.js",
     "imports": [
-      "_use-quasar-2537cf06.js",
+      "_use-quasar-668a6586.js",
       "resources/js/app.js",
-      "_QPage-cc23aeed.js",
+      "_QPage-882aab8c.js",
       "__plugin-vue_export-helper-c27b6911.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/auth/LoginAuth.vue"
   },
   "resources/js/pages/authorization/Detail/CreateDetail.vue": {
-    "file": "assets/CreateDetail-5709f0c6.js",
+    "file": "assets/CreateDetail-e644acd4.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_QStepper-ce04e653.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_use-quasar-2537cf06.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_use-panel-36e1a8ce.js"
+      "_QSelect-b53f5f5b.js",
+      "_QStepper-f4f625ee.js",
+      "_MainLayout-6b22a9ba.js",
+      "_use-quasar-668a6586.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_use-panel-c4f4cd9c.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/authorization/Detail/CreateDetail.vue"
   },
   "resources/js/pages/authorization/Detail/CreateDetailNew.vue": {
-    "file": "assets/CreateDetailNew-7b89cc0b.js",
+    "file": "assets/CreateDetailNew-64fe2ff1.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBar-9a12b57c.js",
-      "_vue-qrcode-reader-09c61eba.js",
-      "_use-quasar-2537cf06.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js"
+      "_QSelect-b53f5f5b.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QTooltip-36029d98.js",
+      "_QBar-2d21b166.js",
+      "_vue-qrcode-reader-96d7c4bf.js",
+      "_use-quasar-668a6586.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/authorization/Detail/CreateDetailNew.vue"
   },
   "resources/js/pages/authorization/Detail/EditDetail.vue": {
-    "file": "assets/EditDetail-3b717fa5.js",
+    "file": "assets/EditDetail-f8e6d09a.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_use-quasar-2537cf06.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js"
+      "_QSelect-b53f5f5b.js",
+      "_MainLayout-6b22a9ba.js",
+      "_use-quasar-668a6586.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/authorization/Detail/EditDetail.vue"
   },
   "resources/js/pages/authorization/DetailAccountability.vue": {
-    "file": "assets/DetailAccountability-66ab2543.js",
+    "file": "assets/DetailAccountability-bbc3f8aa.js",
     "imports": [
-      "_QBadge-a62acbea.js",
+      "_QBadge-f4a3b4cd.js",
       "resources/js/app.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_use-quasar-2537cf06.js",
-      "_open-url-710f20a3.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_MainLayout-6b22a9ba.js",
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_use-quasar-668a6586.js",
+      "_open-url-41e6594e.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/authorization/DetailAccountability.vue"
@@ -947,53 +947,53 @@
     "css": [
       "assets/DetailAccountabilityNew-f3611dc9.css"
     ],
-    "file": "assets/DetailAccountabilityNew-ec81dc1b.js",
+    "file": "assets/DetailAccountabilityNew-27d156af.js",
     "imports": [
-      "_QBadge-a62acbea.js",
+      "_QBadge-f4a3b4cd.js",
       "resources/js/app.js",
-      "_QBanner-9af14bf1.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_QTimeline-42d3e270.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QBar-9a12b57c.js",
-      "_use-quasar-2537cf06.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_open-url-710f20a3.js",
+      "_QBanner-c696bda7.js",
+      "_MainLayout-6b22a9ba.js",
+      "_QTimeline-4387044f.js",
+      "_QTooltip-36029d98.js",
+      "_QBar-2d21b166.js",
+      "_use-quasar-668a6586.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_open-url-41e6594e.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QMarkupTable-bc8413d3.js"
+      "_use-virtual-scroll-3e14198a.js",
+      "_QMarkupTable-6cea9299.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/authorization/DetailAccountabilityNew.vue"
   },
   "resources/js/pages/authorization/EditAccountability.vue": {
-    "file": "assets/EditAccountability-bbeab2e8.js",
+    "file": "assets/EditAccountability-2a420268.js",
     "imports": [
       "resources/js/app.js",
-      "_QSelect-7d248ecf.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_use-quasar-2537cf06.js",
-      "_QChip-2fc0265b.js",
-      "_use-virtual-scroll-7b699d11.js"
+      "_QSelect-b53f5f5b.js",
+      "_MainLayout-6b22a9ba.js",
+      "_use-quasar-668a6586.js",
+      "_QChip-dc77e97d.js",
+      "_use-virtual-scroll-3e14198a.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/authorization/EditAccountability.vue"
   },
   "resources/js/pages/authorization/IndexAccountability.vue": {
-    "file": "assets/IndexAccountability-f9a16f09.js",
+    "file": "assets/IndexAccountability-58ddd378.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_use-quasar-2537cf06.js",
-      "_QBadge-a62acbea.js",
-      "_open-url-710f20a3.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_use-quasar-668a6586.js",
+      "_QBadge-f4a3b4cd.js",
+      "_open-url-41e6594e.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/authorization/IndexAccountability.vue"
@@ -1006,52 +1006,52 @@
     "css": [
       "assets/IndexAccountabilityNew-8eacb4cc.css"
     ],
-    "file": "assets/IndexAccountabilityNew-a5e6345d.js",
+    "file": "assets/IndexAccountabilityNew-0d82e218.js",
     "imports": [
       "resources/js/app.js",
-      "_QBadge-a62acbea.js",
-      "_QTabs-336f05ef.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_use-quasar-2537cf06.js",
-      "_QTable-e5ce6864.js",
-      "_MainLayout-2d4ab3aa.js",
-      "_open-url-710f20a3.js",
+      "_QBadge-f4a3b4cd.js",
+      "_QTabs-d6e5ef08.js",
+      "_QTooltip-36029d98.js",
+      "_use-quasar-668a6586.js",
+      "_QTable-d1cc2fa6.js",
+      "_MainLayout-6b22a9ba.js",
+      "_open-url-41e6594e.js",
       "__plugin-vue_export-helper-c27b6911.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_QSelect-7d248ecf.js",
-      "_QChip-2fc0265b.js"
+      "_use-virtual-scroll-3e14198a.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_QSelect-b53f5f5b.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/authorization/IndexAccountabilityNew.vue"
   },
   "resources/js/pages/authorization/PendingExport.vue": {
-    "file": "assets/PendingExport-400808ce.js",
+    "file": "assets/PendingExport-562a3587.js",
     "imports": [
-      "_MainLayout-2d4ab3aa.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_QTable-e5ce6864.js",
-      "_QTooltip-4a7b4c1e.js",
-      "_QSelect-7d248ecf.js",
-      "_ClosePopup-ef998bde.js",
-      "_use-quasar-2537cf06.js",
-      "_QVirtualScroll-e8f114cc.js",
-      "_QMarkupTable-bc8413d3.js",
-      "_use-virtual-scroll-7b699d11.js",
-      "_QChip-2fc0265b.js"
+      "_QTable-d1cc2fa6.js",
+      "_QTooltip-36029d98.js",
+      "_QSelect-b53f5f5b.js",
+      "_ClosePopup-6b25b5d2.js",
+      "_use-quasar-668a6586.js",
+      "_QVirtualScroll-02742dc2.js",
+      "_QMarkupTable-6cea9299.js",
+      "_use-virtual-scroll-3e14198a.js",
+      "_QChip-dc77e97d.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/authorization/PendingExport.vue"
   },
   "resources/js/pages/welcome.vue": {
-    "file": "assets/welcome-889b3d95.js",
+    "file": "assets/welcome-92ada59e.js",
     "imports": [
-      "_QImg-955d8885.js",
-      "_QPage-cc23aeed.js",
-      "_MainLayout-2d4ab3aa.js",
+      "_QImg-9025014a.js",
+      "_QPage-882aab8c.js",
+      "_MainLayout-6b22a9ba.js",
       "resources/js/app.js",
-      "_use-quasar-2537cf06.js"
+      "_use-quasar-668a6586.js"
     ],
     "isDynamicEntry": true,
     "src": "resources/js/pages/welcome.vue"

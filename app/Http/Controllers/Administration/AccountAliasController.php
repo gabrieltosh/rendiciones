@@ -90,14 +90,14 @@ class AccountAliasController extends Controller
         $spreadsheet = IOFactory::load($request->file('file')->getRealPath());
         $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
 
-        // Collect FormatCodes from Excel (skip header)
+        // Collect FormatCodes from Excel (skip header) — allow multiple rows per account
         $entries = [];
         foreach ($rows as $i => $row) {
             if ($i === 0) continue;
             $formatCode = trim((string) ($row[0] ?? ''));
             $alias      = trim((string) ($row[1] ?? ''));
             if ($formatCode === '' || $alias === '') continue;
-            $entries[$formatCode] = $alias;
+            $entries[] = ['format_code' => $formatCode, 'alias' => $alias];
         }
 
         if (empty($entries)) {
@@ -106,22 +106,22 @@ class AccountAliasController extends Controller
             return back();
         }
 
-        // Bulk lookup in SAP by FormatCode
-        $formatCodes = array_keys($entries);
-        $sapAccounts = $this->HandleGetAccountsByFormatCode($formatCodes);
+        // Bulk lookup in SAP by unique FormatCodes
+        $formatCodes = array_unique(array_column($entries, 'format_code'));
+        $sapAccounts = $this->HandleGetAccountsByFormatCode(array_values($formatCodes));
 
         $created = 0;
         $skipped = 0;
 
-        foreach ($entries as $formatCode => $alias) {
-            $sap = $sapAccounts[$formatCode] ?? null;
+        foreach ($entries as $entry) {
+            $sap = $sapAccounts[$entry['format_code']] ?? null;
             if (!$sap) { $skipped++; continue; }
 
             AccountAlias::create([
                 'acct_code'   => $sap['AcctCode'],
-                'format_code' => $formatCode,
+                'format_code' => $entry['format_code'],
                 'acct_name'   => $sap['AcctName'],
-                'alias'       => $alias,
+                'alias'       => $entry['alias'],
             ]);
             $created++;
         }

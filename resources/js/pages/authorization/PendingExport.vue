@@ -116,7 +116,7 @@
                                 dense outlined
                                 :options="filteredAccounts"
                                 v-model="editForm.account"
-                                option-value="account_code"
+                                option-value="key"
                                 option-label="label"
                                 emit-value map-options
                                 use-input input-debounce="0"

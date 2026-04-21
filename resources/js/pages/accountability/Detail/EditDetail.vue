@@ -39,7 +39,7 @@
                                         Cuenta <span class="text-red">*</span>
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.accounts"
-                                        v-model="form.account" option-value="account_code" option-label="label"
+                                        v-model="form.account" option-value="key" option-label="label"
                                         emit-value map-options use-input input-debounce="0"
                                         @filter="HandleFilterAccounts" clearable />
                                     <div v-if="errors.account" class="container-error">

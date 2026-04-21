@@ -33,6 +33,7 @@ use App\Models\User;
 use App\Models\Audit;
 use App\Models\AccountabilityLevelApproval;
 use App\Models\AuthorizationCycleLevel;
+use App\Models\AccountAlias;
 use Log;
 
 class AccountabilityController extends Controller
@@ -469,14 +470,8 @@ class AccountabilityController extends Controller
     {
         $accountability = Accountability::with('user')->where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
-        $accounts = GeneralAccounts::select(
-            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
-            'account_code',
-            'format_code',
-            'account_name',
-            'alias'
-        )->where('profile_id', $profile->id)->get();
-        $accountability->account = $accountability->account_code;
+        $accounts = $this->HandleBuildGeneralAccounts($profile->id);
+        $accountability->account = $this->HandleMatchAccountKey($accounts, $accountability->account_code, $accountability->account_name);
         $accountability->employee = $accountability->employee_code;
         $employees = Employee::where('profile_id', $profile->id)->get();
         return response()->json([
@@ -641,14 +636,8 @@ class AccountabilityController extends Controller
         Session::put('title', 'Crear Rendición');
         $accountability = Accountability::with('user')->where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
-        $accounts = GeneralAccounts::select(
-            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
-            'account_code',
-            'format_code',
-            'account_name',
-            'alias'
-        )->where('profile_id', $profile->id)->get();
-        $accountability->account = $accountability->account_code;
+        $accounts = $this->HandleBuildGeneralAccounts($profile->id);
+        $accountability->account = $this->HandleMatchAccountKey($accounts, $accountability->account_code, $accountability->account_name);
         $accountability->employee = $accountability->employee_code;
         $employees = Employee::where('profile_id', $profile->id)->get();
         return Inertia::render(
@@ -708,7 +697,8 @@ SQL;
     }
     public function HandleUpdateAccountability(AccountabilityRequest $request)
     {
-        $account = GeneralAccounts::where('account_code', $request->account)->first();
+        ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
+        $account = GeneralAccounts::where('account_code', $acctCode)->first();
         $params_sap = Management::where('group', 'accountability')->get();
         $hana = $params_sap->where('name', 'hana_enable')->first()->value == 'SI';
         $auth_accountability = Accountability::where('id', $request->id)->first();
@@ -725,8 +715,8 @@ SQL;
         Accountability::findOrFail($request->id)->fill([
             'employee_name' => $employee_name,
             'employee_code' => $employee_code,
-            'account_code' => $account->account_code,
-            'account_name' => $account->account_name,
+            'account_code' => $acctCode,
+            'account_name' => $aliasName ?? ($account->alias ?? $account->account_name),
             'total' => $request->total,
             'description' => $request->description,
             'start_date' => $request->start_date,
@@ -859,11 +849,12 @@ SQL;
     }
     public function HandleUpdateDocument(DocumentRequest $request, $accountability_id)
     {
-        $account = DetailAccounts::where('account_code', $request->account)->first();
+        ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
+        $account = DetailAccounts::where('account_code', $acctCode)->first();
         AccountabilityDetail::findOrFail($request->id)->fill([
             'accountability_id' => $accountability_id,
-            'account' => $request->account,
-            'account_name' => $account->account_name,
+            'account' => $acctCode,
+            'account_name' => $aliasName ?? ($account->alias ?? $account->account_name),
             'date' => $request->date,
             'document_id' => $request->document_id,
             'document_number' => $request->document_number,
@@ -903,11 +894,12 @@ SQL;
     }
     public function HandleStoreDocument(DocumentRequest $request, $accountability_id)
     {
-        $account = DetailAccounts::where('account_code', $request->account)->first();
+        ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
+        $account = DetailAccounts::where('account_code', $acctCode)->first();
         AccountabilityDetail::create([
             'accountability_id' => $accountability_id,
-            'account' => $request->account,
-            'account_name' => $account->account_name,
+            'account' => $acctCode,
+            'account_name' => $aliasName ?? ($account->alias ?? $account->account_name),
             'date' => $request->date,
             'document_id' => $request->document_id,
             'document_number' => $request->document_number,
@@ -940,13 +932,7 @@ SQL;
         $params = Management::where('group', 'supplier')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
-        $accounts = DetailAccounts::select(
-            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
-            'account_code',
-            'format_code',
-            'account_name',
-            'alias'
-        )->where('profile_id', $profile->id)->get();
+        $accounts = $this->HandleBuildDetailAccounts($profile->id);
         $documents = Document::where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
         return Inertia::render(
@@ -1000,16 +986,11 @@ SQL;
         $params = Management::where('group', 'supplier')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
-        $accounts = DetailAccounts::select(
-            DB::raw("CASE WHEN format_code IS NULL OR format_code = '' THEN ISNULL(alias, account_name) ELSE CONCAT(format_code, '-', ISNULL(alias, account_name)) END as label"),
-            'account_code',
-            'format_code',
-            'account_name',
-            'alias'
-        )->where('profile_id', $profile->id)->get();
+        $accounts = $this->HandleBuildDetailAccounts($profile->id);
         $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
         $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
+        $data->account = $this->HandleMatchAccountKey($accounts, $data->account, $data->account_name);
         $data->distribution_rule_one = $this->HandleGetDistribution($data->distribution_rule_one, 1);
         $data->distribution_rule_second = $this->HandleGetDistribution($data->distribution_rule_second, 2);
         $data->distribution_rule_three = $this->HandleGetDistribution($data->distribution_rule_three, 3);
@@ -1153,5 +1134,54 @@ SQL;
         Session::flash('message', "Documento enviado correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.authorization.index');
+    }
+
+    private function HandleBuildGeneralAccounts(int $profileId): \Illuminate\Support\Collection
+    {
+        $rows = GeneralAccounts::select('account_code', 'format_code', 'account_name', 'alias')
+            ->where('profile_id', $profileId)->get();
+        $allAliases = AccountAlias::whereIn('acct_code', $rows->pluck('account_code'))
+            ->get()->groupBy('acct_code');
+        return $rows->flatMap(function ($row) use ($allAliases) {
+            $prefix = ($row->format_code ?? '') !== '' ? $row->format_code . '-' : '';
+            $aliases = $allAliases[$row->account_code] ?? collect();
+            if ($aliases->isEmpty()) {
+                $display = $row->alias ?? $row->account_name;
+                return [(object)['key' => $row->account_code, 'account_code' => $row->account_code, 'account_name' => $display, 'label' => $prefix . $display]];
+            }
+            return $aliases->map(fn($al) => (object)[
+                'key' => $row->account_code . '||' . $al->alias, 'account_code' => $row->account_code, 'account_name' => $al->alias, 'label' => $prefix . $al->alias,
+            ])->all();
+        })->values();
+    }
+
+    private function HandleBuildDetailAccounts(int $profileId): \Illuminate\Support\Collection
+    {
+        $rows = DetailAccounts::select('account_code', 'format_code', 'account_name', 'alias')
+            ->where('profile_id', $profileId)->get();
+        $allAliases = AccountAlias::whereIn('acct_code', $rows->pluck('account_code'))
+            ->get()->groupBy('acct_code');
+        return $rows->flatMap(function ($row) use ($allAliases) {
+            $prefix = ($row->format_code ?? '') !== '' ? $row->format_code . '-' : '';
+            $aliases = $allAliases[$row->account_code] ?? collect();
+            if ($aliases->isEmpty()) {
+                $display = $row->alias ?? $row->account_name;
+                return [(object)['key' => $row->account_code, 'account_code' => $row->account_code, 'account_name' => $display, 'label' => $prefix . $display]];
+            }
+            return $aliases->map(fn($al) => (object)[
+                'key' => $row->account_code . '||' . $al->alias, 'account_code' => $row->account_code, 'account_name' => $al->alias, 'label' => $prefix . $al->alias,
+            ])->all();
+        })->values();
+    }
+
+    private function HandleParseAccountKey(string $key): array
+    {
+        $parts = explode('||', $key, 2);
+        return ['code' => $parts[0], 'name' => count($parts) > 1 ? $parts[1] : null];
+    }
+
+    private function HandleMatchAccountKey(\Illuminate\Support\Collection $accounts, string $acctCode, ?string $acctName): string
+    {
+        return $accounts->first(fn($a) => $a->account_code === $acctCode && $a->account_name === $acctName)?->key ?? $acctCode;
     }
 }
