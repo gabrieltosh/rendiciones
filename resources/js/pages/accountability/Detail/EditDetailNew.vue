@@ -48,7 +48,7 @@
                     <div class="row q-col-gutter-md">
                         <div class="col-xs-12 col-sm-6">
                             <label class="form-label">
-                                Cuenta <span class="text-red">*</span>
+                                Concepto <span class="text-red">*</span>
                             </label>
                             <q-select
                                 class="input-theme"
@@ -153,14 +153,14 @@
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <label class="form-label">
-                                Concepto <span class="text-red">*</span>
+                                Comentario <span class="text-red">*</span>
                             </label>
                             <q-input
                                 v-model="form.concept"
                                 dense
                                 outlined
                                 class="input-theme"
-                                aria-label="Concepto del detalle"
+                                aria-label="Comentario del detalle"
                                 name="concept"
                                 autocomplete="off"
                             />

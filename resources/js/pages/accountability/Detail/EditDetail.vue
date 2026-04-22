@@ -36,7 +36,7 @@
                             <div class="row q-col-gutter-md q-mt-xs">
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
-                                        Cuenta <span class="text-red">*</span>
+                                        Concepto <span class="text-red">*</span>
                                     </div>
                                     <q-select class="input-theme" dense outlined :options="options.accounts"
                                         v-model="form.account" option-value="key" option-label="label"
@@ -84,7 +84,7 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
-                                        Concepto <span class="text-red">*</span>
+                                        Comentario <span class="text-red">*</span>
                                     </div>
                                     <q-input v-model="form.concept" dense outlined class="input-theme" />
                                     <div v-if="errors.concept" class="container-error">

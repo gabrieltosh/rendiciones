@@ -25,7 +25,7 @@
                     <div class="text-subtitle1 text-weight-medium q-mb-md">Informacion General</div>
                     <div class="row q-col-gutter-md">
                         <div class="col-xs-12 col-sm-6">
-                            <div class="form-label">Cuenta <span class="text-red">*</span></div>
+                            <div class="form-label">Concepto <span class="text-red">*</span></div>
                             <q-select class="input-theme" dense outlined :options="options.accounts"
                                 v-model="form.account" option-value="key" option-label="label"
                                 emit-value map-options use-input input-debounce="0"
@@ -59,7 +59,7 @@
                             </div>
                         </div>
                         <div class="col-xs-12 col-sm-6">
-                            <div class="form-label">Concepto <span class="text-red">*</span></div>
+                            <div class="form-label">Comentario <span class="text-red">*</span></div>
                             <q-input v-model="form.concept" dense outlined class="input-theme" />
                             <div v-if="errors.concept" class="container-error">
                                 <ul v-for="(error, index) in errors.concept" :key="index" class="message-error">

@@ -631,14 +631,13 @@ SQL;
         $allAliases = AccountAlias::whereIn('acct_code', $rows->pluck('account_code'))
             ->get()->groupBy('acct_code');
         return $rows->flatMap(function ($row) use ($allAliases) {
-            $prefix = ($row->format_code ?? '') !== '' ? $row->format_code . '-' : '';
             $aliases = $allAliases[$row->account_code] ?? collect();
             if ($aliases->isEmpty()) {
                 $display = $row->alias ?? $row->account_name;
-                return [(object)['key' => $row->account_code, 'account_code' => $row->account_code, 'account_name' => $display, 'label' => $prefix . $display]];
+                return [(object)['key' => $row->account_code, 'account_code' => $row->account_code, 'account_name' => $display, 'label' => $display]];
             }
             return $aliases->map(fn($al) => (object)[
-                'key' => $row->account_code . '||' . $al->alias, 'account_code' => $row->account_code, 'account_name' => $al->alias, 'label' => $prefix . $al->alias,
+                'key' => $row->account_code . '||' . $al->alias, 'account_code' => $row->account_code, 'account_name' => $al->alias, 'label' => $al->alias,
             ])->all();
         })->values();
     }
@@ -650,14 +649,13 @@ SQL;
         $allAliases = AccountAlias::whereIn('acct_code', $rows->pluck('account_code'))
             ->get()->groupBy('acct_code');
         return $rows->flatMap(function ($row) use ($allAliases) {
-            $prefix = ($row->format_code ?? '') !== '' ? $row->format_code . '-' : '';
             $aliases = $allAliases[$row->account_code] ?? collect();
             if ($aliases->isEmpty()) {
                 $display = $row->alias ?? $row->account_name;
-                return [(object)['key' => $row->account_code, 'account_code' => $row->account_code, 'account_name' => $display, 'label' => $prefix . $display]];
+                return [(object)['key' => $row->account_code, 'account_code' => $row->account_code, 'account_name' => $display, 'label' => $display]];
             }
             return $aliases->map(fn($al) => (object)[
-                'key' => $row->account_code . '||' . $al->alias, 'account_code' => $row->account_code, 'account_name' => $al->alias, 'label' => $prefix . $al->alias,
+                'key' => $row->account_code . '||' . $al->alias, 'account_code' => $row->account_code, 'account_name' => $al->alias, 'label' => $al->alias,
             ])->all();
         })->values();
     }
