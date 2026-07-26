@@ -95,6 +95,23 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                                     <div class="form-label" for="device_name">
+                                        Estado <span class="text-red">*</span>
+                                    </div>
+                                    <q-select v-model="form.status" :options="[
+                                        'Activo',
+                                        'PreActivo',
+                                        'Bloqueado',
+                                    ]" dense outlined class="input-theme" />
+                                    <div v-if="errors.status" class="container-error">
+                                        <ul v-for="(
+                                                error, index
+                                            ) in errors.status" :key="index" class="message-error">
+                                            <li>{{ error }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                                    <div class="form-label" for="device_name">
                                         Área
                                     </div>
                                     <q-select
@@ -458,6 +475,7 @@ const form = ref({
     email: null,
     password: null,
     type: null,
+    status: 'Activo',
     distribution_rule_one: null,
     distribution_rule_second: null,
     distribution_rule_three: null,

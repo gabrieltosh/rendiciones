@@ -29,13 +29,13 @@ class AuthController extends Controller
                 return redirect()->back();
             }
         }else{
-            if(isset($user->status) && $user->status=='pre-activo'){
-
+            if(isset($user->status) && $user->status=='PreActivo'){
+                Session::flash('message', 'El usuario esta pendiente de activacion, contacte al administrador');
             }else{
                 Session::flash('message', 'El usuario esta deshabilitado o no registrado');
-                Session::flash('type', 'negative');
-                return redirect()->back();
             }
+            Session::flash('type', 'negative');
+            return redirect()->back();
         }
     }
     public function HandleLogoutAuth(Request $request){

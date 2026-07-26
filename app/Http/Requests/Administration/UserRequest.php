@@ -27,7 +27,8 @@ class UserRequest extends FormRequest
             'email'=>['required','email',Rule::unique('users')->ignore($this->id)],
             'username'=>['required',Rule::unique('users')->ignore($this->id)],
             'password'=>[$this->method() === 'PUT' ? '':'required',Password::min(5)->letters()->mixedCase()->numbers()],
-            'type'=>'required'
+            'type'=>'required',
+            'status'=>['required',Rule::in(['Activo','PreActivo','Bloqueado'])]
         ];
     }
     public function messages(): array
@@ -40,7 +41,9 @@ class UserRequest extends FormRequest
             'email.unique'=>'La Correo Electronico ya esta registrado',
             'password.required'=>'El campo Contraseña es obligatorio',
             'password'=>'La Contraseña debe contener al menos 5 caracteres entre números, letras, mayúsculas y minúsculas',
-            'password.min'=>'El campo Contraseña debe tener al menos :min caracteres'
+            'password.min'=>'El campo Contraseña debe tener al menos :min caracteres',
+            'status.required'=>'El campo Estado es obligatorio',
+            'status.in'=>'El Estado seleccionado no es valido'
         ];
     }
 }

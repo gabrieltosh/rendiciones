@@ -37,7 +37,7 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'card_code' => $request->card_code,
             'area_id' => $request->area_id,
-            'status' => 'PreActivo'
+            'status' => $request->status
         ]);
         foreach ($request->profiles as $name_profile) {
             $profile = Profile::where('name', $name_profile)->first();
