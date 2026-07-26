@@ -55,6 +55,35 @@ class ManagementSeeder extends Seeder
                 'label'=>'Notificaciones por Correo',
                 'type'=>'text',
                 'value'=>'NO'
+            ],
+            //Modo de exportación del asiento contable: SL (Service Layer) o DI (servicio DI API)
+            [
+                'group'=>'accountability',
+                'name'=>'export_mode',
+                'label'=>'Modo de Exportación (SL / DI)',
+                'type'=>'text',
+                'value'=>'SL'
+            ],
+            [
+                'group'=>'accountability',
+                'name'=>'bridge_url',
+                'label'=>'URL Servicio DI API',
+                'type'=>'text',
+                'value'=>'http://127.0.0.1:5001'
+            ],
+            [
+                'group'=>'accountability',
+                'name'=>'bridge_api_key',
+                'label'=>'API Key Servicio DI API',
+                'type'=>'password',
+                'value'=>''
+            ],
+            [
+                'group'=>'accountability',
+                'name'=>'bridge_timeout',
+                'label'=>'Timeout DI API (segundos)',
+                'type'=>'text',
+                'value'=>'120'
             ]
             /*[
                 'group'=>'accountability',

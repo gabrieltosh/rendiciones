@@ -20,7 +20,6 @@ use App\Models\Document;
 use App\Http\Requests\Accountability\AccountabilityRequest;
 use DB;
 use App\Models\Employee;
-use Illuminate\Support\Facades\Http;
 use Throwable;
 use App\Models\Management;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -34,10 +33,16 @@ use App\Models\Audit;
 use App\Models\AccountabilityLevelApproval;
 use App\Models\AuthorizationCycleLevel;
 use App\Models\AccountAlias;
+use App\Services\Sap\JournalVoucherPayloadBuilder;
+use App\Services\Sap\SapExporterFactory;
+use App\Services\Sap\SapExportResult;
 use Log;
 
 class AccountabilityController extends Controller
 {
+    /** Modo con el que se resolvió la última exportación a SAP ('SL' o 'DI'). */
+    private ?string $sap_export_mode = null;
+
     public function HandleGetReportAccountability($accountability_id)
     {
         $params = Management::where('group', 'company')->get();
@@ -165,94 +170,6 @@ class AccountabilityController extends Controller
         ]);
         return $pdf->stream();
     }
-    public function HandleFormatLine($document_line, $management)
-    {
-        $journal = [];
-        $detail_lines = [];
-        $total = 0;
-        $amount_line = $document_line->amount;
-        //$exento_percentage = $document_line->document->exento / 100;
-        $rate_percentage = $document_line->document->tasas / 100;
-        $ice_percentage = $document_line->document->ice / 100;
-        // $total_excento = $document_line->exento_status ? $document_line->exento : $document_line->amount * $exento_percentage;
-        // $total_ice = $document_line->ice_status ? $document_line->ice : $document_line->amount * $ice_percentage;
-        // $total_tasas = $document_line->tasas_status ? $document_line->tasas : $document_line->amount * $rate_percentage;
-        // $amount = $document_line->amount - $total_excento - $total_tasas - $total_ice;
-        // $operation = $document_line->document->type_calculation == 'Grossing Up' ? 1 : -1;
-
-        foreach ($document_line->field as $field) {
-            $amount_line += ($field->document_field->type_calculation == 'Credito' ? 1 : -1) * $field->value;
-            $detail_lines[] = [
-                'AccountCode' => $field->document_field->account,
-                'Debit' => $field->document_field->type_calculation == 'Credito' ? 0 : $field->value,
-                'Credit' => $field->document_field->type_calculation == 'Credito' ? $field->value : 0,
-                'ShortName' => $field->document_field->account,
-                'LineMemo' => $document_line->concept
-            ];
-        }
-        $total_ice = $document_line->ice_status ? $document_line->ice : $amount_line * $ice_percentage;
-        $total_tasas = $document_line->tasas_status ? $document_line->tasas : $amount_line * $rate_percentage;
-
-        $max_exento = 0;
-        foreach ($document_line->document->detail as $detail) {
-            $exento_percentage = $detail->exento / 100;
-            $total_excento = $document_line->exento_status ? $document_line->exento : $amount_line * $exento_percentage;
-            $max_exento = $total_excento > $max_exento ? $total_excento : $max_exento;
-
-            //$amount = $amount_line - $total_excento - $total_tasas - $total_ice;
-            $amount = ($total_excento == 0 ? $amount_line : $total_excento) + $total_tasas + $total_ice;
-
-            $operation = $detail->type_calculation == 'Grossing Up' ? 1 : -1;
-            $percentage = $detail->percentage / 100;
-            $total_percentage = $amount * $percentage;
-            $total += $operation * $total_percentage;
-            $detail_lines[] = [
-                'AccountCode' => $detail->account,
-                'Debit' => $document_line->document->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
-                'Credit' => $document_line->document->type_calculation == 'Grossing Up' ? $total_percentage : 0,
-                'ShortName' => $detail->account,
-                'LineMemo' => $document_line->concept
-            ];
-        }
-        $total += $amount_line;
-
-        $udfs = [
-            'ProjectCode' => $document_line->project_code,
-            'CostingCode' => $document_line->distribution_rule_one,
-            'CostingCode2' => $document_line->distribution_rule_second,
-            'CostingCode3' => $document_line->distribution_rule_three,
-            'CostingCode4' => $document_line->distribution_rule_four,
-            'CostingCode5' => $document_line->distribution_rule_five,
-            $management->where('name', 'date')->first()->value => $document_line->date,
-            $management->where('name', 'document_number')->first()->value => $document_line->document_number,
-            $management->where('name', 'authorization_number')->first()->value => $document_line->authorization_number,
-            $management->where('name', 'cuf')->first()->value => $document_line->cuf,
-            $management->where('name', 'control_code')->first()->value => $document_line->control_code,
-            $management->where('name', 'business_name')->first()->value => $document_line->business_name,
-            $management->where('name', 'nit')->first()->value => $document_line->nit,
-            $management->where('name', 'amount')->first()->value => $document_line->amount,
-            $management->where('name', 'discount')->first()->value => $document_line->discount,
-            $management->where('name', 'excento')->first()->value => $max_exento,
-            $management->where('name', 'rate')->first()->value => $document_line->rate,
-            $management->where('name', 'gift_card')->first()->value => $document_line->gift_card,
-            $management->where('name', 'ice')->first()->value => $document_line->ice,
-            $management->where('name', 'document_type')->first()->value => $document_line->document->type_document_sap
-        ];
-
-        $journal[] = array_merge([
-            'AccountCode' => $document_line->account,
-            'Debit' => $total,
-            'Credit' => 0,
-            'ShortName' => $document_line->account,
-            'LineMemo' => $document_line->concept,
-        ], $udfs);
-
-        foreach ($detail_lines as &$d_line) {
-            $d_line = array_merge($d_line, $udfs);
-        }
-
-        return array_merge($journal, $detail_lines);
-    }
     private function HandleRecordApproval($accountability_id, $level_id, $user_id, $status, $comments = null)
     {
         AccountabilityLevelApproval::create([
@@ -322,8 +239,6 @@ class AccountabilityController extends Controller
 
     public function HandleExportSAP($accountability_id, Request $request)
     {
-        $journal_entry_lines = array();
-        $management = Management::where('group', 'accountability_detail')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
 
         // If cycle system: check if there's a next level before attempting SAP export
@@ -338,106 +253,83 @@ class AccountabilityController extends Controller
         }
 
         // Last level or legacy: attempt SAP export
-        $documents = AccountabilityDetail::with('document.detail', 'field.document_field')->where('accountability_id', $accountability_id)->orderBy('id', 'desc')->get();
-        foreach ($documents as $document) {
-            $journal_entry_lines = array_merge($journal_entry_lines, $this->HandleFormatLine($document, $management));
-        }
+        $result = $this->HandleSendToSap($accountability);
 
-        $total_debit = 0;
-        $total_credit = 0;
-        foreach ($journal_entry_lines as $line) {
-            $total_debit += (float) $line['Debit'];
-            $total_credit += (float) $line['Credit'];
-        }
-        $debit = $total_debit - $total_credit;
-        $export_profile = Profile::where('id', $accountability->profile_id)->first();
-        $export_short_name = ($export_profile && $export_profile->sin_empleado)
-            ? $accountability->account_code
-            : $accountability->employee_code;
-        $last_line[] = [
-            'AccountCode' => $accountability->account_code,
-            'Debit' => 0,
-            'Credit' => $debit,
-            'ShortName' => $export_short_name,
-            'LineMemo' => $accountability->description,
-        ];
-        $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
-        $exportUser = User::find($accountability->user_id);
-        $userFieldKey = $management->where('name', 'user_field')->first()?->value;
-        $journalEntry = [
-            'Memo' => $accountability->description,
-            'ReferenceDate' => $accountability->end_date,
-            'TaxDate' => $accountability->end_date,
-            'DueDate' => $accountability->end_date,
-            'JournalEntryLines' => $journal_entry_lines,
-        ];
-        if ($userFieldKey) {
-            $journalEntry[$userFieldKey] = $exportUser->name;
-        }
-        $journal_entries = [
-            'JournalVoucher' => [
-                'JournalEntry' => $journalEntry,
-            ],
-        ];
-
-        Log::info('SAP Export Data:', $journal_entries);
-
-        $params_sap = Management::where('group', 'accountability')->get();
-
-        try {
-            $login = Http::withoutVerifying()
-                ->baseUrl($params_sap->where('name', 'service_layer')->first()->value . '/b1s/v1/')
-                ->post('Login', [
-                    'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
-                    'UserName' => $params_sap->where('name', 'user')->first()->value,
-                    'Password' => $params_sap->where('name', 'password')->first()->value
-                ]);
-            if ($login->successful()) {
-                $session = $login["SessionId"];
-                $response = Http::baseUrl($params_sap->where('name', 'service_layer')->first()->value . '/b1s/v1/')
-                    ->withoutVerifying()
-                    ->withHeaders([
-                        'Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9',
-                    ])->post('JournalVouchersService_Add', $journal_entries);
-                if ($response->successful()) {
-                    if ($currentLevel) {
-                        $this->HandleRecordApproval(
-                            $accountability->id,
-                            $currentLevel->id,
-                            $request->user()->id,
-                            'aprobado',
-                            $request->comments
-                        );
-                    }
-                    $accountability->fill([
-                        'status'           => 'Autorizado',
-                        'comments'         => $request->comments,
-                        'sap_exported'     => 1,
-                        'current_level_id' => null,
-                    ])->save();
-                    Session::flash('message', "Documento autorizado y exportado correctamente");
-                    Session::flash('type', 'positive');
-                    $user = User::find($accountability->user_id);
-                    $params = Management::where('group', 'accountability')->get();
-                    if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-                        $user->notify(new StatusAccountabilityNotification($accountability->fresh()));
-                    }
-                    return Redirect::route('panel.accountability.authorization.index');
-                } else {
-                    Session::flash('message', $response->json()['error']['message']['value'] ?? 'Error al exportar a SAP');
-                    Session::flash('type', 'negative');
-                    return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id);
-                }
-            } else {
-                Session::flash('message', $login->json()['error']['message']['value'] ?? 'Error al conectar con SAP');
-                Session::flash('type', 'negative');
-                return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id);
-            }
-        } catch (Throwable $e) {
-            Session::flash('message', $e->getMessage());
+        if (!$result->success) {
+            Session::flash('message', $result->errorMessage);
             Session::flash('type', 'negative');
             return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id);
         }
+
+        if ($currentLevel) {
+            $this->HandleRecordApproval(
+                $accountability->id,
+                $currentLevel->id,
+                $request->user()->id,
+                'aprobado',
+                $request->comments
+            );
+        }
+        $accountability->fill(array_merge([
+            'status'           => 'Autorizado',
+            'comments'         => $request->comments,
+            'current_level_id' => null,
+        ], $this->HandleSapExportAttributes($result)))->save();
+
+        Session::flash('message', "Documento autorizado y exportado correctamente");
+        Session::flash('type', 'positive');
+
+        $user = User::find($accountability->user_id);
+        $params = Management::where('group', 'accountability')->get();
+        if ($params->where('name', 'notification_email')->first()->value == 'SI') {
+            $user->notify(new StatusAccountabilityNotification($accountability->fresh()));
+        }
+        return Redirect::route('panel.accountability.authorization.index');
+    }
+
+    /**
+     * Construye el asiento y lo envía a SAP por el driver configurado
+     * (Service Layer o servicio DI API).
+     */
+    private function HandleSendToSap(Accountability $accountability): SapExportResult
+    {
+        // El asiento ya existe en SAP: no se vuelve a enviar aunque el usuario reintente.
+        if ($accountability->sap_trans_id) {
+            return SapExportResult::failure(
+                "Esta rendición ya fue exportada a SAP (asiento {$accountability->sap_trans_id})."
+            );
+        }
+
+        try {
+            $builder = new JournalVoucherPayloadBuilder();
+            $payload = $builder->build($accountability);
+
+            Log::info('SAP Export Data:', $payload);
+
+            $exporter = SapExporterFactory::make();
+            $this->sap_export_mode = $exporter->mode();
+
+            return $exporter->addJournalVoucher(
+                $payload,
+                'acc-' . $accountability->id,
+                $builder->udfTypes()
+            );
+        } catch (Throwable $e) {
+            return SapExportResult::failure($e->getMessage());
+        }
+    }
+
+    /**
+     * Campos de trazabilidad que se guardan tras una exportación exitosa.
+     */
+    private function HandleSapExportAttributes(SapExportResult $result): array
+    {
+        return [
+            'sap_exported'    => 1,
+            'sap_trans_id'    => $result->key,
+            'sap_exported_at' => now(),
+            'sap_export_mode' => $this->sap_export_mode,
+        ];
     }
 
     public function HandleForceAuthorize($accountability_id, Request $request)
@@ -486,88 +378,18 @@ class AccountabilityController extends Controller
 
     public function HandleReExportSAP($accountability_id, Request $request)
     {
-        $journal_entry_lines = [];
-        $management = Management::where('group', 'accountability_detail')->get();
-        $accountability = Accountability::where('id', $accountability_id)->first();
-        $documents = AccountabilityDetail::with('document.detail', 'field.document_field')
-            ->where('accountability_id', $accountability_id)
-            ->orderBy('id', 'desc')
-            ->get();
+        $accountability = Accountability::findOrFail($accountability_id);
+        $result = $this->HandleSendToSap($accountability);
 
-        foreach ($documents as $document) {
-            $journal_entry_lines = array_merge($journal_entry_lines, $this->HandleFormatLine($document, $management));
-        }
-
-        $total_debit = 0;
-        $total_credit = 0;
-        foreach ($journal_entry_lines as $line) {
-            $total_debit += (float) $line['Debit'];
-            $total_credit += (float) $line['Credit'];
-        }
-        $debit = $total_debit - $total_credit;
-        $export_profile = Profile::where('id', $accountability->profile_id)->first();
-        $export_short_name = ($export_profile && $export_profile->sin_empleado)
-            ? $accountability->account_code
-            : $accountability->employee_code;
-
-        $last_line[] = [
-            'AccountCode' => $accountability->account_code,
-            'Debit' => 0,
-            'Credit' => $debit,
-            'ShortName' => $export_short_name,
-            'LineMemo' => $accountability->description,
-        ];
-        $journal_entry_lines = array_merge($journal_entry_lines, $last_line);
-        $reExportUser = User::find($accountability->user_id);
-        $reExportUserFieldKey = $management->where('name', 'user_field')->first()?->value;
-        $reExportJournalEntry = [
-            'Memo' => $accountability->description,
-            'ReferenceDate' => $accountability->end_date,
-            'TaxDate' => $accountability->end_date,
-            'DueDate' => $accountability->end_date,
-            'JournalEntryLines' => $journal_entry_lines,
-        ];
-        if ($reExportUserFieldKey) {
-            $reExportJournalEntry[$reExportUserFieldKey] = $reExportUser->name;
-        }
-        $journal_entries = [
-            'JournalVoucher' => [
-                'JournalEntry' => $reExportJournalEntry,
-            ],
-        ];
-
-        $params_sap = Management::where('group', 'accountability')->get();
-
-        try {
-            $login = Http::withoutVerifying()
-                ->baseUrl($params_sap->where('name', 'service_layer')->first()->value . '/b1s/v1/')
-                ->post('Login', [
-                    'CompanyDB' => $params_sap->where('name', 'bd_sap')->first()->value,
-                    'UserName' => $params_sap->where('name', 'user')->first()->value,
-                    'Password' => $params_sap->where('name', 'password')->first()->value,
-                ]);
-            if ($login->successful()) {
-                $session = $login['SessionId'];
-                $response = Http::baseUrl($params_sap->where('name', 'service_layer')->first()->value . '/b1s/v1/')
-                    ->withoutVerifying()
-                    ->withHeaders(['Cookie' => 'B1SESSION=' . $session . '; ROUTEID=.node9'])
-                    ->post('JournalVouchersService_Add', $journal_entries);
-                if ($response->successful()) {
-                    Accountability::findOrFail($accountability_id)->fill(['sap_exported' => 1])->save();
-                    Session::flash('message', "Rendición exportada a SAP correctamente");
-                    Session::flash('type', 'positive');
-                } else {
-                    Session::flash('message', $response->json()['error']['message']['value'] ?? 'Error al exportar a SAP');
-                    Session::flash('type', 'negative');
-                }
-            } else {
-                Session::flash('message', $login->json()['error']['message']['value'] ?? 'Error al conectar con SAP');
-                Session::flash('type', 'negative');
-            }
-        } catch (Throwable $e) {
-            Session::flash('message', $e->getMessage());
+        if ($result->success) {
+            $accountability->fill($this->HandleSapExportAttributes($result))->save();
+            Session::flash('message', "Rendición exportada a SAP correctamente");
+            Session::flash('type', 'positive');
+        } else {
+            Session::flash('message', $result->errorMessage);
             Session::flash('type', 'negative');
         }
+
         return Redirect::route('panel.accountability.authorization.pending-export');
     }
     public function HandleIndexAccountability(Request $request)

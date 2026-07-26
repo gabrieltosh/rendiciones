@@ -29,6 +29,9 @@ class Accountability extends Model implements Auditable
         'end_date',
         'comments',
         'sap_exported',
+        'sap_trans_id',
+        'sap_exported_at',
+        'sap_export_mode',
         'current_level_id',
     ];
 
