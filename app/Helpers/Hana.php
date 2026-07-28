@@ -15,12 +15,20 @@ class Hana{
     if (!($connect)){
         return "Falló la conexión a la base de datos a través de ODBC:";
       }else{
-          $result = odbc_exec($connect, utf8_decode($sql));
+          $result = odbc_exec($connect, $sql);
           $data = array();
           while ($row = odbc_fetch_array($result)) {
-             array_push($data, $row);
+             array_push($data, self::HandleFixEncoding($row));
            }
           return $data;
       }
+  }
+  private static function HandleFixEncoding($row){
+    return array_map(function ($value) {
+        if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+            return mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1');
+        }
+        return $value;
+    }, $row);
   }
 }
