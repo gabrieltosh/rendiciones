@@ -237,7 +237,7 @@ SQL;
                     'percentage' => $item['percentage'],
                     'account' => $item['account'],
                     'exento' => $item['exento'] ?? 0,
-                    'calculation' => $item['calculation']
+                    'calculation' => $item['calculation'] ?? false
                 ]);
             }
             foreach ($document['fields'] as $item) {
@@ -419,7 +419,7 @@ SQL;
                         'account' => $item['account'],
                         'exento' => $item['exento'] ?? 0,
                         'type_calculation' => $item['type_calculation'],
-                        'calculation' => $item['calculation']
+                        'calculation' => $item['calculation'] ?? false
                     ]);
                 }
                 foreach ($document['fields'] as $item) {
@@ -471,7 +471,7 @@ SQL;
                                 'account' => $item['account'],
                                 'exento' => $item['exento'] ?? 0,
                                 'type_calculation' => $item['type_calculation'],
-                                'calculation' => $item['calculation']
+                                'calculation' => $item['calculation'] ?? false
                             ]);
                         } else {
                             if ((int) $item['for_delete'] == 1) {
@@ -483,7 +483,7 @@ SQL;
                                     'account' => $item['account'],
                                     'exento' => $item['exento'] ?? 0,
                                     'type_calculation' => $item['type_calculation'],
-                                    'calculation' => $item['calculation']
+                                    'calculation' => $item['calculation'] ?? false
                                 ])->save();
                             }
                         }
