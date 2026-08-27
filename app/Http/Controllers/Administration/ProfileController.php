@@ -713,7 +713,10 @@ SQL;
         return Redirect::route('panel.profile.index');
     }
     public function HandleGetDocumentType($field){
-        $field_explode=explode('_',$field);
+        // El nombre físico del UDF siempre es "U_" + AliasID (el AliasID puede
+        // tener sus propios "_", ej. U_LB_Indicador -> AliasID "LB_Indicador"),
+        // por eso se saca solo el prefijo "U_" y no se separa por cada "_".
+        $alias_id = preg_replace('/^U_/', '', $field, 1);
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
             $db=Config::get('database.connections.hana.database');
@@ -726,7 +729,7 @@ SQL;
             inner join $db.UFD1 as T2 on T1."TableID" = T2."TableID"
             and T1."FieldID" = T2."FieldID"
             where T1."TableID" = 'JDT1'
-            and T1."AliasID" = '$field_explode[1]'
+            and T1."AliasID" = '$alias_id'
 SQL;
             return Hana::query($sql);
         }else{
@@ -740,7 +743,7 @@ SQL;
                         'T2.FldValue',
                         'T2.Descr'
                     )
-                    ->where('T1.AliasID',$field_explode[1])
+                    ->where('T1.AliasID',$alias_id)
                     ->where('T1.TableID','JDT1')
                     ->get();
         }

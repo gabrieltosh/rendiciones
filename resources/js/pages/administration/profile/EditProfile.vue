@@ -853,6 +853,7 @@ function HandleAddDocument() {
                 account: null,
                 exento: 0,
                 type_calculation: null,
+                calculation: false,
                 for_delete: 0,
             },
         ],
@@ -874,6 +875,7 @@ function HandleAddLineDetail(index) {
         account: null,
         exento: 0,
         type_calculation: null,
+        calculation: false,
         for_delete: 0,
     });
 }

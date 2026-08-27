@@ -53,17 +53,21 @@ class JournalVoucherPayloadBuilder
         $debit = $total_debit - $total_credit;
 
         $export_profile = Profile::where('id', $accountability->profile_id)->first();
-        $export_short_name = ($export_profile && $export_profile->sin_empleado)
-            ? $accountability->account_code
-            : $accountability->employee_code;
 
-        $journal_entry_lines[] = [
+        $closing_line = [
             'AccountCode' => $accountability->account_code,
             'Debit' => 0,
             'Credit' => $debit,
-            'ShortName' => $export_short_name,
             'LineMemo' => $accountability->description,
         ];
+
+        // 'sin_empleado' no tiene un CardCode real que mandar (account_code es
+        // una cuenta contable, no un socio de negocio): se omite ShortName.
+        if (!$export_profile || !$export_profile->sin_empleado) {
+            $closing_line['ShortName'] = $accountability->employee_code;
+        }
+
+        $journal_entry_lines[] = $closing_line;
 
         $journalEntry = [
             'Memo' => $accountability->description,
@@ -112,7 +116,6 @@ class JournalVoucherPayloadBuilder
                 'AccountCode' => $field->document_field->account,
                 'Debit' => $field->document_field->type_calculation == 'Credito' ? 0 : $field->value,
                 'Credit' => $field->document_field->type_calculation == 'Credito' ? $field->value : 0,
-                'ShortName' => $field->document_field->account,
                 'LineMemo' => $document_line->concept,
             ];
         }
@@ -136,7 +139,6 @@ class JournalVoucherPayloadBuilder
                 'AccountCode' => $detail->account,
                 'Debit' => $document_line->document->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
                 'Credit' => $document_line->document->type_calculation == 'Grossing Up' ? $total_percentage : 0,
-                'ShortName' => $detail->account,
                 'LineMemo' => $document_line->concept,
             ];
         }
@@ -148,7 +150,6 @@ class JournalVoucherPayloadBuilder
             'AccountCode' => $document_line->account,
             'Debit' => $total,
             'Credit' => 0,
-            'ShortName' => $document_line->account,
             'LineMemo' => $document_line->concept,
         ], $udfs);
 
