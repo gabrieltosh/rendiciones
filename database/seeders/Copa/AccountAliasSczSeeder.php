@@ -1,0 +1,62 @@
+<?php
+
+namespace Database\Seeders\Copa;
+
+/**
+ * Alias (glosas) de cuentas contables de COPA - Santa Cruz.
+ * Fuente: "Proceso Rendiciones - Actualizado.xlsx", hoja "1.c.-5. Cuenta Glosa SCZ"
+ * (columna B: cuenta contable nueva, columna C: glosa).
+ *
+ * Uso: php artisan db:seed --class="Database\\Seeders\\Copa\\AccountAliasSczSeeder"
+ */
+class AccountAliasSczSeeder extends AccountAliasSeeder
+{
+    protected function rows(): array
+    {
+        // [código de cuenta (FormatCode), nombre de cuenta, glosa]
+        return [
+            ['6210302', 'SERVICIO DE TE Y REFRIGERIO', 'PAN SERVICIO DE TE'],
+            ['6210302', 'SERVICIO DE TE Y REFRIGERIO', 'TORTA'],
+            ['6210302', 'SERVICIO DE TE Y REFRIGERIO', 'BOTELLON AGUA'],
+            ['6210302', 'SERVICIO DE TE Y REFRIGERIO', 'AZUCAR'],
+            ['6212201', 'TRANSPORTE PÚBLICO', 'TRANSPORTE INSUMOS DE ALMACEN'],
+            ['6210408', 'SERVICIO DE TRANSPORTE', 'TRASLADO PAPA CONGELADA'],
+            ['6212203', 'COURRIER Y MENSAJERÍA', 'COURRIER'],
+            ['6210404', 'LIMPIEZA NOCTURA', 'FUMIGACION'],
+            ['6210404', 'LIMPIEZA NOCTURA', 'CONTROL INTEGRAL DE PLAGAS'],
+            ['6210408', 'SERVICIO DE TRANSPORTE', 'ENCOMIENDA'],
+            ['6210701', 'MANT. INFRAESTRUCTURA', 'ENCHUFES, CLAVIJAS'],
+            ['6210701', 'MANT. INFRAESTRUCTURA', 'SILICONA SELLADO FILTRACIONES'],
+            ['6210701', 'MANT. INFRAESTRUCTURA', 'GRIFO Y TEFLON'],
+            ['6210701', 'MANT. INFRAESTRUCTURA', 'MANTENIMIENTO JARDINERIA'],
+            ['6210701', 'MANT. INFRAESTRUCTURA', 'CAMBIO DE CANALETAS'],
+            ['6210704', 'MANT. MAQUINARIA Y EQUIPO', 'RESISTENCIA'],
+            ['6210704', 'MANT. MAQUINARIA Y EQUIPO', 'REPUESTO LICUADORA'],
+            ['6210711', 'MO. EXTERNA MANT. INFRAESTRUCTURA', 'CAMBIO ENCHUFES'],
+            ['6210712', 'MO. EXTERNA MANT. MAQ. Y EQUIPO', 'ARREGLO TELEFONO'],
+            ['6210712', 'MO. EXTERNA MANT. MAQ. Y EQUIPO', 'MANTENIMIENTO MAQUINA FILTRADORA DE ACEITE'],
+            ['6210712', 'MO. EXTERNA MANT. MAQ. Y EQUIPO', 'CAMBIO FILTRO'],
+            ['6210901', 'MATERIAL DE ESCRITORIO', 'ANILLADO'],
+            ['6210901', 'MATERIAL DE ESCRITORIO', 'FOTOCOPIAS'],
+            ['6210901', 'MATERIAL DE ESCRITORIO', 'PAPEL'],
+            ['6210903', 'MATERIAL ELÉCTRICO', 'PANEL LED'],
+            ['6210903', 'MATERIAL ELÉCTRICO', 'CONDENSADOR'],
+            ['6210903', 'MATERIAL ELÉCTRICO', 'CORTA PICO'],
+            ['6210905', 'UTENSILIOS DE TRABAJO', 'TAPER'],
+            ['6210905', 'UTENSILIOS DE TRABAJO', 'ENVASES'],
+            ['6210905', 'UTENSILIOS DE TRABAJO', 'PINZAS'],
+            ['6212231', 'GASTOS MENORES DE REST.', 'COPIA LLAVES'],
+            ['6212231', 'GASTOS MENORES DE REST.', 'ARTICULOS CHALLA'],
+            ['6212231', 'GASTOS MENORES DE REST.', 'MATERIAL MUNDIAL'],
+            ['6212231', 'GASTOS MENORES DE REST.', 'COMPRA GLOBOS'],
+            ['6112212', 'FORMULARIOS CAJA DE SALUD, MIN. DE TRABAJO Y OTROS', 'TRAMITE SEDES'],
+            ['6112212', 'FORMULARIOS CAJA DE SALUD, MIN. DE TRABAJO Y OTROS', 'TRAMITE CARNET SANITARIO'],
+            ['6112212', 'FORMULARIOS CAJA DE SALUD, MIN. DE TRABAJO Y OTROS', 'TRAMITE CARNETMANIPULACION'],
+            ['6112212', 'FORMULARIOS CAJA DE SALUD, MIN. DE TRABAJO Y OTROS', 'TRAMITE ALCALDIA'],
+            ['6210303', 'GASTOS MÉDICOS Y FARMACEÚTICOS', 'AMBULANCIA'],
+            ['6112205', 'OBSEQUIOS Y DONACIONES', 'HELADOS - SALARIO EMOCIONAL T.H.'],
+            ['6112205', 'OBSEQUIOS Y DONACIONES', 'CHOCOLATES - SALARIO EMOCIONAL T.H.'],
+            ['6112209', 'DESARROLLO DE PRODUCTOS', 'INSUMOS'],
+        ];
+    }
+}
