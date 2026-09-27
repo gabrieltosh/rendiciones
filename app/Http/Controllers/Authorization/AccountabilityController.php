@@ -33,6 +33,7 @@ use App\Models\Audit;
 use App\Models\AccountabilityLevelApproval;
 use App\Models\AuthorizationCycleLevel;
 use App\Models\AccountAlias;
+use App\Services\Sap\DocumentLineCalculator;
 use App\Services\Sap\JournalVoucherPayloadBuilder;
 use App\Services\Sap\SapExporterFactory;
 use App\Services\Sap\SapExportResult;
@@ -64,65 +65,32 @@ class AccountabilityController extends Controller
     }
     public function HandleFormatLineReport($document_line, $management)
     {
-        $journal = [];
-        $detail_lines = [];
-        $total = 0;
-        //$exento_percentage = $document_line->document->exento / 100;
-        $rate_percentage = $document_line->document->tasas / 100;
-        $ice_percentage = $document_line->document->ice / 100;
-        //$total_excento = $document_line->exento_status ? $document_line->exento : $document_line->amount * $exento_percentage;
-        //$total_ice = $document_line->ice_status ? $document_line->ice : $document_line->amount * $ice_percentage;
-        //$total_tasas = $document_line->tasas_status ? $document_line->tasas : $document_line->amount * $rate_percentage;
-        //$amount = $document_line->amount - $total_excento - $total_tasas - $total_ice;
-        //$operation = $document_line->document->type_calculation == 'Grossing Up' ? 1 : -1;
+        $result = (new DocumentLineCalculator())->calculate($document_line);
 
-        foreach ($document_line->document->field as $field) {
-            $amount_line = $document_line->amount + ($field->document_field->type_calculation == 'Credito' ? 1 : -1) * $field->value;
-            $detail_lines[] = [
-                'AccountCode' => $field->account,
-                'Debit' => $field->document_field->type_calculation == 'Credito' ? 0 : $field->value,
-                'Credit' => $field->document_field->type_calculation == 'Credito' ? $field->value : 0,
-                'AccountName' => $field->document_field->account,
-            ];
-        }
-
-        $total_ice = $document_line->ice_status ? $document_line->ice : $amount_line * $ice_percentage;
-        $total_tasas = $document_line->tasas_status ? $document_line->tasas : $amount_line * $rate_percentage;
-
-        foreach ($document_line->document->detail as $detail) {
-            $exento_percentage = $detail->exento / 100;
-            $total_excento = $document_line->exento_status ? $document_line->exento : $amount_line * $exento_percentage;
-            $amount = $amount_line - $total_excento - $total_tasas - $total_ice;
-            $operation = $detail->type_calculation == 'Grossing Up' ? 1 : -1;
-
-            $percentage = $detail->percentage / 100;
-            $total_percentage = $amount * $percentage;
-            $total += $operation * $total_percentage;
-            $detail_lines[] = [
-                'AccountCode' => $detail->account,
-                'Debit' => $detail->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
-                'Credit' => $detail->type_calculation == 'Grossing Up' ? $total_percentage : 0,
-                'AccountName' => $detail->account_name,
-            ];
-        }
-
-
-        $total += $amount_line;
-        $journal[] = [
+        $journal = [[
             'AccountCode' => $document_line->account,
-            'Debit' => $total,
+            'Debit' => $result['expense'],
             'Credit' => 0,
             'AccountName' => $document_line->account_name,
-        ];
+        ]];
 
-        return array_merge($journal, $detail_lines);
+        foreach ($result['lines'] as $line) {
+            $journal[] = [
+                'AccountCode' => $line['account'],
+                'Debit' => $line['debit'],
+                'Credit' => $line['credit'],
+                'AccountName' => $line['source']->account_name ?? $line['account'],
+            ];
+        }
+
+        return $journal;
     }
     public function HandleGetReport($accountability_id)
     {
         $journal_entry_lines = array();
         $management = Management::where('group', 'accountability_detail')->get();
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $documents = AccountabilityDetail::with('document.detail', 'document.field.document_field')->where('accountability_id', $accountability_id)->orderBy('id', 'asc')->get();
+        $documents = AccountabilityDetail::with('document.detail', 'field.document_field')->where('accountability_id', $accountability_id)->orderBy('id', 'asc')->get();
         $exchange = DB::connection('sap')
             ->table('ORTT as T1')
             ->select('Rate')
