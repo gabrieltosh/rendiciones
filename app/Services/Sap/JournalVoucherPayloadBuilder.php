@@ -15,9 +15,8 @@ use Illuminate\Support\Collection;
  * El mismo payload sirve para los dos modos de exportación: el Service Layer lo
  * recibe tal cual y el servicio DI API lo traduce a objetos COM.
  *
- * NOTA: AccountabilityController::HandleFormatLineReport duplica esta lógica
- * para la vista previa en PDF. Si cambian las reglas de cálculo, hay que
- * actualizar ambos lados.
+ * Los montos de cada documento salen de DocumentLineCalculator, que también usa
+ * la vista previa en PDF (AccountabilityController::HandleFormatLineReport).
  */
 class JournalVoucherPayloadBuilder
 {
@@ -50,7 +49,7 @@ class JournalVoucherPayloadBuilder
             $total_debit += (float) $line['Debit'];
             $total_credit += (float) $line['Credit'];
         }
-        $debit = $total_debit - $total_credit;
+        $debit = round($total_debit - $total_credit, 2);
 
         $export_profile = Profile::where('id', $accountability->profile_id)->first();
 
@@ -103,61 +102,26 @@ class JournalVoucherPayloadBuilder
      */
     public function formatLine($document_line): array
     {
-        $journal = [];
-        $detail_lines = [];
-        $total = 0;
-        $amount_line = $document_line->amount;
-        $rate_percentage = $document_line->document->tasas / 100;
-        $ice_percentage = $document_line->document->ice / 100;
+        $result = (new DocumentLineCalculator())->calculate($document_line);
+        $udfs = $this->buildUdfs($document_line, $result['exento']);
 
-        foreach ($document_line->field as $field) {
-            $amount_line += ($field->document_field->type_calculation == 'Credito' ? 1 : -1) * $field->value;
-            $detail_lines[] = [
-                'AccountCode' => $field->document_field->account,
-                'Debit' => $field->document_field->type_calculation == 'Credito' ? 0 : $field->value,
-                'Credit' => $field->document_field->type_calculation == 'Credito' ? $field->value : 0,
-                'LineMemo' => $document_line->concept,
-            ];
-        }
-
-        $total_ice = $document_line->ice_status ? $document_line->ice : $amount_line * $ice_percentage;
-        $total_tasas = $document_line->tasas_status ? $document_line->tasas : $amount_line * $rate_percentage;
-
-        $max_exento = 0;
-        foreach ($document_line->document->detail as $detail) {
-            $exento_percentage = $detail->exento / 100;
-            $total_excento = $document_line->exento_status ? $document_line->exento : $amount_line * $exento_percentage;
-            $max_exento = $total_excento > $max_exento ? $total_excento : $max_exento;
-
-            $amount = ($total_excento == 0 ? $amount_line : $total_excento) + $total_tasas + $total_ice;
-
-            $operation = $detail->type_calculation == 'Grossing Up' ? 1 : -1;
-            $percentage = $detail->percentage / 100;
-            $total_percentage = $amount * $percentage;
-            $total += $operation * $total_percentage;
-            $detail_lines[] = [
-                'AccountCode' => $detail->account,
-                'Debit' => $document_line->document->type_calculation == 'Grossing Up' ? 0 : $total_percentage,
-                'Credit' => $document_line->document->type_calculation == 'Grossing Up' ? $total_percentage : 0,
-                'LineMemo' => $document_line->concept,
-            ];
-        }
-        $total += $amount_line;
-
-        $udfs = $this->buildUdfs($document_line, $max_exento);
-
-        $journal[] = array_merge([
+        $journal = [array_merge([
             'AccountCode' => $document_line->account,
-            'Debit' => $total,
+            'Debit' => $result['expense'],
             'Credit' => 0,
             'LineMemo' => $document_line->concept,
-        ], $udfs);
+        ], $udfs)];
 
-        foreach ($detail_lines as &$d_line) {
-            $d_line = array_merge($d_line, $udfs);
+        foreach ($result['lines'] as $line) {
+            $journal[] = array_merge([
+                'AccountCode' => $line['account'],
+                'Debit' => $line['debit'],
+                'Credit' => $line['credit'],
+                'LineMemo' => $document_line->concept,
+            ], $udfs);
         }
 
-        return array_merge($journal, $detail_lines);
+        return $journal;
     }
 
     /**

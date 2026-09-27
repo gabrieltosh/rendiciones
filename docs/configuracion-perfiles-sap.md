@@ -100,85 +100,65 @@ que esa línea no genera una cuenta contable propia.
 
 ---
 
-#### `Calculo` (`type_calculation`)
-
-Controla la dirección del asiento para esta línea:
+#### `Calculo` (`type_calculation`) y check `calculation`
 
 | Valor | Efecto en el asiento |
 |---|---|
-| **Grossing Up** | El monto calculado va al **Haber (Credit)** |
-| **Grossing Down** | El monto calculado va al **Debe (Debit)** |
+| **Grossing Down** | Monto sobre la base del crédito fiscal → **Debe**. Se resta del gasto (ej. IVA 13%). |
+| **Grossing Up** | Monto sobre el bruto → **Haber**. Se suma al gasto (ej. retenciones IUE, IT, RC-IVA). |
+
+El check **`calculation`** en una línea Grossing Up indica que el usuario registra el
+importe **pagado (líquido)** y que hay que calcular el bruto:
+`bruto = importe / (1 − Σ% de las líneas Grossing Up marcadas)`. En Grossing Down no tiene efecto.
 
 ---
 
 #### `Cuenta`
 
-Código de cuenta contable de SAP (tabla `OACT`). Es la cuenta donde se acredita o debita
-el monto de esta línea del asiento.
+Código de cuenta contable de SAP (tabla `OACT`) de la línea.
 
 ---
 
 #### `Porcentaje`
 
-Porcentaje del **monto base calculado** que se asigna a esta cuenta.
-
-```
-monto_linea = monto_base × (porcentaje / 100)
-```
+Porcentaje sobre el bruto (Grossing Up) o sobre la base del crédito fiscal (Grossing Down),
+tal como lo define la norma (ej. IUE 5%, IT 3%, IVA 13%).
 
 ---
 
 #### `% Exento`
 
-Porcentaje del monto del gasto que se trata como **exento de impuesto** para
-**esta línea de prorrateo específicamente**.
-
-- Si `% Exento = 0` → la base del prorrateo es el monto completo del gasto + impuestos
-- Si `% Exento > 0` → la base del prorrateo es solo la porción exenta + impuestos
-
-> Este valor puede ser sobreescrito por el usuario documento a documento
-> si `exento_status = true` en el documento.
+Porcentaje fijo del importe que se considera exento para esta línea. Si el documento tiene
+`exento_status = true` y el usuario ingresa el monto exento, se usa ese monto.
 
 ---
 
 ### Fórmula completa de cálculo del asiento
 
+Implementada en `App\Services\Sap\DocumentLineCalculator` (única fuente, la usan el export
+y la vista previa; cubierta por `tests/Unit/DocumentLineCalculatorTest.php`).
+
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│ 1. Ajuste por Campos Adicionales                                    │
-│                                                                     │
-│    amount_line = monto_gasto                                        │
-│    Por cada campo adicional:                                        │
-│      amount_line += (Crédito ? +valor : -valor)                     │
-│                                                                     │
-│ 2. Calcular impuestos sobre amount_line                             │
-│                                                                     │
-│    total_ice   = ice_status   ? ice_usuario   : amount_line × ice%  │
-│    total_tasas = tasas_status ? tasas_usuario : amount_line × tasas%│
-│                                                                     │
-│ 3. Por cada línea de prorrateo:                                     │
-│                                                                     │
-│    total_excento = exento_status                                    │
-│                  ? exento_usuario                                   │
-│                  : amount_line × (exento_linea% / 100)              │
-│                                                                     │
-│    base = (total_excento == 0 ? amount_line : total_excento)        │
-│           + total_tasas + total_ice                                 │
-│                                                                     │
-│    monto_linea = base × (porcentaje% / 100)                         │
-│                                                                     │
-│    → Grossing Up   → Haber (Credit) = monto_linea                  │
-│    → Grossing Down → Debe  (Debit)  = monto_linea                  │
-│                                                                     │
-│ 4. Línea principal (cuenta del gasto del usuario):                  │
-│                                                                     │
-│    Debe cuenta_gasto = Σ(operaciones) + amount_line                 │
-└─────────────────────────────────────────────────────────────────────┘
+1. importe = monto ± campos adicionales (Crédito suma, Débito resta)
+2. bruto   = importe / (1 − Σ% Grossing Up con calculation)
+3. exento  = monto exento ingresado, o importe × %exento de la línea
+   ICE     = ICE ingresado,           o importe × % ICE del documento
+   tasas   = tasas ingresadas,        o importe × % tasas del documento
+4. Grossing Up   → Haber = bruto × %
+   Grossing Down → Debe  = (bruto − exento − ICE − tasas) × %
+5. Gasto (Debe)  = importe + Σ Grossing Up − Σ Grossing Down
+6. Contrapartida (caja chica / empleado, Haber) = Σ Debe − Σ Haber = importe
 ```
 
-> **Comportamiento del exento:** Cuando una línea tiene `% Exento > 0`, la base de
-> cálculo del prorrateo es el **monto exento**, no el monto total. Esto permite separar
-> contablemente la porción gravada de la exenta dentro del mismo asiento.
+Cada línea se redondea a 2 decimales; el asiento siempre cuadra.
+
+| Documento | Configuración | Importe | Asiento |
+|---|---|---|---|
+| Factura | IVA 13% Grossing Down | 100 | Gasto 87 D · IVA 13 D · Caja 100 H |
+| Compra retenciones bienes | IUE 5% + IT 3% Grossing Up ✔ | 92 (pagado) | Gasto 100 D · IUE 5 H · IT 3 H · Caja 92 H |
+| Compra retenciones servicios | RC-IVA 13% + IT 3% Grossing Up ✔ | 84 (pagado) | Gasto 100 D · RC-IVA 13 H · IT 3 H · Caja 84 H |
+| Factura combustible | IVA 13% Down, exento ingresado 30 | 100 | Gasto 90.90 D · IVA 9.10 D · Caja 100 H |
+| Registros otros | Sin prorrateo | 50 | Gasto 50 D · Caja 50 H |
 
 ---
 
@@ -205,139 +185,7 @@ Haber ← si type_calculation == 'Crédito'
 
 ---
 
-## 4. Configuraciones Típicas
-
-### Factura normal con IVA (13%)
-
-```
-tasas = 13      tasas_status = false (fijo)
-ice   = 0       ice_status   = false
-
-Prorrateo:
-  Tipo=IVA · Calculo=Grossing Up · Cuenta=2140 (IVA CF) · Porcentaje=100% · %Exento=0%
-```
-
-**Asiento generado** para una factura de Bs 1,000:
-
-| Cuenta | Debe | Haber |
-|---|---|---|
-| 5xxxx — Gasto (cuenta del detalle del usuario) | 1,130 | |
-| 2140 — IVA Crédito Fiscal | | 1,130 |
-
----
-
-### Factura con porción exenta (ej: combustible)
-
-En Bolivia, el combustible tiene una parte del IVA no reembolsable. Se configura con
-dos líneas de prorrateo:
-
-```
-tasas = 13      tasas_status = false
-
-Prorrateo:
-  Línea 1: Tipo=IVA    · Calculo=Grossing Up · Cuenta=2140 (IVA CF Reembolsable)   · Porcentaje=87% · %Exento=0%
-  Línea 2: Tipo=EXENTO · Calculo=Grossing Up · Cuenta=2141 (IVA No Reembolsable)   · Porcentaje=13% · %Exento=100%
-```
-
-**Asiento generado** para una factura de Bs 1,000:
-
-| Cuenta | Debe | Haber |
-|---|---|---|
-| 5xxxx — Gasto | 1,130 | |
-| 2140 — IVA CF Reembolsable (87%) | | 982.10 |
-| 2141 — IVA No Reembolsable (13%) | | 147.90 |
-
----
-
-### Factura con ICE variable (ej: bebidas, tabaco)
-
-El ICE varía por producto, por lo que el usuario lo ingresa en cada factura:
-
-```
-tasas = 13      tasas_status = false
-ice   = 0       ice_status   = true   ← usuario ingresa el ICE por documento
-exento_status   = true                ← usuario ingresa el exento por documento
-
-Prorrateo:
-  Línea 1: Tipo=IVA · Calculo=Grossing Up · Cuenta=2140 · Porcentaje=100% · %Exento=0%
-  Línea 2: Tipo=ICE · Calculo=Grossing Up · Cuenta=2142 · Porcentaje=100% · %Exento=0%
-```
-
----
-
-### Factura con anticipos (campo adicional — Débito)
-
-El usuario aplicó un anticipo previo al proveedor. Se descuenta del monto base:
-
-```
-Campo adicional:
-  Nombre             = "Anticipo aplicado"
-  Cuenta             = 1310 (Anticipos a Proveedores)
-  type_calculation   = Débito   ← RESTA del monto base
-
-Prorrateo: IVA 13% normal
-```
-
-**Efecto:** `amount_line = monto_factura - anticipo`
-
-**Asiento generado** para factura Bs 1,000 con anticipo Bs 300:
-
-| Cuenta | Debe | Haber |
-|---|---|---|
-| 5xxxx — Gasto | 791 | |
-| 1310 — Anticipo Proveedores | 300 | |
-| 2140 — IVA CF | | 791 |
-
-> El anticipo aparece en el Debe porque es una recuperación del activo anticipado.
-
----
-
-### Factura con retención IT (Impuesto a las Transacciones — 3%)
-
-Se usa `Grossing Down` para generar el Debe de la retención:
-
-```
-tasas = 13      (IVA)
-
-Prorrateo:
-  Línea 1: Tipo=IVA · Calculo=Grossing Up   · Cuenta=2140 · Porcentaje=100% · %Exento=0%
-  Línea 2: Tipo=IT  · Calculo=Grossing Down · Cuenta=2150 · Porcentaje=3%   · %Exento=0%
-```
-
-**Asiento generado** para factura Bs 1,000:
-
-| Cuenta | Debe | Haber |
-|---|---|---|
-| 5xxxx — Gasto | 1,097 | |
-| 2150 — IT Retenido | 33 | |
-| 2140 — IVA CF | | 1,130 |
-
----
-
-### Sin impuestos (viáticos, gastos varios)
-
-```
-tasas = 0       tasas_status = false
-ice   = 0       ice_status   = false
-
-Prorrateo:
-  Línea 1: Tipo=EXENTO · Calculo=Grossing Up · Cuenta='-' · Porcentaje=100% · %Exento=0%
-
-Campos opcionales: NIT, Razón Social desactivados (checkboxes en false)
-```
-
-**Asiento generado** para gasto de Bs 500:
-
-| Cuenta | Debe | Haber |
-|---|---|---|
-| 5xxxx — Gasto | 500 | |
-| — | | 500 |
-
-> Con `%Exento = 0` y tasas = 0, el monto pasa sin transformación.
-
----
-
-## 5. Opciones disponibles en los selectores
+## 4. Opciones disponibles en los selectores
 
 | Selector | Opciones |
 |---|---|
@@ -347,7 +195,7 @@ Campos opcionales: NIT, Razón Social desactivados (checkboxes en false)
 
 ---
 
-## 6. Integración con SAP Service Layer
+## 5. Integración con SAP Service Layer
 
 Al autorizar la rendición, el sistema:
 
