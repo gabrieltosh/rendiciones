@@ -37,6 +37,9 @@ class Accountability extends Model implements Auditable
 
     protected $casts = [
         'sap_exported' => 'boolean',
+        // Sin el cast, la fecha se envía como 'Y-m-d H:i:s.v' y SQL Server en español
+        // la interpreta como año-día-mes; con el cast usa $dateFormat (ISO 8601).
+        'sap_exported_at' => 'datetime',
         'current_level_id' => 'integer',
     ];
     public function createdAt(): Attribute
