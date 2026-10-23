@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Accountability;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -58,6 +59,21 @@ class HandleInertiaRequests extends Middleware
                     'card_code'
                 )
                 : null,
+            // Contadores para los badges del menú lateral
+            'menu_counts' => fn () => $this->menuCounts($request),
         ]);
+    }
+
+    private function menuCounts(Request $request): ?array
+    {
+        $user = $request->user();
+        if (!$user || !in_array($user->type, ['Administrador', 'Autorizador'])) {
+            return null;
+        }
+
+        return [
+            'authorization' => Accountability::pendingAuthorizationFor($user->id)->count(),
+            'pending_sap' => Accountability::pendingSapExport()->count(),
+        ];
     }
 }

@@ -1,165 +1,83 @@
 <template>
-
     <Head :title="title" />
     <Layout>
         <div class="row justify-center q-px-md q-py-lg">
-            <div class="col-xs-12 col-sm-12 col-md-9">
-                <q-stepper v-model="step" header-nav ref="stepper" color="primary" animated flat alternative-labels
-                    class="backgroup-theme">
-                    <q-step :name="1" title="Datos Usuario" icon="settings" :done="step > 1">
-                        <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <h5 class="title-form">Rendicion</h5>
+            <div class="col-xs-12 col-sm-12 col-md-11 col-lg-9">
+                <PageHeader
+                    title="Configuración"
+                    subtitle="Parámetros de rendiciones, integración con SAP y datos de la empresa"
+                    icon="eva-settings-2-outline"
+                    sticky
+                >
+                    <template #actions>
+                        <q-btn color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
+                            :loading="saving" @click="HandleStoreForm()" />
+                    </template>
+                </PageHeader>
+
+                <q-card class="card-form">
+                    <q-tabs v-model="tab" align="left" no-caps active-color="primary" indicator-color="primary"
+                        class="form-tabs q-px-sm" inline-label outside-arrows mobile-arrows>
+                        <q-tab v-for="section in sections" :key="section.key" :name="section.key" :icon="section.icon"
+                            :label="section.label" />
+                    </q-tabs>
+                    <q-separator />
+
+                    <q-tab-panels v-model="tab" animated keep-alive class="bg-transparent">
+                        <q-tab-panel v-for="section in sections" :key="section.key" :name="section.key" class="q-pa-lg">
+                            <div class="form-section-title">{{ section.title }}</div>
+                            <div class="form-section-caption q-mb-md">{{ section.caption }}</div>
+                            <div class="row q-col-gutter-md">
+                                <div v-for="item in data[section.key]" :key="item.name" class="col-xs-12 col-md-6">
+                                    <FormField :label="item.label">
+                                        <div v-if="isYesNo(item)" class="yes-no-field row items-center">
+                                            <q-toggle v-model="item.value" true-value="SI" false-value="NO" color="primary"
+                                                :label="item.value === 'SI' ? 'Sí' : 'No'" />
+                                        </div>
+                                        <q-input v-else v-model="item.value" dense outlined class="input-theme"
+                                            :type="item.type === 'password' && !visible[item.name] ? 'password' : 'text'"
+                                            :autocomplete="item.type === 'password' ? 'new-password' : 'off'">
+                                            <template v-if="item.type === 'password'" v-slot:append>
+                                                <q-btn flat round dense size="sm"
+                                                    :icon="visible[item.name] ? 'eva-eye-off-outline' : 'eva-eye-outline'"
+                                                    :aria-label="visible[item.name] ? 'Ocultar valor' : 'Mostrar valor'"
+                                                    @click="visible[item.name] = !visible[item.name]" />
+                                            </template>
+                                        </q-input>
+                                    </FormField>
                                 </div>
-                                <div class="col-sm-6 text-right q-gutter-sm">
-                                    <q-btn @click="$refs.stepper.next()" color="primary" outline no-caps size="12px"
-                                        label="Continuar" />
-                                    <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
-                                        label="Actualizar" />
-                                </div>
-                            </div>
-                            <div class="row q-col-gutter-md q-mt-xs">
-                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6" v-for="item in data.accountability">
-                                    <div class="form-label" for="device_name">
-                                        {{ item.label }} <span class="text-red">*</span>
+
+                                <div v-if="section.key === 'company'" class="col-xs-12 col-md-6">
+                                    <FormField label="Logo de la empresa" hint="Se usa en los reportes PDF. Formatos de imagen (JPG, PNG).">
+                                        <q-file v-model="img" dense outlined accept=".jpg, image/*" class="input-theme"
+                                            clearable @rejected="onRejected">
+                                            <template v-slot:prepend><q-icon name="eva-image-outline" /></template>
+                                        </q-file>
+                                    </FormField>
+                                    <div class="logo-preview q-mt-md row items-center justify-center rounded-borders">
+                                        <q-img :src="previewUrl || data.url" fit="contain" width="180px" height="100px" />
                                     </div>
-                                    <q-input v-model="item.value" dense outlined :type="item.type"
-                                        class="input-theme" />
-                                </div>
-                            </div>
-                        </q-card>
-                    </q-step>
-                    <q-step :name="2" title="Campos Rendición" icon="settings" :done="step > 1">
-                        <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <h5 class="title-form">Detalle Rendición</h5>
-                                </div>
-                                <div class="col-sm-6 text-right q-gutter-sm">
-                                    <q-btn flat color="primary" @click="
-                                        $refs.stepper.previous()
-                                        " label="Atras" no-caps size="12px" />
-                                    <q-btn @click="$refs.stepper.next()" color="primary" outline no-caps size="12px"
-                                        label="Continuar" />
-                                    <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
-                                        label="Actualizar" />
-                                </div>
-                            </div>
-                            <div class="row q-col-gutter-md q-mt-xs">
-                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6"
-                                    v-for="item in data.accountability_detail">
-                                    <div class="form-label" for="device_name">
-                                        {{ item.label }} <span class="text-red">*</span>
-                                    </div>
-                                    <q-input v-model="item.value" dense outlined :type="item.type"
-                                        class="input-theme" />
-                                </div>
-                            </div>
-                        </q-card>
-                    </q-step>
-                    <q-step :name="3" title="Empleados" icon="settings" :done="step > 2">
-                        <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <h5 class="title-form">Empleados</h5>
-                                </div>
-                                <div class="col-sm-6 text-right q-gutter-sm">
-                                    <q-btn flat color="primary" @click="
-                                        $refs.stepper.previous()
-                                        " label="Atras" no-caps size="12px" />
-                                    <q-btn @click="$refs.stepper.next()" color="primary" outline no-caps size="12px"
-                                        label="Continuar" />
-                                    <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
-                                        label="Actualizar" />
-                                </div>
-                            </div>
-                            <div class="row q-col-gutter-md q-mt-xs">
-                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6" v-for="item in data.employee">
-                                    <div class="form-label" for="device_name">
-                                        {{ item.label }} <span class="text-red">*</span>
-                                    </div>
-                                    <q-input v-model="item.value" dense outlined :type="item.type"
-                                        class="input-theme" />
-                                </div>
-                            </div>
-                        </q-card>
-                    </q-step>
-                    <q-step :name="4" title="Proveedores" icon="settings" :done="step > 3">
-                        <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <h5 class="title-form">Proveedores</h5>
-                                </div>
-                                <div class="col-sm-6 text-right q-gutter-sm">
-                                    <q-btn flat color="primary" @click="
-                                        $refs.stepper.previous()
-                                        " label="Atras" no-caps size="12px" />
-                                    <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
-                                        label="Actualizar" />
-                                </div>
-                            </div>
-                            <div class="row q-col-gutter-md q-mt-xs">
-                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6" v-for="item in data.suppliers">
-                                    <div class="form-label" for="device_name">
-                                        {{ item.label }} <span class="text-red">*</span>
-                                    </div>
-                                    <q-input v-model="item.value" dense outlined :type="item.type"
-                                        class="input-theme" />
-                                </div>
-                            </div>
-                        </q-card>
-                    </q-step>
-                    <q-step :name="5" title="Datos Empresa" icon="settings" :done="step > 4">
-                        <q-card class="q-px-lg q-py-md q-ma-sm card-form q-mt-md">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <h5 class="title-form">Datos Empresariales</h5>
-                                </div>
-                                <div class="col-sm-6 text-right q-gutter-sm">
-                                    <q-btn flat color="primary" @click="
-                                        $refs.stepper.previous()
-                                        " label="Atras" no-caps size="12px" />
-                                    <q-btn @click="HandleStoreForm()" color="primary" no-caps size="12px"
-                                        label="Actualizar" />
-                                </div>
-                            </div>
-                            <div class="row q-col-gutter-md q-mt-xs">
-                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6" v-for="item in data.company">
-                                    <div class="form-label" for="device_name">
-                                        {{ item.label }} <span class="text-red">*</span>
-                                    </div>
-                                    <q-input v-model="item.value" dense outlined :type="item.type"
-                                        class="input-theme" />
-                                </div>
-                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                                    <div class="form-label" for="device_name">
-                                        Logo Empresa <span class="text-red">*</span>
-                                    </div>
-                                    <q-file v-model="img" dense outlined accept=".jpg, image/*" class="input-theme"
-                                        @rejected="onRejected" />
-                                    <div class="text-center q-mt-md">
-                                        <q-img
-                                        :src="data.url"
-                                        fit="contain"
-                                        width="180px"
-                                    />
+                                    <div v-if="previewUrl" class="text-caption text-grey text-center q-mt-xs">
+                                        Vista previa · se guardará al presionar "Guardar cambios"
                                     </div>
                                 </div>
                             </div>
-                        </q-card>
-                    </q-step>
-                </q-stepper>
+                        </q-tab-panel>
+                    </q-tab-panels>
+                </q-card>
             </div>
         </div>
     </Layout>
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref } from "vue";
-import { Head, usePage, router, useForm } from "@inertiajs/vue3";
+import PageHeader from "@/components/PageHeader.vue";
+import FormField from "@/components/FormField.vue";
+import { ref, reactive, computed, onBeforeUnmount } from "vue";
+import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
+import { useHashTab } from "@/utils/forms";
 
 defineProps({
     title: String,
@@ -167,66 +85,105 @@ defineProps({
 });
 const $q = useQuasar();
 const page = usePage();
-let message = ref(page.props.flash.message);
-let type = ref(page.props.flash.type);
-let data = ref({
+
+const sections = [
+    { key: "accountability", label: "Rendición", icon: "eva-briefcase-outline", title: "Rendición",
+        caption: "Parámetros generales de las rendiciones y de la conexión con SAP." },
+    { key: "accountability_detail", label: "Detalle", icon: "eva-list-outline", title: "Detalle de rendición",
+        caption: "Campos de SAP donde se registra el detalle de cada gasto." },
+    { key: "employee", label: "Empleados", icon: "eva-people-outline", title: "Empleados",
+        caption: "Cómo se identifican los empleados en SAP." },
+    { key: "suppliers", label: "Proveedores", icon: "eva-car-outline", title: "Proveedores",
+        caption: "Campos de SAP usados para los proveedores." },
+    { key: "company", label: "Empresa", icon: "eva-home-outline", title: "Datos de la empresa",
+        caption: "Información que aparece en los reportes." },
+];
+
+const tab = useHashTab("accountability", ["accountability", "accountability_detail", "employee", "suppliers", "company"]);
+const saving = ref(false);
+const visible = reactive({});
+const img = ref(null);
+
+const data = ref({
     accountability: page.props.accountability,
     accountability_detail: page.props.accountability_detail,
     employee: page.props.employee,
     suppliers: page.props.suppliers,
     company: page.props.company,
     url: page.props.url,
-})
-let step = ref(1);
-const img = ref(null)
-const filter = ref("");
-const loading = ref({
-    card: false,
 });
-function onRejected(rejectedEntries) {
-    $q.notify({
-        type: 'negative',
-        message: 'Es necesario que seleccione una archivo tipo imagen'
-    })
+
+const previewUrl = computed(() => (img.value ? URL.createObjectURL(img.value) : null));
+onBeforeUnmount(() => previewUrl.value && URL.revokeObjectURL(previewUrl.value));
+
+// Los parámetros SI/NO se muestran como interruptor
+function isYesNo(item) {
+    return item.type === "text" && ["SI", "NO"].includes(item.value);
 }
+
+function onRejected() {
+    $q.notify({
+        type: "negative",
+        message: "Selecciona un archivo de imagen",
+    });
+}
+
 function HandleStoreForm() {
-    const formData = new FormData();
-    formData.append('image', img.value);
+    saving.value = true;
     if (img.value) {
+        const formData = new FormData();
+        formData.append("image", img.value);
         router.post(route("panel.management.logo"), formData, {
             forceFormData: true,
-            onSuccess: () => {
-                HanldeStoreData()
-            }
-        })
+            preserveState: true,
+            onSuccess: () => HandleStoreData(),
+            onError: () => (saving.value = false),
+        });
     } else {
-        HanldeStoreData()
+        HandleStoreData();
     }
 }
-function HanldeStoreData() {
-    router.post(route("panel.management.update"),
+
+function HandleStoreData() {
+    router.post(
+        route("panel.management.update"),
         {
             accountability: data.value.accountability,
             accountability_detail: data.value.accountability_detail,
             employee: data.value.employee,
             suppliers: data.value.suppliers,
-            company: data.value.company
-        }
-        , {
+            company: data.value.company,
+        },
+        {
+            preserveState: true,
+            onFinish: () => (saving.value = false),
             onSuccess: () => {
-                message.value = page.props.flash.message;
-                type.value = page.props.flash.type;
                 $q.notify({
-                    type: type.value,
-                    message: message.value,
+                    type: page.props.flash.type,
+                    message: page.props.flash.message,
                 });
-                data.value.accountability = page.props.accountability
-                data.value.accountability_detail = page.props.accountability_detail
-                data.value.employee = page.props.employee
-                data.value.suppliers = page.props.suppliers
-                data.value.company = page.props.company
-                data.value.url = page.props.url
+                img.value = null;
+                data.value.accountability = page.props.accountability;
+                data.value.accountability_detail = page.props.accountability_detail;
+                data.value.employee = page.props.employee;
+                data.value.suppliers = page.props.suppliers;
+                data.value.company = page.props.company;
+                data.value.url = page.props.url;
             },
-        });
+        }
+    );
 }
 </script>
+
+<style scoped>
+.yes-no-field {
+    min-height: 32px;
+}
+.logo-preview {
+    border: 1px dashed rgba(0, 0, 0, 0.15);
+    padding: 12px;
+}
+.body--dark .logo-preview {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+</style>

@@ -28,7 +28,7 @@ class LoginRequest extends FormRequest
     }
     public function messages(): array{
         return [
-            'email.required'=>'El correo electronico es requerido',
+            'email.required'=>'El usuario es requerido',
             'password.required'=>'La contraseña es requerida',
         ];
     }

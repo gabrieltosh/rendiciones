@@ -1,39 +1,49 @@
 <template>
     <Head :title="title" />
     <Layout>
-        <div class="q-px-sm q-py-md">
-            <q-card class="card-form q-mt-sm">
+        <div class="row justify-center q-px-md q-py-lg">
+            <div class="col-xs-12 col-sm-12 col-md-11 col-lg-10">
+                <PageHeader
+                    title="Ciclos de Autorización"
+                    subtitle="Niveles y autorizadores por los que pasa cada rendición antes de exportarse"
+                    icon="eva-shuffle-2-outline"
+                >
+                    <template #actions>
+                        <q-btn
+                            color="primary"
+                            icon="add"
+                            label="Nuevo Ciclo"
+                            no-caps
+                            unelevated
+                            @click="router.visit(route('panel.authorization-cycle.create'))"
+                        />
+                    </template>
+                </PageHeader>
+
+            <q-card class="card-form">
                 <q-table
                     :rows="data"
                     :columns="columns"
                     row-key="id"
                     class="table-theme"
                     :filter="filter"
+                    flat
                     separator="horizontal"
                     :table-header-class="{ 'table-header-theme': true }"
                 >
                     <template v-slot:top>
-                        <h5 class="title-form">Ciclos de Autorización</h5>
-                        <q-space />
-                        <q-btn
-                            color="primary"
-                            icon="add"
-                            label="Nuevo Ciclo"
-                            size="11px"
-                            no-caps
-                            unelevated
-                            @click="router.visit(route('panel.authorization-cycle.create'))"
-                        />
+                        <div class="text-subtitle1 text-weight-medium">Lista de Ciclos</div>
                         <q-space />
                         <q-input
                             outlined
                             dense
-                            color="primary"
-                            placeholder="Buscar..."
+                            clearable
+                            placeholder="Buscar…"
                             v-model="filter"
-                            class="input-theme"
+                            class="input-theme search-input"
+                            aria-label="Buscar ciclos"
                         >
-                            <template v-slot:append>
+                            <template v-slot:prepend>
                                 <q-icon name="search" />
                             </template>
                         </q-input>
@@ -50,37 +60,20 @@
 
                     <template v-slot:body="props">
                         <q-tr :props="props">
-                            <q-td style="width: 120px !important">
-                                <div class="text-center q-gutter-xs">
-                                    <q-btn
-                                        flat round dense size="sm"
-                                        :icon="props.expand ? 'expand_less' : 'expand_more'"
-                                        color="grey"
-                                        @click="props.expand = !props.expand"
-                                    >
-                                        <q-tooltip>{{ props.expand ? 'Ocultar niveles' : 'Ver niveles' }}</q-tooltip>
-                                    </q-btn>
-                                    <q-btn
-                                        size="sm"
-                                        color="primary"
-                                        dense
-                                        icon="eva-edit-2-outline"
-                                        @click="router.visit(route('panel.authorization-cycle.edit', props.row.id))"
-                                    >
-                                        <q-tooltip class="bg-secondary">Editar ciclo</q-tooltip>
-                                    </q-btn>
-                                    <q-btn
-                                        size="sm"
-                                        color="red"
-                                        dense
-                                        icon="eva-trash-2-outline"
-                                        @click="HandleDelete(props.row.id)"
-                                    >
-                                        <q-tooltip class="bg-red">Eliminar ciclo</q-tooltip>
-                                    </q-btn>
-                                </div>
+                            <q-td auto-width>
+                                <q-btn
+                                    flat round dense size="sm"
+                                    :icon="props.expand ? 'expand_less' : 'expand_more'"
+                                    color="grey"
+                                    :aria-label="props.expand ? 'Ocultar niveles' : 'Ver niveles'"
+                                    @click="props.expand = !props.expand"
+                                >
+                                    <q-tooltip>{{ props.expand ? 'Ocultar niveles' : 'Ver niveles' }}</q-tooltip>
+                                </q-btn>
                             </q-td>
-                            <q-td key="name" :props="props">{{ props.row.name }}</q-td>
+                            <q-td key="name" :props="props">
+                                <span class="text-weight-medium">{{ props.row.name }}</span>
+                            </q-td>
                             <q-td key="description" :props="props">
                                 <span class="text-grey-7">{{ props.row.description || '—' }}</span>
                             </q-td>
@@ -93,11 +86,31 @@
                                     :label="props.row.is_active ? 'Activo' : 'Inactivo'"
                                 />
                             </q-td>
+                            <q-td key="actions" :props="props">
+                                <q-btn
+                                    flat round dense size="sm"
+                                    color="primary"
+                                    icon="eva-edit-2-outline"
+                                    aria-label="Editar ciclo"
+                                    @click="router.visit(route('panel.authorization-cycle.edit', props.row.id))"
+                                >
+                                    <q-tooltip>Editar</q-tooltip>
+                                </q-btn>
+                                <q-btn
+                                    flat round dense size="sm"
+                                    color="negative"
+                                    icon="eva-trash-2-outline"
+                                    aria-label="Eliminar ciclo"
+                                    @click="HandleDelete(props.row.id)"
+                                >
+                                    <q-tooltip>Eliminar</q-tooltip>
+                                </q-btn>
+                            </q-td>
                         </q-tr>
 
                         <!-- Fila expandible: niveles del ciclo -->
                         <q-tr v-show="props.expand" :props="props">
-                            <q-td colspan="100%" class="q-pa-md bg-grey-1">
+                            <q-td colspan="100%" class="q-pa-md level-panel">
                                 <div v-if="props.row.levels.length === 0" class="text-caption text-grey">
                                     Este ciclo no tiene niveles configurados.
                                 </div>
@@ -137,14 +150,25 @@
                             </q-td>
                         </q-tr>
                     </template>
+
+                    <template v-slot:no-data>
+                        <div class="full-width text-center q-pa-xl text-grey">
+                            <q-icon name="eva-shuffle-2-outline" size="56px" color="grey-4" />
+                            <div class="q-mt-sm">
+                                {{ filter ? 'Sin resultados para la búsqueda' : 'No hay ciclos de autorización configurados' }}
+                            </div>
+                        </div>
+                    </template>
                 </q-table>
             </q-card>
+            </div>
         </div>
     </Layout>
 </template>
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
+import PageHeader from "@/components/PageHeader.vue";
 import { ref } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
@@ -160,6 +184,7 @@ const columns = [
     { name: "description", label: "Descripción", field: "description", align: "left"                  },
     { name: "levels",      label: "Niveles",     field: r => r.levels.length, align: "center", sortable: true },
     { name: "is_active",   label: "Estado",      field: "is_active",   align: "center", sortable: true },
+    { name: "actions",     label: "Acciones",    field: "actions",     align: "center", style: "width: 100px" },
 ];
 
 function HandleDelete(id) {
@@ -181,6 +206,9 @@ function HandleDelete(id) {
 </script>
 
 <style scoped>
+.level-panel {
+    background-color: rgba(52, 71, 103, 0.04);
+}
 .level-spine {
     min-width: 26px;
     padding-top: 2px;

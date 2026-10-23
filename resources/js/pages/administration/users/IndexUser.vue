@@ -1,118 +1,127 @@
 <template>
     <Head :title="title" />
     <Layout>
-        <div class="q-px-sm q-py-md">
-            <q-card class="card-form q-mt-sm">
-                <q-table
-                    :loading="table.loading"
-                    :rows="data"
-                    :columns="table.columns"
-                    row-key="id"
-                    class="table-theme"
-                    :filter="table.filter"
-                    separator="horizontal"
-                    :table-header-class="{ 'table-header-theme': true }"
+        <div class="row justify-center q-px-md q-py-lg">
+            <div class="col-xs-12 col-sm-12 col-md-11 col-lg-10">
+                <PageHeader
+                    title="Usuarios"
+                    :subtitle="`${data.length} usuario${data.length !== 1 ? 's' : ''} registrados`"
+                    icon="eva-people-outline"
                 >
-                    <template v-slot:top>
-                        <h5 class="title-form">Lista de Usuarios</h5>
-                        <q-space />
+                    <template #actions>
                         <q-btn
                             color="primary"
+                            icon="add"
                             label="Crear Usuario"
-                            size="11px"
                             no-caps
+                            unelevated
                             @click="HandleCreateUser()"
                         />
-                        <q-space />
-                        <q-input
-                            outlined
-                            dense
-                            color="primary"
-                            placeholder="Buscar..."
-                            v-model="table.filter"
-                            class="input-theme"
-                        >
-                            <template v-slot:append>
-                                <q-icon name="search" />
-                            </template>
-                        </q-input>
                     </template>
-                    <template v-slot:header="props">
-                        <q-tr :props="props">
-                            <q-th auto-width />
-                            <q-th
-                                v-for="col in props.cols"
-                                :key="col.name"
-                                :props="props"
+                </PageHeader>
+
+                <q-card class="card-form">
+                    <q-table
+                        :rows="data"
+                        :columns="table.columns"
+                        row-key="id"
+                        class="table-theme"
+                        :filter="table.filter"
+                        flat
+                        separator="horizontal"
+                        :table-header-class="{ 'table-header-theme': true }"
+                        :pagination="{ rowsPerPage: 15 }"
+                    >
+                        <template v-slot:top>
+                            <div class="text-subtitle1 text-weight-medium">Lista de Usuarios</div>
+                            <q-space />
+                            <q-input
+                                outlined
+                                dense
+                                clearable
+                                placeholder="Buscar usuario…"
+                                v-model="table.filter"
+                                class="input-theme search-input"
+                                aria-label="Buscar usuarios"
                             >
-                                {{ col.label }}
-                            </q-th>
-                        </q-tr>
-                    </template>
-                    <template v-slot:body="props">
-                        <q-tr :props="props">
-                            <q-td style="width: 90px !important">
-                                <div class="text-center q-gutter-xs">
+                                <template v-slot:prepend>
+                                    <q-icon name="search" />
+                                </template>
+                            </q-input>
+                        </template>
+                        <template v-slot:body="props">
+                            <q-tr :props="props">
+                                <q-td key="name" :props="props">
+                                    <div class="row items-center no-wrap">
+                                        <q-avatar size="30px" color="blue-grey-1" text-color="blue-grey-9" class="text-caption text-weight-medium">
+                                            {{ initials(props.row.name) }}
+                                        </q-avatar>
+                                        <div class="q-ml-sm">
+                                            <div class="text-weight-medium">{{ props.row.name }}</div>
+                                            <div class="text-caption text-grey">{{ props.row.email }}</div>
+                                        </div>
+                                    </div>
+                                </q-td>
+                                <q-td key="username" :props="props">
+                                    {{ props.row.username }}
+                                </q-td>
+                                <q-td key="type" :props="props">
+                                    <q-badge outline color="blue-grey" :label="props.row.type || '—'" />
+                                </q-td>
+                                <q-td key="status" :props="props">
+                                    <q-badge :color="statusColor(props.row.status)" :label="props.row.status" />
+                                </q-td>
+                                <q-td key="created_at" :props="props">
+                                    {{ props.row.created_at }}
+                                </q-td>
+                                <q-td key="actions" :props="props">
                                     <q-btn
+                                        flat
+                                        round
+                                        dense
                                         size="sm"
                                         color="primary"
-                                        dense
-                                        @click="HandleEditUser(props.row.id)"
                                         icon="eva-edit-2-outline"
+                                        aria-label="Editar usuario"
+                                        @click="HandleEditUser(props.row.id)"
                                     >
-                                        <q-tooltip
-                                            class="bg-secondary"
-                                            :offset="[10, 10]"
-                                        >
-                                            Editar de usuario
-                                        </q-tooltip>
+                                        <q-tooltip>Editar</q-tooltip>
                                     </q-btn>
                                     <q-btn
-                                        size="sm"
-                                        color="red"
+                                        flat
+                                        round
                                         dense
-                                        @click="HandleDeleteUser(props.row.id)"
+                                        size="sm"
+                                        color="negative"
                                         icon="eva-trash-2-outline"
+                                        aria-label="Eliminar usuario"
+                                        @click="HandleDeleteUser(props.row)"
                                     >
-                                        <q-tooltip
-                                            class="bg-red"
-                                            :offset="[10, 10]"
-                                        >
-                                            Eliminar usuario
-                                        </q-tooltip>
+                                        <q-tooltip>Eliminar</q-tooltip>
                                     </q-btn>
+                                </q-td>
+                            </q-tr>
+                        </template>
+                        <template v-slot:no-data>
+                            <div class="full-width text-center q-pa-xl text-grey">
+                                <q-icon name="eva-people-outline" size="56px" color="grey-4" />
+                                <div class="q-mt-sm">
+                                    {{ table.filter ? 'Sin resultados para la búsqueda' : 'No hay usuarios registrados' }}
                                 </div>
-                            </q-td>
-                            <q-td key="id" :props="props">
-                                {{ props.row.id }}
-                            </q-td>
-                            <q-td key="name" :props="props">
-                                {{ props.row.name }}
-                            </q-td>
-                            <q-td key="username" :props="props">
-                                {{ props.row.username }}
-                            </q-td>
-                            <q-td key="status" :props="props">
-                                <q-badge :color="props.row.status=='PreActivo'?'warning':props.row.status=='Activo'?'positive':'negative'" :label="props.row.status" />
-                            </q-td>
-                            <q-td key="email" :props="props">
-                                {{ props.row.email }}
-                            </q-td>
-                            <q-td key="created_at" :props="props">
-                                {{ props.row.created_at }}
-                            </q-td>
-                        </q-tr>
-                    </template>
-                </q-table>
-            </q-card>
+                            </div>
+                        </template>
+                    </q-table>
+                </q-card>
+            </div>
         </div>
     </Layout>
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, watch } from "vue";
-import { Head, usePage,router } from "@inertiajs/vue3";
-import {route} from "ziggy-js"
+import PageHeader from "@/components/PageHeader.vue";
+import { ref } from "vue";
+import { Head, usePage, router } from "@inertiajs/vue3";
+import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
 defineProps({
     title: String,
@@ -120,56 +129,35 @@ defineProps({
 });
 const $q = useQuasar();
 const page = usePage();
-let data = ref(page.props.data)
-let message = ref(page.props.flash.message)
-let type = ref(page.props.flash.type)
+let data = ref(page.props.data);
 const table = ref({
     filter: "",
-    loading: false,
     columns: [
-        {
-            name: "id",
-            align: "center",
-            label: "ID",
-            field: "id",
-            sortable: true,
-        },
-        {
-            name: "name",
-            align: "center",
-            label: "Nombres",
-            field: "name",
-            sortable: true,
-        },
-        {
-            name: "username",
-            align: "center",
-            label: "Username",
-            field: "username",
-            sortable: true,
-        },
-        {
-            name: "status",
-            align: "center",
-            label: "Estado",
-            field: "status",
-            sortable: true,
-        },
-        {
-            name: "email",
-            align: "center",
-            label: "Correo Electronico",
-            field: "email",
-        },
-        {
-            name: "created_at",
-            align: "center",
-            label: "Fecha de Creación",
-            field: "created_at",
-            sortable: true,
-        },
+        { name: "name", align: "left", label: "Nombre", field: "name", sortable: true },
+        { name: "username", align: "left", label: "Usuario", field: "username", sortable: true },
+        { name: "type", align: "center", label: "Rol", field: "type", sortable: true },
+        { name: "status", align: "center", label: "Estado", field: "status", sortable: true },
+        { name: "created_at", align: "center", label: "Fecha de Creación", field: "created_at", sortable: true },
+        // Columna oculta solo para que el buscador también encuentre por correo
+        { name: "email", label: "Correo", field: "email", classes: "hidden", headerClasses: "hidden" },
+        { name: "actions", align: "center", label: "Acciones", field: "actions", style: "width: 100px" },
     ],
 });
+
+function initials(name) {
+    return (name || "")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((word) => word.charAt(0).toUpperCase())
+        .join("");
+}
+
+function statusColor(status) {
+    if (status === "Activo") return "positive";
+    if (status === "PreActivo") return "warning";
+    return "negative";
+}
 
 function HandleCreateUser() {
     router.visit(route("panel.user.create"));
@@ -177,31 +165,23 @@ function HandleCreateUser() {
 function HandleEditUser($id) {
     router.visit(route("panel.user.edit", $id));
 }
-function HandleDeleteUser($id) {
+function HandleDeleteUser(row) {
     $q.dialog({
-        title: "Confirmar",
-        message: "¿Esta seguro de eliminar el Usuario?",
-        cancel: true,
+        title: "Eliminar usuario",
+        message: `¿Está seguro de eliminar a ${row.name}? Esta acción no se puede deshacer.`,
+        cancel: { label: "Cancelar", flat: true, noCaps: true },
+        ok: { label: "Eliminar", color: "negative", noCaps: true },
         persistent: true,
-    })
-        .onOk(() => {
-            router.delete(route("panel.user.delete", $id), {
-                onSuccess: () => {
-                    data.value = page.props.data;
-                    message.value = page.props.flash.message;
-                    type.value = page.props.flash.type;
-                    $q.notify({
-                        type: type.value,
-                        message: message.value,
-                    });
-                },
-            });
-        })
-        .onCancel(() => {})
-        .onDismiss(() => {});
+    }).onOk(() => {
+        router.delete(route("panel.user.delete", row.id), {
+            onSuccess: () => {
+                data.value = page.props.data;
+                $q.notify({
+                    type: page.props.flash.type,
+                    message: page.props.flash.message,
+                });
+            },
+        });
+    });
 }
 </script>
-<style lang="scss">
-
-
-</style>

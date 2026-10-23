@@ -20,7 +20,7 @@
                             </div>
                             <div class="text-caption text-grey q-mt-xs">
                                 {{ accountability.employee_name }}
-                                &middot; Rendicion #{{ accountability.id }}
+                                &middot; Rendición #{{ accountability.id }}
                             </div>
                         </div>
                         <div class="col-auto q-gutter-sm">
@@ -42,7 +42,7 @@
                                     size="12px"
                                     no-caps
                                     unelevated
-                                    aria-label="Anular rendicion"
+                                    aria-label="Anular rendición"
                                     @click="HandleCancelStatus('Anulado')"
                                 />
                             <template v-if="!isAuthorized">
@@ -52,7 +52,7 @@
                                     size="12px"
                                     no-caps
                                     unelevated
-                                    aria-label="Rechazar rendicion"
+                                    aria-label="Rechazar rendición"
                                     @click="HandleRejectStatus('Rechazado')"
                                 />
                                 <q-btn
@@ -74,7 +74,7 @@
                                 size="12px"
                                 no-caps
                                 flat
-                                aria-label="Imprimir reporte de rendicion"
+                                aria-label="Imprimir reporte de rendición"
                                 @click="HandleGetReport()"
                             />
                         </div>
@@ -94,11 +94,11 @@
                     {{ statusMessage }}
                 </q-banner>
 
-                <!-- Informacion General -->
+                <!-- Información General -->
                 <q-expansion-item
                     class="card-form q-mb-md overflow-hidden rounded-borders"
                     icon="info"
-                    label="Informacion General"
+                    label="Información General"
                     header-class="text-subtitle2 text-weight-medium"
                     default-value
                     dense
@@ -150,7 +150,7 @@
                                     <div class="text-caption">{{ accountability.employee_name || '-' }}</div>
                                 </div>
                                 <div class="col-xs-12 col-sm-6 col-md-4">
-                                    <div class="text-caption text-grey">Descripcion</div>
+                                    <div class="text-caption text-grey">Descripción</div>
                                     <div class="text-caption" style="word-break: break-word;">
                                         {{ accountability.description || '-' }}
                                     </div>
@@ -291,7 +291,7 @@
                         <div class="row items-center q-col-gutter-sm">
                             <div class="col">
                                 <div class="text-subtitle1 text-weight-medium">
-                                    Detalle de Rendicion
+                                    Detalle de Rendición
                                 </div>
                             </div>
                             <div class="col-auto">
@@ -332,7 +332,7 @@
                         <div v-if="filteredDocuments.length === 0" class="text-center q-pa-xl">
                             <q-icon name="receipt_long" size="64px" color="grey-4" aria-hidden="true" />
                             <div class="text-body1 text-grey q-mt-md">
-                                {{ filter ? 'Sin resultados para la busqueda' : 'No hay documentos registrados' }}
+                                {{ filter ? 'Sin resultados para la búsqueda' : 'No hay documentos registrados' }}
                             </div>
                             <q-btn
                                 v-if="!filter && !isAuthorized"
@@ -456,7 +456,7 @@
                                                     <div class="text-body2">{{ doc.document_number }}</div>
                                                 </div>
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.authorization_number">
-                                                    <div class="text-caption text-grey">N. Autorizacion</div>
+                                                    <div class="text-caption text-grey">N. Autorización</div>
                                                     <div class="text-body2">{{ doc.authorization_number }}</div>
                                                 </div>
                                                 <div class="col-xs-12 col-sm-8 col-md-6" v-if="doc.cuf">
@@ -804,10 +804,10 @@ const statusIcon = computed(() => {
 
 const statusMessage = computed(() => {
     const messages = {
-        Pendiente: "La rendicion esta pendiente de autorizacion",
-        Anulado: `La rendicion fue anulada: ${accountability.comments}`,
-        Rechazado: `La rendicion fue rechazada: ${accountability.comments}`,
-        Autorizado: "La rendicion fue aprobada y exportada",
+        Pendiente: "La rendición está pendiente de autorización",
+        Anulado: `La rendición fue anulada: ${accountability.comments}`,
+        Rechazado: `La rendición fue rechazada: ${accountability.comments}`,
+        Autorizado: "La rendición fue aprobada y exportada",
     };
     return messages[accountability.status] || null;
 });
@@ -886,7 +886,7 @@ function HandleEditDocument(id) {
 function HandleDeleteDocument(id) {
     $q.dialog({
         title: "Eliminar Documento",
-        message: "¿Esta seguro de eliminar este documento? Esta accion no se puede deshacer.",
+        message: "¿Está seguro de eliminar este documento? Esta acción no se puede deshacer.",
         cancel: { label: "Cancelar", flat: true, noCaps: true },
         ok: { label: "Eliminar", color: "negative", noCaps: true },
         persistent: true,
@@ -903,7 +903,7 @@ function HandleDeleteDocument(id) {
 
 function HandleCancelStatus(status) {
     $q.dialog({
-        title: "Anular Rendicion",
+        title: "Anular Rendición",
         message: "Escriba el motivo de la anulacion",
         cancel: { label: "Cancelar", flat: true, noCaps: true },
         ok: { label: "Anular", color: "grey-8", noCaps: true },
@@ -925,7 +925,7 @@ function HandleCancelStatus(status) {
 
 function HandleRejectStatus(status) {
     $q.dialog({
-        title: "Rechazar Rendicion",
+        title: "Rechazar Rendición",
         message: "Escriba el motivo del rechazo",
         cancel: { label: "Cancelar", flat: true, noCaps: true },
         ok: { label: "Rechazar", color: "negative", noCaps: true },
@@ -948,10 +948,10 @@ function HandleRejectStatus(status) {
 function HandleAuthorizeStatus(status) {
     const isIntermediate = hasNextLevel.value;
     $q.dialog({
-        title: isIntermediate ? "Aprobar Nivel" : "Autorizar Rendicion",
+        title: isIntermediate ? "Aprobar Nivel" : "Autorizar Rendición",
         message: isIntermediate
             ? "¿Está seguro de aprobar este nivel? La rendición avanzará al siguiente nivel de autorización."
-            : "¿Esta seguro de autorizar esta rendicion? Se exportara a SAP.",
+            : "¿Está seguro de autorizar esta rendición? Se exportará a SAP.",
         cancel: { label: "Cancelar", flat: true, noCaps: true },
         ok: { label: isIntermediate ? "Aprobar y Avanzar" : "Autorizar", color: "positive", noCaps: true },
         persistent: true,

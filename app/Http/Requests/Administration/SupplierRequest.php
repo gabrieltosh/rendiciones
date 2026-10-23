@@ -30,9 +30,9 @@ class SupplierRequest extends FormRequest
     {
         return [
             'business.required'=>'El campo Razón Social es obligatorio',
-            'business.unique'=>'La Razón Social ya esta registrada',
+            'business.unique'=>'La razón social ya está registrada',
             'nit.required'=>'El campo NIT es obligatorio',
-            'nit.unique'=>'El NIT ya esta registrado',
+            'nit.unique'=>'El NIT ya está registrado',
         ];
     }
 }

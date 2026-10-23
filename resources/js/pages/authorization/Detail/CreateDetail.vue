@@ -103,7 +103,7 @@
                                             route('panel.accountability.manage.detail.index', [page.props.profile.id, page.props.accountability.id])
                                         )
                                         " flat />
-                                    <q-btn flat color="primary" @click="$refs.stepper.previous()" label="Atras" no-caps
+                                    <q-btn flat color="primary" @click="$refs.stepper.previous()" label="Atrás" no-caps
                                         size="12px" />
                                     <q-btn @click="$refs.stepper.next()" color="primary" no-caps size="12px"
                                         label="Continuar" />
@@ -151,7 +151,7 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4" v-if="document.control_code_status">
                                     <div class="form-label" for="device_name">
-                                        Codigo Control
+                                        Código Control
                                     </div>
                                     <q-input v-model="form.control_code" dense outlined class="input-theme" />
                                     <div v-if="errors.control_code" class="container-error">
@@ -264,7 +264,7 @@
                                             route('panel.accountability.manage.detail.index', [page.props.profile.id, page.props.accountability.id])
                                         )
                                         " flat />
-                                    <q-btn flat color="primary" @click="$refs.stepper.previous()" label="Atras" no-caps
+                                    <q-btn flat color="primary" @click="$refs.stepper.previous()" label="Atrás" no-caps
                                         size="12px" />
                                     <q-btn color="primary" label="Crear" size="12px" no-caps
                                         @click="HandleStoreForm()" />

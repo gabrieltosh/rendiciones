@@ -318,8 +318,7 @@ class AccountabilityController extends Controller
     {
         Session::put('title', 'Pendientes de Exportación SAP');
         $data = Accountability::with('user', 'profile', 'detail.document')
-            ->where('status', 'Autorizado')
-            ->where('sap_exported', 0)
+            ->pendingSapExport()
             ->get();
         return Inertia::render('authorization/PendingExport', [
             'data' => $data,
@@ -365,28 +364,16 @@ class AccountabilityController extends Controller
         Session::put('title', 'Lista Rendiciones');
         $authUserId = $request->user()->id;
 
-        // New system: accountabilities where current user is in the current level
-        $levelIds = AuthorizationCycleLevel::whereHas('levelUsers', function ($q) use ($authUserId) {
-            $q->where('user_id', $authUserId);
-        })->pluck('id');
+        $accountabilities = Accountability::with('user', 'profile', 'currentLevel.cycle')
+            ->pendingAuthorizationFor($authUserId)
+            ->get();
 
         // Legacy system: accountabilities with no cycle (current_level_id is null)
         $legacyUserIds = UserAuthorization::where('auth_user_id', $authUserId)->pluck('user_id');
 
-        $accountabilities = Accountability::with('user', 'profile', 'currentLevel.cycle')
-            ->where('status', 'Pendiente')
-            ->where(function ($q) use ($levelIds, $legacyUserIds) {
-                $q->whereIn('current_level_id', $levelIds)
-                  ->orWhere(function ($q2) use ($legacyUserIds) {
-                      $q2->whereNull('current_level_id')
-                         ->whereIn('user_id', $legacyUserIds);
-                  });
-            })
-            ->get();
-
         $authorized = Accountability::with('user', 'profile', 'currentLevel.cycle')
             ->where('status', 'Autorizado')
-            ->where(function ($q) use ($levelIds, $legacyUserIds, $authUserId) {
+            ->where(function ($q) use ($legacyUserIds, $authUserId) {
                 $q->whereHas('levelApprovals', function ($q2) use ($authUserId) {
                     $q2->where('user_id', $authUserId);
                 })->orWhere(function ($q2) use ($legacyUserIds) {
@@ -726,7 +713,7 @@ SQL;
         $documents = Document::where('profile_id', $profile->id)->get();
         $suppliers = Supplier::get();
         return Inertia::render(
-            'authorization/Detail/CreateDetail',
+            'authorization/Detail/CreateDetailNew',
             [
                 'profile' => $profile,
                 'accountability' => $accountability,

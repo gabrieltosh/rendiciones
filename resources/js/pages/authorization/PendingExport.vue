@@ -1,7 +1,21 @@
 <template>
     <Head :title="title" />
     <Layout>
-        <div class="q-px-sm q-py-md">
+        <div class="row justify-center q-px-md q-py-lg">
+            <div class="col-xs-12 col-sm-12 col-md-11 col-lg-10">
+            <PageHeader
+                title="Pendientes de Exportación SAP"
+                icon="eva-cloud-upload-outline"
+            >
+                <template #subtitle>
+                    <span v-if="data.length">
+                        {{ data.length }} rendición{{ data.length !== 1 ? 'es' : '' }} autorizada{{ data.length !== 1 ? 's' : '' }}
+                        por {{ formatAmount(totalAmount) }} que aún no llegan a SAP
+                    </span>
+                    <span v-else>Todas las rendiciones autorizadas están en SAP</span>
+                </template>
+            </PageHeader>
+
             <q-card class="card-form">
                 <q-table
                     :rows="data"
@@ -11,32 +25,25 @@
                     :filter="filter"
                     separator="horizontal"
                     flat
-                    bordered
                     :table-header-class="{ 'table-header-theme': true }"
+                    :pagination="{ rowsPerPage: 15 }"
                 >
                     <template v-slot:top>
-                        <h5 class="title-form">Pendientes de Exportación SAP</h5>
+                        <div class="text-subtitle1 text-weight-medium">Rendiciones por exportar</div>
                         <q-space />
                         <q-input
                             outlined
                             dense
-                            color="primary"
-                            placeholder="Buscar..."
+                            clearable
+                            placeholder="Buscar…"
                             v-model="filter"
-                            class="input-theme"
+                            class="input-theme search-input"
+                            aria-label="Buscar rendiciones"
                         >
-                            <template v-slot:append>
+                            <template v-slot:prepend>
                                 <q-icon name="search" />
                             </template>
                         </q-input>
-                    </template>
-
-                    <template v-slot:header="props">
-                        <q-tr :props="props">
-                            <q-th v-for="col in props.cols" :key="col.name" :props="props">
-                                {{ col.label }}
-                            </q-th>
-                        </q-tr>
                     </template>
 
                     <template v-slot:body="props">
@@ -53,15 +60,16 @@
                             <q-td key="actions" :props="props">
                                 <div class="q-gutter-xs">
                                     <q-btn flat round dense size="sm" icon="cloud_upload" color="positive"
+                                        aria-label="Exportar a SAP" :loading="exportingId === props.row.id"
                                         @click="HandleReExport(props.row.id)">
                                         <q-tooltip>Exportar a SAP</q-tooltip>
                                     </q-btn>
                                     <q-btn flat round dense size="sm" icon="visibility" color="primary"
-                                        @click="HandleOpenDetail(props.row.id)">
+                                        aria-label="Ver detalle" @click="HandleOpenDetail(props.row.id)">
                                         <q-tooltip>Ver detalle</q-tooltip>
                                     </q-btn>
                                     <q-btn flat round dense size="sm" icon="edit" color="secondary"
-                                        @click="HandleOpenEdit(props.row.id)">
+                                        aria-label="Editar" @click="HandleOpenEdit(props.row.id)">
                                         <q-tooltip>Editar</q-tooltip>
                                     </q-btn>
                                 </div>
@@ -73,15 +81,17 @@
                         <div class="full-width text-center q-pa-xl text-grey-6">
                             <q-icon name="check_circle" size="64px" color="positive" class="q-mb-md" />
                             <div>No hay rendiciones pendientes de exportación</div>
+                            <div class="text-caption">Todo lo autorizado ya fue registrado en SAP.</div>
                         </div>
                     </template>
                 </q-table>
             </q-card>
+            </div>
         </div>
 
         <!-- ── Modal Edición ─────────────────────────────────────────── -->
         <q-dialog v-model="editDialog" persistent>
-            <q-card style="min-width: 600px; max-width: 900px; width: 90vw;">
+            <q-card style="width: 900px; max-width: 95vw;">
                 <q-card-section class="row items-center q-pb-none">
                     <div class="text-h6 title-form">Actualizar Rendición</div>
                     <q-space />
@@ -169,7 +179,9 @@
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref } from "vue";
+import PageHeader from "@/components/PageHeader.vue";
+import { ref, computed } from "vue";
+import { formatAmount } from "@/utils/accountability";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
@@ -204,9 +216,8 @@ const columns = [
     { name: "actions",      align: "center", label: "Acciones",    field: "actions" },
 ];
 
-function formatAmount(val) {
-    return Number(val ?? 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+const totalAmount = computed(() => data.value.reduce((sum, row) => sum + Number(row.total ?? 0), 0));
+const exportingId = ref(null);
 
 function HandleReExport(id) {
     $q.dialog({
@@ -220,6 +231,8 @@ function HandleReExport(id) {
             route("panel.accountability.authorization.detail.re-export", id),
             {},
             {
+                onStart: () => (exportingId.value = id),
+                onFinish: () => (exportingId.value = null),
                 onSuccess: () => {
                     data.value = page.props.data;
                     $q.notify({ type: page.props.flash.type, message: page.props.flash.message });

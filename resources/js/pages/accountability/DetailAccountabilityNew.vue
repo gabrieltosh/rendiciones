@@ -15,15 +15,15 @@
                                     class="q-pa-xs" />
                             </div>
                             <div class="text-caption text-grey q-mt-xs">
-                                {{ accountability.employee_name }} &middot; Rendicion #{{ accountability.id }}
+                                {{ accountability.employee_name }} &middot; Rendición #{{ accountability.id }}
                             </div>
                         </div>
                         <div class="col-auto q-gutter-sm">
                             <q-btn v-if="isEditable" color="positive" icon="send" label="Enviar" size="12px" no-caps
-                                unelevated aria-label="Enviar rendicion a autorizacion"
+                                unelevated aria-label="Enviar rendición a autorización"
                                 @click="HandleUpdateStatus('Pendiente')" />
                             <q-btn color="primary" icon="print" label="Imprimir" size="12px" no-caps flat
-                                aria-label="Imprimir reporte de rendicion" @click="HandleReportAccountability()" />
+                                aria-label="Imprimir reporte de rendición" @click="HandleReportAccountability()" />
                         </div>
                     </div>
                 </q-card>
@@ -37,9 +37,9 @@
                     {{ statusMessage }}
                 </q-banner>
 
-                <!-- Informacion General (colapsable) -->
+                <!-- Información General (colapsable) -->
                 <q-expansion-item class="card-form q-mb-md overflow-hidden rounded-borders" icon="info"
-                    label="Informacion General" header-class="text-subtitle2 text-weight-medium" default-value dense default-opened>
+                    label="Información General" header-class="text-subtitle2 text-weight-medium" default-value dense default-opened>
                     <q-card>
                         <q-card-section>
                             <!-- Resumen -->
@@ -86,7 +86,7 @@
                                     <div class="text-caption">{{ accountability.employee_name || '-' }}</div>
                                 </div>
                                 <div class="col-xs-12 col-sm-6 col-md-4">
-                                    <div class="text-caption text-grey">Descripcion</div>
+                                    <div class="text-caption text-grey">Descripción</div>
                                     <div class="text-caption" style="word-break: break-word;">{{
                                         accountability.description || '-' }}
                                     </div>
@@ -157,7 +157,7 @@
                         <div class="row items-center q-col-gutter-sm">
                             <div class="col">
                                 <div class="text-subtitle1 text-weight-medium">
-                                    Detalle de Rendicion
+                                    Detalle de Rendición
                                 </div>
                             </div>
                             <div class="col-auto">
@@ -181,7 +181,7 @@
                         <div v-if="filteredDocuments.length === 0" class="text-center q-pa-xl">
                             <q-icon name="receipt_long" size="64px" color="grey-4" aria-hidden="true" />
                             <div class="text-body1 text-grey q-mt-md">
-                                {{ filter ? 'Sin resultados para la busqueda' : 'No hay documentos registrados' }}
+                                {{ filter ? 'Sin resultados para la búsqueda' : 'No hay documentos registrados' }}
                             </div>
                             <q-btn v-if="!filter && isEditable" color="primary" label="Crear Documento" icon="add"
                                 no-caps unelevated class="q-mt-md" @click="HandleCreateDocument()" />
@@ -267,7 +267,7 @@
                                                     <div class="text-body2">{{ doc.document_number }}</div>
                                                 </div>
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.authorization_number">
-                                                    <div class="text-caption text-grey">N. Autorizacion</div>
+                                                    <div class="text-caption text-grey">N. Autorización</div>
                                                     <div class="text-body2">{{ doc.authorization_number }}</div>
                                                 </div>
                                                 <div class="col-xs-12 col-sm-8 col-md-6" v-if="doc.cuf">
@@ -558,9 +558,9 @@ const statusIcon = computed(() => {
 
 const statusMessage = computed(() => {
     const messages = {
-        'Pendiente': 'La rendicion esta pendiente de autorizacion',
-        'Anulado': `La rendicion fue anulada: ${accountability.comments}`,
-        'Rechazado': `La rendicion fue rechazada: ${accountability.comments}`,
+        'Pendiente': 'La rendición está pendiente de autorización',
+        'Anulado': `La rendición fue anulada: ${accountability.comments}`,
+        'Rechazado': `La rendición fue rechazada: ${accountability.comments}`,
         'Autorizado': accountability.sap_exported
             ? 'La rendición fue aprobada y exportada a SAP'
             : 'La rendición fue aprobada. Pendiente de exportación a SAP',

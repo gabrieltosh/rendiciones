@@ -2,74 +2,50 @@
     <Head :title="title" />
     <Layout>
         <div class="row justify-center q-px-md q-py-lg">
-            <div class="col-xs-12 col-sm-12 col-md-9">
+            <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8">
+                <PageHeader
+                    title="Editar Proveedor"
+                    subtitle="Actualiza los datos del proveedor"
+                    icon="eva-car-outline"
+                    :back="route('panel.supplier.index')"
+                >
+                    <template #actions>
+                        <q-btn
+                            flat
+                            color="secondary"
+                            label="Cancelar"
+                            no-caps
+                            :disable="saving"
+                            @click="router.visit(route('panel.supplier.index'))"
+                        />
+                        <q-btn
+                            color="primary"
+                            icon="eva-checkmark-outline"
+                            label="Guardar cambios"
+                            no-caps
+                            unelevated
+                            :loading="saving"
+                            @click="HandleUpdateForm()"
+                        />
+                    </template>
+                </PageHeader>
+
                 <q-card class="q-pa-lg card-form">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <h5 class="title-form">Actualizar Proveedor</h5>
+                    <div class="form-section-title">Datos del proveedor</div>
+                    <div class="form-section-caption q-mb-md">Los campos marcados con <span class="text-negative">*</span> son obligatorios.</div>
+                    <q-form class="row q-col-gutter-md" @submit.prevent="HandleUpdateForm()">
+                        <div class="col-xs-12 col-md-6">
+                            <FormField label="Razón Social" required :error="errors.business" input-id="business">
+                                <q-input v-model="form.business" for="business" dense outlined class="input-theme" />
+                            </FormField>
                         </div>
-                        <div class="col-sm-6 text-right q-gutter-sm">
-                            <q-btn
-                                color="secondary"
-                                label="Cancelar"
-                                size="12px"
-                                no-caps
-                                @click="
-                                    router.visit(route('panel.supplier.index'))
-                                "
-                                flat
-                            />
-                            <q-btn
-                                color="primary"
-                                label="Actualizar"
-                                size="12px"
-                                no-caps
-                                @click="HandleUpdateForm()"
-                            />
+                        <div class="col-xs-12 col-md-6">
+                            <FormField label="NIT" required :error="errors.nit" input-id="nit">
+                                <q-input v-model="form.nit" for="nit" dense outlined class="input-theme" />
+                            </FormField>
                         </div>
-                    </div>
-                    <div class="row q-col-gutter-md q-mt-xs">
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <div class="form-label" for="device_name">
-                                Razón Social <span class="text-red">*</span>
-                            </div>
-                            <q-input
-                                v-model="form.business"
-                                dense
-                                outlined
-                                class="input-theme"
-                            />
-                            <div v-if="errors.business" class="container-error">
-                                <ul
-                                    v-for="(error, index) in errors.business"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <div class="form-label" for="device_name">
-                                NIT <span class="text-red">*</span>
-                            </div>
-                            <q-input
-                                v-model="form.nit"
-                                dense
-                                outlined
-                                class="input-theme"
-                            />
-                            <div v-if="errors.nit" class="container-error">
-                                <ul
-                                    v-for="(error, index) in errors.nit"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+                        <button type="submit" hidden />
+                    </q-form>
                 </q-card>
             </div>
         </div>
@@ -77,35 +53,33 @@
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, watch, onMounted} from "vue";
-import { Head, usePage, useForm, router } from "@inertiajs/vue3";
-import {route} from "ziggy-js"
+import PageHeader from "@/components/PageHeader.vue";
+import FormField from "@/components/FormField.vue";
+import { ref } from "vue";
+import { Head, usePage, router } from "@inertiajs/vue3";
+import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
-
+import { scrollToFirstError } from "@/utils/forms";
 
 defineProps({
     title: String,
     errors: Object,
-    supplier:Object
+    supplier: Object,
 });
 const $q = useQuasar();
 const page = usePage();
-let message = ref(page.props.flash.message)
-let type = ref(page.props.flash.type)
+const saving = ref(false);
 
 const form = ref(page.props.supplier);
 
 function HandleUpdateForm() {
-    router.put(route('panel.supplier.update'),form.value,{
-        onSuccess:()=>{
-            message.value=page.props.flash.message
-            type.value=page.props.flash.type
-            $q.notify({
-                type: type.value,
-                message: message.value,
-            });
-        }
+    router.put(route("panel.supplier.update"), form.value, {
+        onStart: () => (saving.value = true),
+        onFinish: () => (saving.value = false),
+        onError: () => scrollToFirstError(),
+        onSuccess: () => {
+            $q.notify({ type: page.props.flash.type, message: page.props.flash.message });
+        },
     });
 }
-
 </script>

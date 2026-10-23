@@ -21,11 +21,11 @@
                             <q-btn
                                 color="primary"
                                 icon="add"
-                                label="Nueva Rendicion"
+                                label="Nueva Rendición"
                                 size="12px"
                                 no-caps
                                 unelevated
-                                aria-label="Crear nueva rendicion"
+                                aria-label="Crear nueva rendición"
                                 @click="HandleCreateAccountability()"
                             />
                         </div>
@@ -104,12 +104,12 @@
                                 aria-hidden="true"
                             />
                             <div class="text-body1 text-grey q-mt-md">
-                                {{ filter ? 'Sin resultados para la busqueda' : 'No hay rendiciones registradas' }}
+                                {{ filter ? 'Sin resultados para la búsqueda' : 'No hay rendiciones registradas' }}
                             </div>
                             <q-btn
                                 v-if="!filter"
                                 color="primary"
-                                label="Crear Rendicion"
+                                label="Crear Rendición"
                                 icon="add"
                                 no-caps
                                 unelevated
@@ -138,7 +138,7 @@
                                                     {{ row.description || 'Sin descripcion' }}
                                                 </div>
                                                 <div class="text-caption text-grey q-mt-xs">
-                                                    Rendicion #{{ row.id }}
+                                                    Rendición #{{ row.id }}
                                                 </div>
                                             </div>
                                             <div class="col-auto">
@@ -229,7 +229,7 @@
                                                     size="sm"
                                                     icon="visibility"
                                                     color="primary"
-                                                    aria-label="Ver detalle de rendicion"
+                                                    aria-label="Ver detalle de rendición"
                                                     @click="HandleDetailAccountability(row.id)"
                                                 >
                                                     <q-tooltip>Ver Detalle</q-tooltip>
@@ -242,7 +242,7 @@
                                                     size="sm"
                                                     icon="edit"
                                                     color="secondary"
-                                                    aria-label="Editar rendicion"
+                                                    aria-label="Editar rendición"
                                                     @click="HandleEditAccountability(row.id)"
                                                 >
                                                     <q-tooltip>Editar</q-tooltip>
@@ -255,7 +255,7 @@
                                                     size="sm"
                                                     icon="delete_outline"
                                                     color="negative"
-                                                    aria-label="Eliminar rendicion"
+                                                    aria-label="Eliminar rendición"
                                                     @click="HandleDeleteAccountability(row.id)"
                                                 >
                                                     <q-tooltip>Eliminar</q-tooltip>
@@ -334,7 +334,7 @@
                                                 size="sm"
                                                 icon="visibility"
                                                 color="primary"
-                                                aria-label="Ver detalle de rendicion"
+                                                aria-label="Ver detalle de rendición"
                                                 @click="HandleDetailAccountability(props.row.id)"
                                             >
                                                 <q-tooltip>Ver Detalle</q-tooltip>
@@ -347,7 +347,7 @@
                                                 size="sm"
                                                 icon="edit"
                                                 color="secondary"
-                                                aria-label="Editar rendicion"
+                                                aria-label="Editar rendición"
                                                 @click="HandleEditAccountability(props.row.id)"
                                             >
                                                 <q-tooltip>Editar</q-tooltip>
@@ -360,7 +360,7 @@
                                                 size="sm"
                                                 icon="delete_outline"
                                                 color="negative"
-                                                aria-label="Eliminar rendicion"
+                                                aria-label="Eliminar rendición"
                                                 @click="HandleDeleteAccountability(props.row.id)"
                                             >
                                                 <q-tooltip>Eliminar</q-tooltip>
@@ -380,10 +380,10 @@
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
-import { useQuasar } from "quasar";
+import { useQuasar, LocalStorage } from "quasar";
 
 defineProps({
     title: String,
@@ -394,7 +394,9 @@ const $q = useQuasar();
 const page = usePage();
 const rows = ref(page.props.data);
 const filter = ref("");
-const viewMode = ref("grid");
+// La vista elegida (tarjetas/tabla) se recuerda entre visitas
+const viewMode = ref(LocalStorage.getItem("accountability-view-mode") || "grid");
+watch(viewMode, (mode) => LocalStorage.set("accountability-view-mode", mode));
 
 const columns = [
     {
@@ -408,7 +410,7 @@ const columns = [
     {
         name: "description",
         align: "left",
-        label: "Descripcion",
+        label: "Descripción",
         field: "description",
         sortable: true,
     },
@@ -526,8 +528,8 @@ function HandleDetailAccountability(id) {
 
 function HandleDeleteAccountability(id) {
     $q.dialog({
-        title: "Eliminar Rendicion",
-        message: "¿Esta seguro de eliminar esta rendicion? Esta accion no se puede deshacer.",
+        title: "Eliminar Rendición",
+        message: "¿Está seguro de eliminar esta rendición? Esta acción no se puede deshacer.",
         cancel: { label: "Cancelar", flat: true, noCaps: true },
         ok: { label: "Eliminar", color: "negative", noCaps: true },
         persistent: true,

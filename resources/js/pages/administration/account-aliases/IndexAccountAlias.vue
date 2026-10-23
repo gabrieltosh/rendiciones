@@ -1,66 +1,65 @@
 <template>
     <Head :title="title" />
     <Layout>
-        <div class="q-px-sm q-py-md">
+        <div class="row justify-center q-px-md q-py-lg">
+            <div class="col-xs-12 col-sm-12 col-md-11 col-lg-10">
+            <PageHeader
+                title="Alias de Cuentas Contables"
+                subtitle="Nombres amigables para las cuentas SAP que verán los usuarios al rendir"
+                icon="eva-pricetags-outline"
+            >
+                <template #actions>
+                    <q-btn flat color="primary" icon="download" label="Plantilla" no-caps
+                        :href="route('panel.account-alias.template')" type="a" target="_blank" />
+                    <q-btn outline color="primary" icon="upload_file" label="Importar Excel" no-caps
+                        @click="importDialog = true" />
+                    <q-btn color="primary" icon="add" label="Nuevo Alias" no-caps unelevated
+                        @click="HandleOpenCreate" />
+                </template>
+            </PageHeader>
 
-            <q-card class="card-form q-mt-sm">
+            <q-card class="card-form">
                 <q-table
                     :rows="aliases"
                     :columns="columns"
                     row-key="id"
                     class="table-theme"
                     :filter="filter"
+                    flat
                     separator="horizontal"
                     :table-header-class="{ 'table-header-theme': true }"
+                    :pagination="{ rowsPerPage: 15 }"
                 >
                     <template v-slot:top>
-                        <h5 class="title-form">Alias de Cuentas Contables</h5>
+                        <div class="text-subtitle1 text-weight-medium">Lista de Alias</div>
                         <q-space />
-                        <q-btn flat color="primary" icon="download" label="Plantilla" size="11px" no-caps
-                            :href="route('panel.account-alias.template')" type="a" target="_blank" class="q-mr-xs" />
-                        <q-btn color="secondary" icon="upload_file" label="Importar Excel" size="11px" no-caps
-                            unelevated @click="importDialog = true" class="q-mr-xs" />
-                        <q-btn color="primary" icon="add" label="Nuevo Alias" size="11px" no-caps unelevated
-                            @click="HandleOpenCreate" />
-                        <q-space />
-                        <q-input outlined dense color="primary" placeholder="Buscar..." v-model="filter"
-                            class="input-theme">
-                            <template v-slot:append><q-icon name="search" /></template>
+                        <q-input outlined dense clearable placeholder="Buscar código, cuenta o alias…" v-model="filter"
+                            class="input-theme search-input" aria-label="Buscar alias">
+                            <template v-slot:prepend><q-icon name="search" /></template>
                         </q-input>
-                    </template>
-
-                    <template v-slot:header="props">
-                        <q-tr :props="props">
-                            <q-th auto-width />
-                            <q-th v-for="col in props.cols" :key="col.name" :props="props" class="text-center">
-                                {{ col.label }}
-                            </q-th>
-                        </q-tr>
                     </template>
 
                     <template v-slot:body="props">
                         <q-tr :props="props">
-                            <q-td style="width: 90px">
-                                <div class="text-center q-gutter-xs">
-                                    <q-btn size="sm" color="primary" dense icon="eva-edit-2-outline"
-                                        @click="HandleStartEdit(props.row)">
-                                        <q-tooltip class="bg-secondary">Editar alias</q-tooltip>
-                                    </q-btn>
-                                    <q-btn size="sm" color="red" dense icon="eva-trash-2-outline"
-                                        @click="HandleDelete(props.row)">
-                                        <q-tooltip class="bg-red">Eliminar alias</q-tooltip>
-                                    </q-btn>
-                                </div>
-                            </q-td>
-                            <q-td key="display_code" :props="props" class="text-center">
+                            <q-td key="display_code" :props="props">
                                 <div class="text-weight-medium">{{ props.row.format_code ?? props.row.acct_code }}</div>
                                 <div class="text-caption text-grey-6">SAP: {{ props.row.acct_code }}</div>
                             </q-td>
-                            <q-td key="acct_name" :props="props" class="text-center">
+                            <q-td key="acct_name" :props="props">
                                 <span class="text-grey-8">{{ props.row.acct_name }}</span>
                             </q-td>
-                            <q-td key="alias" :props="props" class="text-center">
+                            <q-td key="alias" :props="props">
                                 <span class="text-primary text-weight-medium">{{ props.row.alias }}</span>
+                            </q-td>
+                            <q-td key="actions" :props="props">
+                                <q-btn flat round dense size="sm" color="primary" icon="eva-edit-2-outline"
+                                    aria-label="Editar alias" @click="HandleStartEdit(props.row)">
+                                    <q-tooltip>Editar</q-tooltip>
+                                </q-btn>
+                                <q-btn flat round dense size="sm" color="negative" icon="eva-trash-2-outline"
+                                    aria-label="Eliminar alias" @click="HandleDelete(props.row)">
+                                    <q-tooltip>Eliminar</q-tooltip>
+                                </q-btn>
                             </q-td>
                         </q-tr>
                     </template>
@@ -188,12 +187,14 @@
                 </q-card>
             </q-dialog>
 
+            </div>
         </div>
     </Layout>
 </template>
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
+import PageHeader from "@/components/PageHeader.vue";
 import { ref } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
@@ -223,9 +224,10 @@ const editingRow    = ref(null);
 const form = ref({ alias: "" });
 
 const columns = [
-    { name: "display_code", label: "Código",       field: r => r.format_code ?? r.acct_code, align: "center", sortable: true },
-    { name: "acct_name",    label: "Nombre Cuenta", field: "acct_name",                        align: "center", sortable: true },
-    { name: "alias",        label: "Alias",         field: "alias",                            align: "center", sortable: true },
+    { name: "display_code", label: "Código",       field: r => r.format_code ?? r.acct_code, align: "left", sortable: true },
+    { name: "acct_name",    label: "Nombre Cuenta", field: "acct_name",                        align: "left", sortable: true },
+    { name: "alias",        label: "Alias",         field: "alias",                            align: "left", sortable: true },
+    { name: "actions",      label: "Acciones",      field: "actions",                          align: "center", style: "width: 100px" },
 ];
 
 function HandleFilterTree(node, filter) {

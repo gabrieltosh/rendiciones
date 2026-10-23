@@ -4,46 +4,20 @@
         <div class="row justify-center q-px-md q-py-lg">
             <div class="col-xs-12 col-sm-12 col-md-9">
 
-                <!-- Header -->
-                <q-card class="q-pa-md card-form q-mb-md">
-                    <div class="row items-center">
-                        <div class="col">
-                            <div class="text-h6 title-form">Editar Detalle</div>
-                            <div class="text-caption text-grey">
-                                Rendicion #{{ page.props.accountability.id }}
-                            </div>
-                        </div>
-                        <div class="col-auto q-gutter-sm">
-                            <q-btn
-                                color="secondary"
-                                label="Cancelar"
-                                size="12px"
-                                no-caps
-                                flat
-                                unelevated
-                                aria-label="Cancelar y volver al detalle"
-                                @click="HandleCancel"
-                            />
-                            <q-btn
-                                color="primary"
-                                label="Actualizar"
-                                icon="save"
-                                size="12px"
-                                no-caps
-                                unelevated
-                                :loading="loading.submit"
-                                :disable="loading.submit || Object.keys(document).length === 0"
-                                aria-label="Guardar cambios del detalle"
-                                @click="HandleUpdateForm"
-                            />
-                        </div>
-                    </div>
-                </q-card>
+                <PageHeader title="Editar gasto" :subtitle="`Rendición #${page.props.accountability.id}`" icon="eva-edit-2-outline" sticky>
+                    <template #actions>
+                        <q-btn flat color="secondary" label="Cancelar" no-caps :disable="loading.submit"
+                            @click="HandleCancel" />
+                        <q-btn color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
+                            :loading="loading.submit" :disable="Object.keys(document).length === 0" @click="HandleUpdateForm()" />
+                    </template>
+                </PageHeader>
+
 
                 <!-- Seccion: General -->
                 <q-card class="q-pa-lg card-form q-mb-md">
                     <div class="text-subtitle1 text-weight-medium q-mb-md">
-                        Informacion General
+                        Información General
                     </div>
                     <div class="row q-col-gutter-md">
                         <div class="col-xs-12 col-sm-6">
@@ -223,7 +197,7 @@
                                     class="input-theme"
                                     type="number"
                                     style="font-variant-numeric: tabular-nums"
-                                    aria-label="Numero de documento"
+                                    aria-label="Número de documento"
                                     name="document_number"
                                     autocomplete="off"
                                 />
@@ -239,13 +213,13 @@
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-4" v-if="document.authorization_number_status">
-                                <label class="form-label">N. Autorizacion</label>
+                                <label class="form-label">N. Autorización</label>
                                 <q-input
                                     v-model="form.authorization_number"
                                     dense
                                     outlined
                                     class="input-theme"
-                                    aria-label="Numero de autorizacion"
+                                    aria-label="Número de autorización"
                                     name="authorization_number"
                                     autocomplete="off"
                                 />
@@ -267,7 +241,7 @@
                                     dense
                                     outlined
                                     class="input-theme"
-                                    aria-label="Codigo unico de facturacion"
+                                    aria-label="Código único de facturación"
                                     name="cuf"
                                     autocomplete="off"
                                 />
@@ -283,13 +257,13 @@
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-4" v-if="document.control_code_status">
-                                <label class="form-label">Codigo Control</label>
+                                <label class="form-label">Código Control</label>
                                 <q-input
                                     v-model="form.control_code"
                                     dense
                                     outlined
                                     class="input-theme"
-                                    aria-label="Codigo de control"
+                                    aria-label="Código de control"
                                     name="control_code"
                                     autocomplete="off"
                                 />
@@ -967,6 +941,7 @@
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
+import PageHeader from "@/components/PageHeader.vue";
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";

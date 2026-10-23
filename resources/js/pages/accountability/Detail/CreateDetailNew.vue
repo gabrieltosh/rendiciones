@@ -4,25 +4,18 @@
         <div class="row justify-center q-px-md q-py-lg">
             <div class="col-xs-12 col-sm-12 col-md-9">
 
-                <!-- Header -->
-                <q-card class="q-pa-md card-form q-mb-md">
-                    <div class="row items-center">
-                        <div class="col">
-                            <div class="text-h6">Nuevo Detalle</div>
-                            <div class="text-caption text-grey">Rendicion #{{ page.props.accountability.id }}</div>
-                        </div>
-                        <div class="col-auto q-gutter-sm">
-                            <q-btn color="secondary" label="Cancelar" size="12px" no-caps flat
-                                @click="router.visit(route('panel.accountability.manage.detail.index', [page.props.profile.id, page.props.accountability.id]))" />
-                            <q-btn color="primary" label="Guardar" icon="save" size="12px" no-caps
-                                @click="HandleStoreForm()" :disable="Object.keys(document).length === 0" />
-                        </div>
-                    </div>
-                </q-card>
+                <PageHeader title="Nuevo gasto" :subtitle="`Rendición #${page.props.accountability.id}`" icon="eva-file-add-outline" sticky>
+                    <template #actions>
+                        <q-btn flat color="secondary" label="Cancelar" no-caps :disable="saving"
+                            @click="router.visit(route('panel.accountability.manage.detail.index', [page.props.profile.id, page.props.accountability.id]))" />
+                        <q-btn color="primary" icon="eva-checkmark-outline" label="Guardar gasto" no-caps unelevated
+                            :loading="saving" :disable="Object.keys(document).length === 0" @click="HandleStoreForm()" />
+                    </template>
+                </PageHeader>
 
                 <!-- Seccion: General -->
                 <q-card class="q-pa-lg card-form q-mb-md">
-                    <div class="text-subtitle1 text-weight-medium q-mb-md">Informacion General</div>
+                    <div class="text-subtitle1 text-weight-medium q-mb-md">Información General</div>
                     <div class="row q-col-gutter-md">
                         <div class="col-xs-12 col-sm-6">
                             <div class="form-label">Concepto <span class="text-red">*</span></div>
@@ -98,7 +91,7 @@
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-4" v-if="document.authorization_number_status">
-                                <div class="form-label">N. Autorizacion</div>
+                                <div class="form-label">N. Autorización</div>
                                 <q-input v-model="form.authorization_number" dense outlined class="input-theme" />
                                 <div v-if="errors.authorization_number" class="container-error">
                                     <ul v-for="(error, index) in errors.authorization_number" :key="index" class="message-error">
@@ -116,7 +109,7 @@
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-4" v-if="document.control_code_status">
-                                <div class="form-label">Codigo Control</div>
+                                <div class="form-label">Código Control</div>
                                 <q-input v-model="form.control_code" dense outlined class="input-theme" />
                                 <div v-if="errors.control_code" class="container-error">
                                     <ul v-for="(error, index) in errors.control_code" :key="index" class="message-error">
@@ -597,6 +590,8 @@
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import { scrollToFirstError } from "@/utils/forms";
 import { ref, onMounted, computed } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
@@ -696,11 +691,16 @@ function HandleChangeBusinessName() {
     form.value.nit = result ? result.nit : form.value.nit;
 }
 
+const saving = ref(false);
+
 function HandleStoreForm() {
     router.post(
         route("panel.accountability.manage.detail.store", [page.props.profile.id, page.props.accountability.id]),
         form.value,
         {
+            onStart: () => (saving.value = true),
+            onFinish: () => (saving.value = false),
+            onError: () => scrollToFirstError(),
             onSuccess: () => {
                 message.value = page.props.flash.message;
                 type.value = page.props.flash.type;
