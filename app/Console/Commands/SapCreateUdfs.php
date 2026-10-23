@@ -74,60 +74,63 @@ class SapCreateUdfs extends Command
         $skipped = 0;
         $errors  = 0;
 
-        foreach ($this->groupTables as $group => $sapTable) {
-            $table  = $sapTable ?? $defaultTable;
-            $fields = Management::where('group', $group)->get()
-                        // Solo procesar campos cuyo valor empiece con U_
-                        ->filter(fn($f) => str_starts_with($f->value, 'U_'));
+        try {
+            foreach ($this->groupTables as $group => $sapTable) {
+                $table  = $sapTable ?? $defaultTable;
+                $fields = Management::where('group', $group)->get()
+                            // Solo procesar campos cuyo valor empiece con U_
+                            ->filter(fn($f) => str_starts_with($f->value, 'U_'));
 
-            if ($fields->isEmpty()) {
-                continue;
-            }
-
-            $this->newLine();
-            $this->line("<fg=cyan>── Tabla {$table} (grupo: {$group})</>");
-
-            foreach ($fields as $field) {
-                $udfName    = substr($field->value, 2); // quitar "U_"
-                $typeConfig = $this->fieldTypes[$field->name] ?? ['type' => 'db_Alpha', 'size' => 100];
-
-                $body = [
-                    'TableName'   => $table,
-                    'Name'        => $udfName,
-                    'Description' => $field->label,
-                    'Type'        => $typeConfig['type'],
-                ];
-
-                if ($typeConfig['size'] !== null) {
-                    $body['Size'] = $typeConfig['size'];
+                if ($fields->isEmpty()) {
+                    continue;
                 }
 
-                $response = $http->post('UserFieldsMD', $body);
+                $this->newLine();
+                $this->line("<fg=cyan>── Tabla {$table} (grupo: {$group})</>");
 
-                if ($response->successful()) {
-                    $this->line("  <fg=green>✓</> Creado: U_{$udfName} ({$field->label})");
-                    $created++;
-                } elseif ($response->status() === 400) {
-                    $errorCode = $response->json()['error']['code'] ?? null;
-                    // -2028 = UDF ya existe en SAP B1
-                    if ($errorCode == -2028) {
-                        $this->line("  <fg=yellow>~</> Ya existe: U_{$udfName} ({$field->label})");
-                        $skipped++;
+                foreach ($fields as $field) {
+                    $udfName    = substr($field->value, 2); // quitar "U_"
+                    $typeConfig = $this->fieldTypes[$field->name] ?? ['type' => 'db_Alpha', 'size' => 100];
+
+                    $body = [
+                        'TableName'   => $table,
+                        'Name'        => $udfName,
+                        'Description' => $field->label,
+                        'Type'        => $typeConfig['type'],
+                    ];
+
+                    if ($typeConfig['size'] !== null) {
+                        $body['Size'] = $typeConfig['size'];
+                    }
+
+                    $response = $http->post('UserFieldsMD', $body);
+
+                    if ($response->successful()) {
+                        $this->line("  <fg=green>✓</> Creado: U_{$udfName} ({$field->label})");
+                        $created++;
+                    } elseif ($response->status() === 400) {
+                        $errorCode = $response->json()['error']['code'] ?? null;
+                        // -2028 = UDF ya existe en SAP B1
+                        if ($errorCode == -2028) {
+                            $this->line("  <fg=yellow>~</> Ya existe: U_{$udfName} ({$field->label})");
+                            $skipped++;
+                        } else {
+                            $message = $response->json()['error']['message']['value'] ?? $response->body();
+                            $this->line("  <fg=red>✗</> Error en U_{$udfName}: {$message}");
+                            $errors++;
+                        }
                     } else {
                         $message = $response->json()['error']['message']['value'] ?? $response->body();
                         $this->line("  <fg=red>✗</> Error en U_{$udfName}: {$message}");
                         $errors++;
                     }
-                } else {
-                    $message = $response->json()['error']['message']['value'] ?? $response->body();
-                    $this->line("  <fg=red>✗</> Error en U_{$udfName}: {$message}");
-                    $errors++;
                 }
             }
+        } finally {
+            // Cierra solo esta sesión (la del SessionId de arriba) aunque el comando falle a mitad,
+            // para no dejar ocupada una licencia del Service Layer hasta el timeout.
+            rescue(fn () => $http->post('Logout'), null, false);
         }
-
-        // Logout
-        $http->post('Logout');
 
         $this->newLine();
         $this->table(
