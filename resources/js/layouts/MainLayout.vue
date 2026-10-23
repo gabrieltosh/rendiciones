@@ -678,7 +678,7 @@ body.screen--xs .search-input {
 }
 .brand-icon {
     border-radius: 10px;
-    background: linear-gradient(135deg, #1a73e8, #344767);
+    background-color: var(--q-primary);
 }
 .brand-title {
     font-weight: 700;

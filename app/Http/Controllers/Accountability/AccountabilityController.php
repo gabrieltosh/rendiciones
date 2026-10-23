@@ -602,6 +602,9 @@ SQL;
         ])->save();
         Session::flash('message', "Rendición actualizada correctamente");
         Session::flash('type', 'positive');
+        if ($request->input('return_to') === 'detail') {
+            return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $request->id]);
+        }
         return Redirect::route('panel.accountability.manage.index', $profile_id);
     }
     public function HandleEditAccountability($profile_id, $acc_id, )
