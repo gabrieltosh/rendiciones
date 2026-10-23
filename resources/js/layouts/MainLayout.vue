@@ -1,43 +1,87 @@
 <template>
     <q-layout view="lHh Lpr fFf" class="backgroup-theme">
-        <q-header class="q-ma-sm header-theme" height-hint="110">
-            <q-toolbar>
+        <q-header class="q-ma-sm header-theme" height-hint="58">
+            <q-toolbar class="q-py-xs">
                 <q-btn
                     dense
                     flat
                     round
                     icon="menu"
+                    aria-label="Abrir o cerrar menú"
                     @click="toggleLeftDrawer"
                     class="text-profile"
                 />
 
-                <q-space />
-                <q-btn
-                    dense
-                    flat
-                    round
-                    icon="eva-log-out-outline"
-                    @click="HandleLogout()"
-                    class="text-profile"
-                />
-                <div class="q-gutter-sm row items-center no-wrap">
-                    <q-item clickable v-ripple>
-                        <q-item-section side>
-                            <q-avatar
-                                color="primary"
-                                text-color="white"
-                                size="33px"
-                                >{{ name_profile }}</q-avatar
-                            >
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label class="text-profile">{{
-                                user.name
-                            }}</q-item-label>
-                            <q-item-label caption>Admin</q-item-label>
-                        </q-item-section>
-                    </q-item>
+                <div class="header-title text-profile ellipsis q-ml-sm">
+                    {{ page.props.title }}
                 </div>
+
+                <q-space />
+
+                <q-btn
+                    flat
+                    dense
+                    round
+                    :icon="$q.dark.isActive ? 'eva-sun-outline' : 'eva-moon-outline'"
+                    :aria-label="$q.dark.isActive ? 'Usar modo claro' : 'Usar modo oscuro'"
+                    class="text-profile q-mr-xs gt-xs"
+                    @click="toggleDarkMode()"
+                >
+                    <q-tooltip>{{ $q.dark.isActive ? 'Modo claro' : 'Modo oscuro' }}</q-tooltip>
+                </q-btn>
+
+                <q-btn flat no-caps class="user-btn q-px-sm" aria-label="Menú de usuario">
+                    <q-avatar color="primary" text-color="white" size="32px" class="text-weight-medium">
+                        {{ initials }}
+                    </q-avatar>
+                    <div class="column items-start q-ml-sm gt-xs" style="line-height: 1.2;">
+                        <span class="text-profile user-name ellipsis">{{ user.name }}</span>
+                        <span class="text-caption text-grey">{{ user.type }}</span>
+                    </div>
+                    <q-icon name="expand_more" size="18px" class="q-ml-xs text-grey gt-xs" />
+
+                    <q-menu anchor="bottom right" self="top right" :offset="[0, 8]" class="user-menu">
+                        <q-list style="min-width: 240px;">
+                            <q-item>
+                                <q-item-section avatar>
+                                    <q-avatar color="primary" text-color="white" size="40px">
+                                        {{ initials }}
+                                    </q-avatar>
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label class="text-weight-medium">{{ user.name }}</q-item-label>
+                                    <q-item-label caption>{{ user.email || user.username }}</q-item-label>
+                                    <q-item-label caption>
+                                        <q-badge color="blue-grey-1" text-color="blue-grey-9" :label="user.type" />
+                                    </q-item-label>
+                                </q-item-section>
+                            </q-item>
+                            <q-separator />
+                            <q-item clickable @click="toggleDarkMode()">
+                                <q-item-section avatar>
+                                    <q-icon :name="$q.dark.isActive ? 'eva-sun-outline' : 'eva-moon-outline'" />
+                                </q-item-section>
+                                <q-item-section>Modo oscuro</q-item-section>
+                                <q-item-section side>
+                                    <q-toggle
+                                        :model-value="$q.dark.isActive"
+                                        dense
+                                        color="primary"
+                                        aria-label="Modo oscuro"
+                                        @update:model-value="toggleDarkMode()"
+                                    />
+                                </q-item-section>
+                            </q-item>
+                            <q-separator />
+                            <q-item clickable v-close-popup class="text-negative" @click="HandleLogout()">
+                                <q-item-section avatar>
+                                    <q-icon name="eva-log-out-outline" />
+                                </q-item-section>
+                                <q-item-section>Cerrar sesión</q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-menu>
+                </q-btn>
             </q-toolbar>
         </q-header>
 
@@ -45,269 +89,42 @@
             show-if-above
             v-model="leftDrawerOpen"
             side="left"
+            :width="260"
             class="menu q-pa-sm"
         >
             <q-scroll-area class="fit drawer-theme">
-                <q-list padding>
-                    <q-item
-                        clickable
-                        class="cursor-pointer q-mx-md q-mb-md"
-                        :active="active"
-                        active-class="menu-inactive"
-                        @click="router.visit(route('home'))"
-                    >
-                        <q-item-section avatar>
-                            <q-avatar
-                                square
-                                class="icon-theme"
-                                icon="eva-home-outline"
-                            >
-                            </q-avatar>
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label class="text-menu"
-                                >Inicio</q-item-label
-                            >
-                        </q-item-section>
-                    </q-item>
-                    <q-expansion-item
-                        default-opened
-                        class="cursor-pointer q-mx-md q-mb-md"
-                        header-class="menu-active"
-                        v-if="page.props.auth.user.type=='Administrador'"
-                    >
-                        <template v-slot:header>
-                            <q-item-section avatar>
-                                <q-avatar
-                                    square
-                                    class="icon-theme"
-                                    icon="eva-grid-outline"
-                                >
-                                </q-avatar>
-                            </q-item-section>
+                <div class="brand row items-center no-wrap q-px-md q-pt-md q-pb-sm">
+                    <q-avatar square size="36px" class="brand-icon" icon="eva-briefcase-outline" text-color="white" />
+                    <div class="q-ml-sm">
+                        <div class="brand-title">Rendiciones</div>
+                        <div class="text-caption text-grey">Gastos y viáticos</div>
+                    </div>
+                </div>
 
-                            <q-item-section class="text-menu">
-                                Administración
-                            </q-item-section>
-                        </template>
+                <q-list padding class="q-px-sm">
+                    <template v-for="section in menu" :key="section.label">
+                        <q-item-label header class="menu-section">{{ section.label }}</q-item-label>
                         <q-item
-                            class="cursor-pointer q-ml-sm"
-                            @click="
-                                router.visit(route('panel.management.index'))
-                            "
+                            v-for="item in section.items"
+                            :key="item.route"
                             clickable
+                            v-ripple
+                            class="menu-item q-mb-xs"
+                            :active="item.active"
+                            active-class="menu-item--active"
+                            @click="router.visit(route(item.route))"
                         >
                             <q-item-section avatar>
-                                <q-avatar
-                                    class="submenu-icon-inactive"
-                                    icon="hdr_weak"
-                                >
-                                </q-avatar>
+                                <q-avatar square size="32px" class="icon-theme menu-icon" :icon="item.icon" />
                             </q-item-section>
                             <q-item-section>
-                                <q-item-label class="text-menu"
-                                    >Configuración</q-item-label
-                                >
+                                <q-item-label class="text-menu">{{ item.label }}</q-item-label>
+                            </q-item-section>
+                            <q-item-section v-if="item.count" side>
+                                <q-badge :color="item.countColor || 'orange'" :label="item.count" rounded />
                             </q-item-section>
                         </q-item>
-                        <q-item
-                            class="cursor-pointer q-ml-sm"
-                            @click="HandleVisitUser()"
-                            clickable
-                        >
-                            <q-item-section avatar>
-                                <q-avatar
-                                    class="submenu-icon-inactive"
-                                    icon="hdr_weak"
-                                >
-                                </q-avatar>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label class="text-menu"
-                                    >Usuarios</q-item-label
-                                >
-                            </q-item-section>
-                        </q-item>
-                        <q-item
-                            class="cursor-pointer q-ml-sm"
-                            clickable
-                            @click="router.visit(route('panel.profile.index'))"
-                        >
-                            <q-item-section avatar>
-                                <q-avatar
-                                    class="submenu-icon-inactive"
-                                    icon="hdr_weak"
-                                >
-                                </q-avatar>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label class="text-menu"
-                                    >Perfiles</q-item-label
-                                >
-                            </q-item-section>
-                        </q-item>
-                        <q-item
-                            class="cursor-pointer q-ml-sm"
-                            clickable
-                            @click="router.visit(route('panel.area.index'))"
-                        >
-                            <q-item-section avatar>
-                                <q-avatar
-                                    class="submenu-icon-inactive"
-                                    icon="hdr_weak"
-                                >
-                                </q-avatar>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label class="text-menu"
-                                    >Áreas</q-item-label
-                                >
-                            </q-item-section>
-                        </q-item>
-                        <q-item
-                            class="cursor-pointer q-ml-sm"
-                            clickable
-                            @click="router.visit(route('panel.report.audit-log'))"
-                        >
-                            <q-item-section avatar>
-                                <q-avatar
-                                    class="submenu-icon-inactive"
-                                    icon="hdr_weak"
-                                >
-                                </q-avatar>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label class="text-menu"
-                                    >Log de Auditoría</q-item-label
-                                >
-                            </q-item-section>
-                        </q-item>
-                        <q-item
-                            class="cursor-pointer q-ml-sm"
-                            clickable
-                            @click="router.visit(route('panel.authorization-cycle.index'))"
-                        >
-                            <q-item-section avatar>
-                                <q-avatar
-                                    class="submenu-icon-inactive"
-                                    icon="hdr_weak"
-                                >
-                                </q-avatar>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label class="text-menu"
-                                    >Ciclos de Autorización</q-item-label
-                                >
-                            </q-item-section>
-                        </q-item>
-                        <q-item
-                            class="cursor-pointer q-ml-sm"
-                            clickable
-                            @click="router.visit(route('panel.account-alias.index'))"
-                        >
-                            <q-item-section avatar>
-                                <q-avatar
-                                    class="submenu-icon-inactive"
-                                    icon="hdr_weak"
-                                >
-                                </q-avatar>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label class="text-menu"
-                                    >Alias de Cuentas</q-item-label
-                                >
-                            </q-item-section>
-                        </q-item>
-                    </q-expansion-item>
-                    <q-item
-                        v-if="isAdminOrAutorizador"
-                        clickable
-                        class="cursor-pointer q-mx-md q-mb-md"
-                        :active="active"
-                        active-class="menu-inactive"
-                        @click="router.visit(route('panel.report.accountability'))"
-                    >
-                        <q-item-section avatar>
-                            <q-avatar
-                                square
-                                class="icon-theme"
-                                icon="eva-bar-chart-outline"
-                            >
-                            </q-avatar>
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label class="text-menu"
-                                >Reportes</q-item-label
-                            >
-                        </q-item-section>
-                    </q-item>
-                    <q-item
-                        clickable
-                        class="cursor-pointer q-mx-md q-mb-md"
-                        :active="active"
-                        active-class="menu-inactive"
-                        @click="
-                            router.visit(route('panel.accountability.profiles'))
-                        "
-                    >
-                        <q-item-section avatar>
-                            <q-avatar
-                                square
-                                class="icon-theme"
-                                icon="eva-briefcase-outline"
-                            >
-                            </q-avatar>
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label class="text-menu"
-                                >Rendiciones</q-item-label
-                            >
-                        </q-item-section>
-                    </q-item>
-                    <q-item
-                        v-if="isAdminOrAutorizador"
-                        clickable
-                        class="cursor-pointer q-mx-md q-mb-md"
-                        :active="active"
-                        active-class="menu-inactive"
-                        @click="
-                            router.visit(route('panel.accountability.authorization.index'))
-                        "
-                    >
-                        <q-item-section avatar>
-                            <q-avatar
-                                square
-                                class="icon-theme"
-                                icon="eva-checkmark-square-outline"
-                            >
-                            </q-avatar>
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label class="text-menu"
-                                >Autorizaciones</q-item-label
-                            >
-                        </q-item-section>
-                    </q-item>
-                    <q-item
-                        v-if="isAdminOrAutorizador"
-                        clickable
-                        class="cursor-pointer q-mx-md q-mb-md"
-                        :active="active"
-                        active-class="menu-inactive"
-                        @click="router.visit(route('panel.accountability.authorization.pending-export'))"
-                    >
-                        <q-item-section avatar>
-                            <q-avatar
-                                square
-                                class="icon-theme"
-                                icon="eva-cloud-upload-outline"
-                            >
-                            </q-avatar>
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label class="text-menu">Pendientes SAP</q-item-label>
-                        </q-item-section>
-                    </q-item>
+                    </template>
                 </q-list>
             </q-scroll-area>
         </q-drawer>
@@ -316,14 +133,9 @@
             <slot />
         </q-page-container>
         <q-footer class="footer-theme">
-            <div class="column">
-                <div class="col">
-                    <div class="text-center q-pa-xs">
-                        Copyright © {{ new Date().getFullYear() }}
-                        <strong>TOMATE FÁCIL</strong>, Todos los derechos
-                        reservados.
-                    </div>
-                </div>
+            <div class="text-center q-pa-xs">
+                Copyright © {{ new Date().getFullYear() }}
+                <strong>TOMATE FÁCIL</strong>, Todos los derechos reservados.
             </div>
         </q-footer>
     </q-layout>
@@ -331,48 +143,164 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { router, useForm, usePage, Link } from "@inertiajs/vue3";
+import { router, usePage } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
-import { useQuasar } from "quasar";
+import { useQuasar, LocalStorage } from "quasar";
 
 const leftDrawerOpen = ref(false);
-const active = ref(false);
 const page = usePage();
 const $q = useQuasar();
 const user = page.props.auth.user;
 
-const isAdminOrAutorizador = computed(() =>
-    user.type === 'Administrador' || user.type === 'Autorizador'
+const isAdmin = computed(() => user.type === "Administrador");
+const isAdminOrAutorizador = computed(
+    () => user.type === "Administrador" || user.type === "Autorizador"
 );
 
-const name_profile = computed(() => {
-    let words = user.name.split(" ");
-    let initials = "";
-    for (var i = 0; i < Math.min(2, words.length); i++) {
-        initials += words[i].charAt(0).toUpperCase(); // Get the initial and convert it to uppercase
+const initials = computed(() =>
+    user.name
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((word) => word.charAt(0).toUpperCase())
+        .join("")
+);
+
+function isCurrent(...patterns) {
+    return patterns.some((pattern) => route().current(pattern));
+}
+
+// El detalle de una rendición se abre desde "Pendientes SAP" con ?from=pending-export
+const fromPendingExport = computed(() => page.url.includes("from=pending-export"));
+
+const menu = computed(() => {
+    const counts = page.props.menu_counts || {};
+    const pendingSapActive =
+        isCurrent("panel.accountability.authorization.pending-export") ||
+        (isCurrent("panel.accountability.authorization.*") && fromPendingExport.value);
+
+    const sections = [
+        {
+            label: "Principal",
+            items: [
+                {
+                    label: "Inicio",
+                    icon: "eva-home-outline",
+                    route: "home",
+                    active: isCurrent("home"),
+                },
+                {
+                    label: "Mis Rendiciones",
+                    icon: "eva-briefcase-outline",
+                    route: "panel.accountability.profiles",
+                    active: isCurrent("panel.accountability.profiles", "panel.accountability.manage.*"),
+                },
+            ],
+        },
+    ];
+
+    if (isAdminOrAutorizador.value) {
+        sections.push({
+            label: "Revisión",
+            items: [
+                {
+                    label: "Autorizaciones",
+                    icon: "eva-checkmark-square-outline",
+                    route: "panel.accountability.authorization.index",
+                    active: isCurrent("panel.accountability.authorization.*") && !pendingSapActive,
+                    count: counts.authorization,
+                    countColor: "orange",
+                },
+                {
+                    label: "Pendientes SAP",
+                    icon: "eva-cloud-upload-outline",
+                    route: "panel.accountability.authorization.pending-export",
+                    active: pendingSapActive,
+                    count: counts.pending_sap,
+                    countColor: "warning",
+                },
+                {
+                    label: "Reportes",
+                    icon: "eva-bar-chart-outline",
+                    route: "panel.report.accountability",
+                    active: isCurrent("panel.report.accountability"),
+                },
+            ],
+        });
     }
-    return initials;
+
+    if (isAdmin.value) {
+        sections.push({
+            label: "Administración",
+            items: [
+                {
+                    label: "Configuración",
+                    icon: "eva-settings-2-outline",
+                    route: "panel.management.index",
+                    active: isCurrent("panel.management.*"),
+                },
+                {
+                    label: "Usuarios",
+                    icon: "eva-people-outline",
+                    route: "panel.user.index",
+                    active: isCurrent("panel.user.*"),
+                },
+                {
+                    label: "Perfiles",
+                    icon: "eva-layers-outline",
+                    route: "panel.profile.index",
+                    active: isCurrent("panel.profile.*"),
+                },
+                {
+                    label: "Áreas",
+                    icon: "eva-pie-chart-outline",
+                    route: "panel.area.index",
+                    active: isCurrent("panel.area.*"),
+                },
+                {
+                    label: "Ciclos de Autorización",
+                    icon: "eva-shuffle-2-outline",
+                    route: "panel.authorization-cycle.index",
+                    active: isCurrent("panel.authorization-cycle.*"),
+                },
+                {
+                    label: "Alias de Cuentas",
+                    icon: "eva-pricetags-outline",
+                    route: "panel.account-alias.index",
+                    active: isCurrent("panel.account-alias.*"),
+                },
+                {
+                    label: "Log de Auditoría",
+                    icon: "eva-clock-outline",
+                    route: "panel.report.audit-log",
+                    active: isCurrent("panel.report.audit-log"),
+                },
+            ],
+        });
+    }
+
+    return sections;
 });
 
 function toggleLeftDrawer() {
     leftDrawerOpen.value = !leftDrawerOpen.value;
 }
 
+function toggleDarkMode() {
+    $q.dark.toggle();
+    LocalStorage.set("dark-mode", $q.dark.isActive);
+}
+
 function HandleLogout() {
     $q.dialog({
-        title: "Confirmar",
-        message: "¿Esta seguro de cerrar la sesion?",
-        cancel: true,
+        title: "Cerrar sesión",
+        message: "¿Está seguro de cerrar la sesión?",
+        cancel: { label: "Cancelar", flat: true, noCaps: true },
+        ok: { label: "Cerrar sesión", color: "negative", noCaps: true },
         persistent: true,
-    })
-        .onOk(() => {
-            router.post(route("auth.logout"));
-        })
-        .onCancel(() => {})
-        .onDismiss(() => {});
-}
-function HandleVisitUser() {
-    router.visit(route("panel.user.index"));
+    }).onOk(() => {
+        router.post(route("auth.logout"));
+    });
 }
 </script>
 <style lang="scss">
@@ -638,13 +566,69 @@ body.screen--sm {
 
 //validation
 .container-error {
-    margin: 5px 0px;
+    margin: 4px 0 0 2px;
 }
 .message-error {
-    //padding: 0;
     margin: 0;
-    font-size: 10px;
-    color: red;
+    padding: 0;
+    list-style: none;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: $negative;
+}
+
+//FORMULARIOS
+.form-field {
+    .form-label {
+        display: block;
+    }
+}
+.form-field__error {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 4px 0 0 2px;
+    font-size: 11.5px;
+    line-height: 1.3;
+    color: $negative;
+}
+.form-field__hint {
+    margin: 4px 0 0 2px;
+    font-size: 11.5px;
+    color: #7b809a;
+}
+.form-field--error .q-field--outlined .q-field__control:before,
+// Formularios con el bloque de error clásico debajo del campo
+div:has(> .container-error) > .q-field--outlined .q-field__control:before {
+    border-color: $negative;
+}
+.form-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #344767;
+}
+.form-section-caption {
+    font-size: 0.78rem;
+    color: #7b809a;
+    margin-top: 2px;
+}
+.form-tabs {
+    .q-tab {
+        min-height: 44px;
+    }
+    .q-tab__label {
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+}
+.body--dark {
+    .form-section-title {
+        color: white;
+    }
+    .form-section-caption,
+    .form-field__hint {
+        color: rgba(255, 255, 255, 0.6);
+    }
 }
 
 //stepper
@@ -667,5 +651,84 @@ body.screen--sm {
 }
 .q-stepper__step-inner {
     background-color: #f0f2f5;
+}
+//BUSCADOR DE LISTAS
+.search-input {
+    min-width: 240px;
+}
+body.screen--xs .search-input {
+    min-width: 0;
+    width: 100%;
+    margin-top: 8px;
+}
+
+//NAVEGACIÓN
+.header-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    max-width: 50vw;
+}
+.user-btn {
+    border-radius: 0.5rem;
+}
+.user-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    max-width: 180px;
+}
+.brand-icon {
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1a73e8, #344767);
+}
+.brand-title {
+    font-weight: 700;
+    color: #344767;
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+.menu-section {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 12px 16px 6px;
+}
+.menu-item {
+    border-radius: 0.5rem;
+    min-height: 44px;
+    color: #344767;
+    .menu-icon {
+        background-color: white;
+        color: #344767;
+        font-size: 16px;
+    }
+}
+.menu-item--active {
+    background-color: rgba(26, 115, 232, 0.1);
+    color: $primary;
+    font-weight: 600;
+    .menu-icon {
+        background-color: $primary;
+        color: white;
+    }
+}
+.body--dark {
+    .brand-title {
+        color: white;
+    }
+    .menu-item {
+        color: rgba(255, 255, 255, 0.85);
+        .menu-icon {
+            background-color: #1b2033;
+            color: white;
+        }
+    }
+    .menu-item--active {
+        background-color: rgba(26, 115, 232, 0.2);
+        color: white;
+        .menu-icon {
+            background-color: $primary;
+        }
+    }
 }
 </style>

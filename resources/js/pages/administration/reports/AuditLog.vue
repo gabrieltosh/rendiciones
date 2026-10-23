@@ -1,12 +1,18 @@
 <template>
     <Head :title="title" />
     <Layout>
-        <div class="q-px-sm q-py-md">
+        <div class="row justify-center q-px-md q-py-lg">
+            <div class="col-xs-12 col-sm-12 col-md-11 col-lg-10">
+            <PageHeader
+                title="Log de Auditoría"
+                subtitle="Historial de cambios realizados por los usuarios en el sistema"
+                icon="eva-clock-outline"
+            />
 
             <!-- Filtros -->
             <q-card class="card-form q-mb-md">
                 <div class="q-pa-md">
-                    <h5 class="title-form q-mb-md">Filtros</h5>
+                    <div class="text-subtitle1 text-weight-medium q-mb-md">Filtros</div>
                     <div class="row q-col-gutter-md">
                         <div class="col-xs-12 col-sm-6 col-md-3">
                             <div class="form-label">Usuario</div>
@@ -114,13 +120,12 @@
                     class="table-theme"
                     separator="horizontal"
                     flat
-                    bordered
                     :table-header-class="{ 'table-header-theme': true }"
                     :rows-per-page-options="[0]"
                     hide-pagination
                 >
                     <template v-slot:top>
-                        <h5 class="title-form">Log de Auditoría</h5>
+                        <div class="text-subtitle1 text-weight-medium">Registros</div>
                         <q-space />
                         <div class="text-caption text-grey">
                             {{ audits.total }} registros encontrados
@@ -196,12 +201,14 @@
                 </div>
             </q-card>
 
+            </div>
         </div>
     </Layout>
 </template>
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
+import PageHeader from "@/components/PageHeader.vue";
 import { ref, computed } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";

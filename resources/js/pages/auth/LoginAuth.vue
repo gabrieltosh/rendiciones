@@ -11,77 +11,82 @@
                             @submit.prevent="HandleAuthLogin()"
                             class="q-gutter-md login-form"
                         >
-                            <q-list class="q-pb-sm">
-                                <q-item>
-                                    <q-item-section>
-                                        <q-item-label class="text-left">
-                                            <h4 class="title-login q-pa-none q-ma-none q-mb-sm">
-                                                Iniciar Sesion
-                                            </h4>
-                                            <p class="text-login q-pa-none q-ma-none">
-                                                Ingresa tu correo y contraseña para iniciar sesion
-                                            </p>
-                                        </q-item-label>
-                                    </q-item-section>
-                                </q-item>
-                            </q-list>
+                            <div class="q-px-md q-pb-sm">
+                                <q-avatar
+                                    square
+                                    size="48px"
+                                    class="login-brand q-mb-md"
+                                    icon="eva-briefcase-outline"
+                                    text-color="white"
+                                />
+                                <h4 class="title-login q-pa-none q-ma-none q-mb-sm">
+                                    Iniciar sesión
+                                </h4>
+                                <p class="text-login q-pa-none q-ma-none">
+                                    Ingresa tu usuario y contraseña para acceder al
+                                    sistema de rendiciones.
+                                </p>
+                            </div>
                             <q-input
                                 outlined
-                                dense
                                 v-model="auth.email"
-                                label="Usuario *"
+                                label="Usuario"
+                                name="username"
+                                autocomplete="username"
                                 autofocus
-                            />
-                            <div v-if="errors.email" class="container-error">
-                                <ul
-                                    v-for="(error, index) in errors.email"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
+                                :error="!!errors.email"
+                                :error-message="firstError(errors.email)"
+                            >
+                                <template v-slot:prepend>
+                                    <q-icon name="eva-person-outline" />
+                                </template>
+                            </q-input>
                             <q-input
                                 outlined
-                                dense
-                                type="password"
+                                :type="showPassword ? 'text' : 'password'"
                                 v-model="auth.password"
-                                label="Contraseña *"
-                                input-class="input-theme"
-                            />
-                            <div v-if="errors.password" class="container-error">
-                                <ul
-                                    v-for="(error, index) in errors.password"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
+                                label="Contraseña"
+                                name="password"
+                                autocomplete="current-password"
+                                :error="!!errors.password"
+                                :error-message="firstError(errors.password)"
+                            >
+                                <template v-slot:prepend>
+                                    <q-icon name="eva-lock-outline" />
+                                </template>
+                                <template v-slot:append>
+                                    <q-btn
+                                        flat
+                                        round
+                                        dense
+                                        :icon="showPassword ? 'eva-eye-off-outline' : 'eva-eye-outline'"
+                                        :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                                        @click="showPassword = !showPassword"
+                                    />
+                                </template>
+                            </q-input>
                             <q-toggle
                                 v-model="auth.accept"
-                                label="Recuerdame"
+                                label="Mantener sesión iniciada"
                                 color="primary"
                             />
 
                             <div>
                                 <q-btn
-                                    class="full-width"
-                                    label="Iniciar Sesion"
+                                    class="full-width login-btn"
+                                    label="Iniciar sesión"
                                     type="submit"
                                     color="primary"
-                                    size="12px"
+                                    no-caps
+                                    unelevated
+                                    :loading="loading"
                                 />
                             </div>
-                            <div class="q-pa-xs">
-                                <a href="#" class="link-text"
-                                    >¿Olvidaste tu contraseña?</a
-                                >
+                            <div class="text-caption text-grey q-px-xs">
+                                ¿Olvidaste tu contraseña? Comunícate con el
+                                administrador del sistema.
                             </div>
                         </q-form>
-                        <q-inner-loading :showing="loading">
-                            <q-spinner-puff size="50px" color="primary" />
-                        </q-inner-loading>
                     </q-page>
                 </div>
                 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 gt-sm image-container">
@@ -95,56 +100,44 @@
 </template>
 <script setup>
 import Login from "@/layouts/AuthLayout.vue";
-//import { Vue3Lottie } from "vue3-lottie";
-import { ref, reactive, computed, watch } from "vue";
-//import working from "@/assets/harvest.json";
-import { router, useForm, usePage, Head } from "@inertiajs/vue3";
-import NProgress from "nprogress";
-import { useQuasar,Dark } from "quasar";
+import { ref } from "vue";
+import { router, usePage, Head } from "@inertiajs/vue3";
+import { useQuasar, Dark } from "quasar";
 defineProps({
     errors: Object,
     title: String,
 });
 const page = usePage();
-const message = ref();
-const type = ref();
 
 const $q = useQuasar();
 const auth = ref({
-    email: null ,
+    email: null,
     password: null,
     accept: true,
 });
 const loading = ref(false);
+const showPassword = ref(false);
 
-function handleReset() {}
+function firstError(messages) {
+    return Array.isArray(messages) ? messages[0] : messages;
+}
+
 function HandleAuthLogin() {
-    router.post("/login", auth.value,{
-        onSuccess:()=>{
-            message.value=page.props.flash.message
-            type.value=page.props.flash.type
-            $q.notify({
-                type: type.value,
-                message: message.value,
-            });
-        }
+    router.post("/login", auth.value, {
+        onStart: () => (loading.value = true),
+        onFinish: () => (loading.value = false),
+        onSuccess: () => {
+            if (page.props.flash.message) {
+                $q.notify({
+                    type: page.props.flash.type,
+                    message: page.props.flash.message,
+                });
+            }
+        },
     });
 }
 </script>
 <style lang="scss">
-.container-error {
-    margin: 5px 0px;
-}
-.message-error {
-    //padding: 0;
-    margin: 0;
-    font-size: 10px;
-    color: red;
-}
-.link-text {
-    text-decoration: none;
-    color: #1A73E8;
-}
 body.screen--xs {
     .login-form {
         width: 85%;
@@ -159,7 +152,15 @@ body.screen--sm {
     width: 100%;
 }
 .login-form {
-    width: 450px;
+    width: 420px;
+}
+.login-brand {
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1a73e8, #344767);
+}
+.login-btn {
+    height: 44px;
+    font-weight: 600;
 }
 
 .title-login{
@@ -170,23 +171,10 @@ body.screen--sm {
     line-height: 1.375;
 }
 .text-login{
-    font-size: 1rem;
+    font-size: 0.95rem;
     line-height: 1.625;
     font-weight: 400;
     color: rgb(103 116 142 / 1);
-}
-.btn-theme{
-    margin-top:20px;
-  padding: 20px 40px;
-  background-color: #4E4DED;
-  border: 0;
-  border-radius: 10px;
-  color: white;
-  font-size: 1rem;
-  font-weight: 500;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.10), 0 6px 6px rgba(0,0,0,0.05);
-  animation: shadow-pulse 1s infinite;
-  cursor:pointer;
 }
 .image-container {
   width: 900px; /* Ancho del contenedor */

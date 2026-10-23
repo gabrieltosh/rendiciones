@@ -33,14 +33,16 @@ class UserRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required'=>'El campo Nombre es obligatorio',
-            'email.required'=>'El campo Correo Electronico es obligatorio',
-            'username.required'=>'El campo Username es obligatorio',
-            'username.unique'=>'El Username ya esta registrado',
-            'email.unique'=>'La Correo Electronico ya esta registrado',
-            'password.required'=>'El campo Contraseña es obligatorio',
-            'password'=>'La Contraseña debe contener al menos 5 caracteres entre números, letras, mayúsculas y minúsculas',
-            'password.min'=>'El campo Contraseña debe tener al menos :min caracteres'
+            'name.required'=>'El nombre es obligatorio',
+            'email.required'=>'El correo electrónico es obligatorio',
+            'email.email'=>'Ingresa un correo electrónico válido',
+            'username.required'=>'El usuario es obligatorio',
+            'username.unique'=>'Este usuario ya está registrado',
+            'email.unique'=>'Este correo electrónico ya está registrado',
+            'password.required'=>'La contraseña es obligatoria',
+            'password'=>'La contraseña debe tener al menos 5 caracteres, con mayúsculas, minúsculas y números',
+            'password.min'=>'La contraseña debe tener al menos :min caracteres',
+            'type.required'=>'Selecciona el rol del usuario',
         ];
     }
 }

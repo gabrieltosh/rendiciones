@@ -65,4 +65,32 @@ class Accountability extends Model implements Auditable
     public function levelApprovals(){
         return $this->hasMany(AccountabilityLevelApproval::class,'accountability_id','id');
     }
+
+    /**
+     * Rendiciones pendientes que el usuario debe autorizar: las que están en un
+     * nivel del ciclo donde él es autorizador, o (sistema legado, sin ciclo) las
+     * de usuarios que tiene asignados en UserAuthorization.
+     */
+    public function scopePendingAuthorizationFor($query, $userId)
+    {
+        $levelIds = AuthorizationCycleLevel::whereHas('levelUsers', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })->pluck('id');
+
+        $legacyUserIds = UserAuthorization::where('auth_user_id', $userId)->pluck('user_id');
+
+        return $query->where('status', 'Pendiente')
+            ->where(function ($q) use ($levelIds, $legacyUserIds) {
+                $q->whereIn('current_level_id', $levelIds)
+                  ->orWhere(function ($q2) use ($legacyUserIds) {
+                      $q2->whereNull('current_level_id')
+                         ->whereIn('user_id', $legacyUserIds);
+                  });
+            });
+    }
+
+    public function scopePendingSapExport($query)
+    {
+        return $query->where('status', 'Autorizado')->where('sap_exported', 0);
+    }
 }

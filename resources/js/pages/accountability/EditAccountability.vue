@@ -2,52 +2,22 @@
     <Head :title="title" />
     <Layout>
         <div class="row justify-center q-px-md q-py-lg">
-            <div class="col-xs-12 col-sm-12 col-md-9">
-                <!-- Header card -->
-                <q-card class="q-pa-md card-form q-mb-md">
-                    <div class="row items-center">
-                        <div class="col">
-                            <div class="text-h6 title-form">
-                                Actualizar Rendicion
-                            </div>
-                            <div class="text-caption text-grey">
-                                Perfil: {{ page.props.profile.name }}
-                                &middot;
-                                Rendicion #{{ form.id }}
-                            </div>
-                        </div>
-                        <div class="col-auto q-gutter-sm">
-                            <q-btn
-                                color="secondary"
-                                label="Cancelar"
-                                size="12px"
-                                no-caps
-                                flat
-                                unelevated
-                                aria-label="Cancelar y volver a la lista"
-                                @click="HandleCancel"
-                            />
-                            <q-btn
-                                color="primary"
-                                label="Actualizar Rendicion"
-                                size="12px"
-                                no-caps
-                                unelevated
-                                :loading="loading.submit"
-                                :disable="loading.submit"
-                                aria-label="Guardar cambios de la rendicion"
-                                @click="HandleUpdateForm()"
-                            />
-                        </div>
-                    </div>
-                </q-card>
+            <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8">
+                <PageHeader title="Editar Rendición" :subtitle="`Perfil: ${page.props.profile.name} · Rendición #${form.id}`" icon="eva-edit-2-outline" sticky>
+                    <template #actions>
+                        <q-btn flat color="secondary" label="Cancelar" no-caps :disable="loading.submit"
+                            aria-label="Cancelar y volver a la lista" @click="HandleCancel" />
+                        <q-btn color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
+                            :loading="loading.submit" @click="HandleUpdateForm()" />
+                    </template>
+                </PageHeader>
 
                 <!-- Form card -->
                 <q-card class="q-pa-lg card-form">
                     <div
                         class="text-subtitle1 text-weight-medium q-mb-md"
                     >
-                        Datos de la Rendicion
+                        Datos de la Rendición
                     </div>
                     <div class="row q-col-gutter-md">
                         <!-- Empleado -->
@@ -70,8 +40,6 @@
                                 aria-label="Seleccionar empleado"
                                 name="employee"
                                 autocomplete="off"
-                                :error="!!errors.employee"
-                                :error-message="errors.employee ? errors.employee[0] : ''"
                             >
                                 <template v-slot:no-option>
                                     <q-item>
@@ -180,10 +148,10 @@
                             </div>
                         </div>
 
-                        <!-- Descripcion -->
+                        <!-- Descripción -->
                         <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                             <label class="form-label">
-                                Descripcion
+                                Descripción
                                 <span class="text-red">*</span>
                             </label>
                             <q-input
@@ -191,7 +159,7 @@
                                 dense
                                 outlined
                                 class="input-theme"
-                                aria-label="Descripcion de la rendicion"
+                                aria-label="Descripción de la rendición"
                                 name="description"
                                 autocomplete="off"
                             />
@@ -283,6 +251,7 @@
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
+import PageHeader from "@/components/PageHeader.vue";
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
@@ -334,7 +303,7 @@ function HandleCancel() {
         $q.dialog({
             title: "Cambios sin guardar",
             message:
-                "Tienes cambios sin guardar. ¿Estas seguro de que deseas salir?",
+                "Tienes cambios sin guardar. ¿Estás seguro de que deseas salir?",
             cancel: { label: "Quedarse", flat: true, noCaps: true },
             ok: { label: "Salir", color: "negative", noCaps: true },
             persistent: true,

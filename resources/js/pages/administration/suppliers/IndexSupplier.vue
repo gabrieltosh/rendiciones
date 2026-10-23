@@ -161,7 +161,7 @@ function HandleEditSupplier($id) {
 function HandleDeleteSupplier($id) {
     $q.dialog({
         title: "Confirmar",
-        message: "¿Esta seguro de eliminar el Proveedor?",
+        message: "¿Está seguro de eliminar el Proveedor?",
         cancel: true,
         persistent: true,
     })

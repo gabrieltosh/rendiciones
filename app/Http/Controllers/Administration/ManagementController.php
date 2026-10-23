@@ -20,6 +20,8 @@ class ManagementController extends Controller
                     ->update([
                         'value'=>$filename
                     ]);
+        // Inertia necesita una respuesta válida para continuar con el guardado del resto de datos
+        return Redirect::route('panel.management.index');
     }
     public function HandleUpdateData($data){
         foreach ($data as $value) {
@@ -36,7 +38,7 @@ class ManagementController extends Controller
         $this->HandleUpdateData($request->employee);
         $this->HandleUpdateData($request->suppliers);
         $this->HandleUpdateData($request->company);
-        Session::flash('message', "Configuración actualizadas correctamente");
+        Session::flash('message', "Configuración actualizada correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.management.index');
     }

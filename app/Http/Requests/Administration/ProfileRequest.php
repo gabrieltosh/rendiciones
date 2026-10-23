@@ -39,20 +39,20 @@ class ProfileRequest extends FormRequest
     {
         return [
             'name.required'=>'El campo Nombre Perfil es obligatorio',
-            'employee_code.required'=>'El campo Codigo Empleado es obligatorio',
-            'supplier_code.required'=>'El campo Codigo Proveedor es obligatorio',
+            'employee_code.required'=>'El campo Código Empleado es obligatorio',
+            'supplier_code.required'=>'El campo Código Proveedor es obligatorio',
             'type_currency.required'=>'El campo Moneda es obligatorio',
-            'name.unique'=>'El Nombre del Perfil ya esta registrado',
+            'name.unique'=>'El nombre del perfil ya está registrado',
             'documents.*.name.required'=>'El Nombre Documento es obligatorio',
             'documents.*.type_document_sap.required'=>'El Tipo Documento es obligatorio',
-            'documents.*.type_calculation.required'=>'El Calculo es obligatorio',
-            'documents.*.detail.*.type.required'=>'El Tipo es Obligatorio',
-            'documents.*.detail.*.percentage.required'=>'El Porcentaje es Obligatorio',
-            'documents.*.detail.*.account.required'=>'La Cuenta es Obligatoria',
-            'documents.*.detail.*.type_calculation'=>'El Calculo es Obligatorio',
-            'documents.*.fields.*.account'=>'La Cuenta es Obligatoria',
-            'documents.*.fields.*.name'=>'El Nombre es Obligatorio',
-            'documents.*.fields.*.type_calculation'=>'El Tipo es Obligatorio',
+            'documents.*.type_calculation.required'=>'El cálculo es obligatorio',
+            'documents.*.detail.*.type.required'=>'El tipo es obligatorio',
+            'documents.*.detail.*.percentage.required'=>'El porcentaje es obligatorio',
+            'documents.*.detail.*.account.required'=>'La cuenta es obligatoria',
+            'documents.*.detail.*.type_calculation'=>'El cálculo es obligatorio',
+            'documents.*.fields.*.account'=>'La cuenta es obligatoria',
+            'documents.*.fields.*.name'=>'El nombre es obligatorio',
+            'documents.*.fields.*.type_calculation'=>'El tipo es obligatorio',
         ];
     }
 }

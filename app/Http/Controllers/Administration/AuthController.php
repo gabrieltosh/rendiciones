@@ -18,24 +18,24 @@ class AuthController extends Controller
     public function HandleLoginAuth(LoginRequest $request){
         $user=User::where('username', $request->email)->first();
         if(isset($user->status) && $user->status=='Activo'){
-            if(Auth::attempt(['username'=> $request->email,'password'=> $request->password])){
+            if(Auth::attempt(['username'=> $request->email,'password'=> $request->password], $request->boolean('accept'))){
                 $request->session()->regenerate();
-                Session::flash('message', 'Inicio de sesion correcto');
+                Session::flash('message', 'Bienvenido, '.$user->name);
                 Session::flash('type', 'positive');
                 return to_route('home');
             }else{
-                Session::flash('message', 'Las credenciales no son validas');
+                Session::flash('message', 'Usuario o contraseña incorrectos');
                 Session::flash('type', 'negative');
                 return redirect()->back();
             }
+        }elseif(isset($user->status) && in_array($user->status, ['PreActivo', 'pre-activo'])){
+            Session::flash('message', 'Tu usuario aún no está activo. Contacta al administrador.');
+            Session::flash('type', 'warning');
+            return redirect()->back();
         }else{
-            if(isset($user->status) && $user->status=='pre-activo'){
-
-            }else{
-                Session::flash('message', 'El usuario esta deshabilitado o no registrado');
-                Session::flash('type', 'negative');
-                return redirect()->back();
-            }
+            Session::flash('message', 'El usuario está deshabilitado o no registrado');
+            Session::flash('type', 'negative');
+            return redirect()->back();
         }
     }
     public function HandleLogoutAuth(Request $request){

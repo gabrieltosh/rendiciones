@@ -3,36 +3,18 @@
     <Layout>
         <div class="row justify-center q-px-md q-py-lg">
             <div class="col-xs-12 col-sm-12 col-md-9">
+                <PageHeader title="Editar Rendición" :subtitle="`${page.props.profile.name} · Rendición #${form.id}`" icon="eva-edit-2-outline" sticky>
+                    <template #actions>
+                        <q-btn flat color="secondary" label="Cancelar" no-caps :disable="saving"
+                            @click="router.visit(route('panel.accountability.authorization.index'))" />
+                        <q-btn color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
+                            :loading="saving" @click="HandleUpdateForm()" />
+                    </template>
+                </PageHeader>
+
                 <q-card class="q-pa-lg card-form">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <h5 class="title-form">Actualizar Rendición</h5>
-                        </div>
-                        <div class="col-sm-6 text-right q-gutter-sm">
-                            <q-btn
-                                color="secondary"
-                                label="Cancelar"
-                                size="12px"
-                                no-caps
-                                @click="
-                                    router.visit(
-                                        route(
-                                            'panel.accountability.authorization.index'
-                                        )
-                                    )
-                                "
-                                flat
-                            />
-                            <q-btn
-                                color="primary"
-                                label="Actualizar"
-                                size="12px"
-                                no-caps
-                                @click="HandleUpdateForm()"
-                            />
-                        </div>
-                    </div>
-                    <div class="row q-col-gutter-md q-mt-xs">
+                    <div class="form-section-title q-mb-md">Datos de la rendición</div>
+                    <div class="row q-col-gutter-md">
                         <div v-if="!page.props.profile.sin_empleado" class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
                             <div class="form-label" for="device_name">
                                 Empleado
@@ -189,6 +171,8 @@
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import { scrollToFirstError } from "@/utils/forms";
 import { ref,onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
@@ -210,8 +194,13 @@ const loading = ref({
     card: false,
 });
 const form = ref(page.props.accountability);
+const saving = ref(false);
+
 function HandleUpdateForm() {
     router.put(route("panel.accountability.authorization.update"), form.value, {
+        onStart: () => (saving.value = true),
+        onFinish: () => (saving.value = false),
+        onError: () => scrollToFirstError(),
         onSuccess: () => {
             message.value = page.props.flash.message;
             type.value = page.props.flash.type;

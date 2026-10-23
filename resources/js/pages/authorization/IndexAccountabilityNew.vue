@@ -9,7 +9,7 @@
                     <div class="row items-center q-col-gutter-sm">
                         <div class="col">
                             <div class="text-h6 title-form">
-                                Autorizacion de Rendiciones
+                                Autorización de Rendiciones
                             </div>
                             <div class="text-caption text-grey">
                                 {{ pendingRows.length }} pendiente{{ pendingRows.length !== 1 ? 's' : '' }}
@@ -37,7 +37,7 @@
                                 >
                                     <q-tab
                                         name="pending"
-                                        aria-label="Rendiciones pendientes de autorizacion"
+                                        aria-label="Rendiciones pendientes de autorización"
                                     >
                                         <div class="row items-center q-gutter-xs no-wrap">
                                             <span>Pendientes</span>
@@ -130,9 +130,9 @@
                             />
                             <div class="text-body1 text-grey q-mt-md">
                                 {{ filter
-                                    ? 'Sin resultados para la busqueda'
+                                    ? 'Sin resultados para la búsqueda'
                                     : activeTab === 'pending'
-                                        ? 'No hay rendiciones pendientes de autorizacion'
+                                        ? 'No hay rendiciones pendientes de autorización'
                                         : 'No hay rendiciones autorizadas'
                                 }}
                             </div>
@@ -156,7 +156,7 @@
                                                     {{ row.description || 'Sin descripcion' }}
                                                 </div>
                                                 <div class="text-caption text-grey q-mt-xs">
-                                                    Rendicion #{{ row.id }}
+                                                    Rendición #{{ row.id }}
                                                 </div>
                                             </div>
                                             <div class="col-auto">
@@ -264,7 +264,7 @@
                                                     size="sm"
                                                     icon="visibility"
                                                     color="primary"
-                                                    aria-label="Ver detalle de rendicion"
+                                                    aria-label="Ver detalle de rendición"
                                                     @click="HandleDetailAccountability(row.id)"
                                                 >
                                                     <q-tooltip>Ver Detalle</q-tooltip>
@@ -277,7 +277,7 @@
                                                     size="sm"
                                                     icon="edit"
                                                     color="secondary"
-                                                    aria-label="Editar rendicion"
+                                                    aria-label="Editar rendición"
                                                     @click="HandleEditAccountability(row.id)"
                                                 >
                                                     <q-tooltip>Editar</q-tooltip>
@@ -290,7 +290,7 @@
                                                     size="sm"
                                                     icon="print"
                                                     color="secondary"
-                                                    aria-label="Imprimir reporte de rendicion"
+                                                    aria-label="Imprimir reporte de rendición"
                                                     @click="HandleGetReport(row.id)"
                                                 >
                                                     <q-tooltip>Reporte</q-tooltip>
@@ -375,7 +375,7 @@
                                                 size="sm"
                                                 icon="visibility"
                                                 color="primary"
-                                                aria-label="Ver detalle de rendicion"
+                                                aria-label="Ver detalle de rendición"
                                                 @click="HandleDetailAccountability(props.row.id)"
                                             >
                                                 <q-tooltip>Ver Detalle</q-tooltip>
@@ -388,7 +388,7 @@
                                                 size="sm"
                                                 icon="edit"
                                                 color="secondary"
-                                                aria-label="Editar rendicion"
+                                                aria-label="Editar rendición"
                                                 @click="HandleEditAccountability(props.row.id)"
                                             >
                                                 <q-tooltip>Editar</q-tooltip>
@@ -401,7 +401,7 @@
                                                 size="sm"
                                                 icon="print"
                                                 color="secondary"
-                                                aria-label="Imprimir reporte de rendicion"
+                                                aria-label="Imprimir reporte de rendición"
                                                 @click="HandleGetReport(props.row.id)"
                                             >
                                                 <q-tooltip>Reporte</q-tooltip>
@@ -421,10 +421,10 @@
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
-import { openURL } from "quasar";
+import { openURL, LocalStorage } from "quasar";
 
 defineProps({
     title: String,
@@ -435,7 +435,9 @@ const page = usePage();
 const pendingRows = ref(page.props.data);
 const authorizedRows = ref(page.props.authorized);
 const filter = ref("");
-const viewMode = ref("grid");
+// La vista elegida (tarjetas/tabla) se recuerda entre visitas
+const viewMode = ref(LocalStorage.getItem("authorization-view-mode") || "grid");
+watch(viewMode, (mode) => LocalStorage.set("authorization-view-mode", mode));
 const activeTab = ref("pending");
 
 const columns = [
@@ -450,7 +452,7 @@ const columns = [
     {
         name: "description",
         align: "left",
-        label: "Descripcion",
+        label: "Descripción",
         field: "description",
         sortable: true,
     },
