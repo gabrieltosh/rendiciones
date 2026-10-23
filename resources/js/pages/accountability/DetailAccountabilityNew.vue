@@ -8,7 +8,13 @@
                 <!-- Header -->
                 <q-card class="q-pa-md card-form q-mb-md">
                     <div class="row items-center q-col-gutter-sm">
-                        <div class="col">
+                        <div class="col-auto">
+                            <q-btn flat round dense icon="arrow_back" aria-label="Volver a la lista de rendiciones"
+                                @click="HandleBack()">
+                                <q-tooltip>Volver a la lista</q-tooltip>
+                            </q-btn>
+                        </div>
+                        <div class="col" style="min-width: 0;">
                             <div class="row items-center q-gutter-sm">
                                 <div class="text-subtitle1 text-weight-medium">{{ accountability.description }}</div>
                                 <q-badge :color="statusColor" :label="accountability.status || 'Borrador'"
@@ -18,7 +24,9 @@
                                 {{ accountability.employee_name }} &middot; Rendición #{{ accountability.id }}
                             </div>
                         </div>
-                        <div class="col-auto q-gutter-sm">
+                        <div class="col-xs-12 col-sm-auto row q-gutter-sm justify-end">
+                            <q-btn v-if="isEditable" color="primary" icon="edit" label="Editar" size="12px" no-caps
+                                outline aria-label="Editar datos de la rendición" @click="HandleEditAccountability()" />
                             <q-btn v-if="isEditable" color="positive" icon="send" label="Enviar" size="12px" no-caps
                                 unelevated aria-label="Enviar rendición a autorización"
                                 @click="HandleUpdateStatus('Pendiente')" />
@@ -531,6 +539,16 @@ const expandedRows = ref({});
 const selectedFactura = ref(null);
 const showFacturaDialog = ref(false);
 const loadingFactura = ref(null);
+
+function HandleBack() {
+    router.visit(route("panel.accountability.manage.index", page.props.profile.id));
+}
+
+function HandleEditAccountability() {
+    router.visit(
+        route("panel.accountability.manage.edit", [page.props.profile.id, accountability.id]) + "?from=detail"
+    );
+}
 
 const isEditable = computed(() => {
     return accountability.status === 'Rechazado' || accountability.status === null;

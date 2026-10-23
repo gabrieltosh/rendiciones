@@ -55,6 +55,6 @@ body.screen--xs .page-header--sticky .text-caption {
 }
 .page-header-icon {
     border-radius: 10px;
-    background: linear-gradient(135deg, #1a73e8, #344767);
+    background-color: var(--q-primary);
 }
 </style>

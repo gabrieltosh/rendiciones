@@ -298,6 +298,12 @@ onUnmounted(() => {
     window.removeEventListener("beforeunload", handleBeforeUnload);
 });
 
+// Si la edición se abrió desde el detalle, Cancelar y Guardar vuelven al detalle
+const fromDetail = new URLSearchParams(window.location.search).get("from") === "detail";
+const returnUrl = fromDetail
+    ? route("panel.accountability.manage.detail.index", [page.props.profile.id, form.value.id])
+    : route("panel.accountability.manage.index", page.props.profile.id);
+
 function HandleCancel() {
     if (isDirty.value) {
         $q.dialog({
@@ -308,20 +314,10 @@ function HandleCancel() {
             ok: { label: "Salir", color: "negative", noCaps: true },
             persistent: true,
         }).onOk(() => {
-            router.visit(
-                route(
-                    "panel.accountability.manage.index",
-                    page.props.profile.id
-                )
-            );
+            router.visit(returnUrl);
         });
     } else {
-        router.visit(
-            route(
-                "panel.accountability.manage.index",
-                page.props.profile.id
-            )
-        );
+        router.visit(returnUrl);
     }
 }
 
@@ -332,7 +328,7 @@ function HandleUpdateForm() {
             "panel.accountability.manage.update",
             page.props.profile.id
         ),
-        form.value,
+        { ...form.value, return_to: fromDetail ? "detail" : null },
         {
             onSuccess: () => {
                 message.value = page.props.flash.message;

@@ -12,13 +12,6 @@
                             class="q-gutter-md login-form"
                         >
                             <div class="q-px-md q-pb-sm">
-                                <q-avatar
-                                    square
-                                    size="48px"
-                                    class="login-brand q-mb-md"
-                                    icon="eva-briefcase-outline"
-                                    text-color="white"
-                                />
                                 <h4 class="title-login q-pa-none q-ma-none q-mb-sm">
                                     Iniciar sesión
                                 </h4>
@@ -153,10 +146,6 @@ body.screen--sm {
 }
 .login-form {
     width: 420px;
-}
-.login-brand {
-    border-radius: 12px;
-    background: linear-gradient(135deg, #1a73e8, #344767);
 }
 .login-btn {
     height: 44px;
