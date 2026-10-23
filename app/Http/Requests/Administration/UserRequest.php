@@ -26,7 +26,8 @@ class UserRequest extends FormRequest
             'name'=>'required',
             'email'=>['required','email',Rule::unique('users')->ignore($this->id)],
             'username'=>['required',Rule::unique('users')->ignore($this->id)],
-            'password'=>[$this->method() === 'PUT' ? '':'required',Password::min(5)->letters()->mixedCase()->numbers()],
+            // Al editar (PUT) la contraseña es opcional: vacía significa mantener la actual
+            'password'=>[$this->method() === 'PUT' ? 'nullable' : 'required',Password::min(5)->letters()->mixedCase()->numbers()],
             'type'=>'required'
         ];
     }
