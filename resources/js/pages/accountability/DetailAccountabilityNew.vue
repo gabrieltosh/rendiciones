@@ -45,6 +45,16 @@
                     {{ statusMessage }}
                 </q-banner>
 
+                <!-- Sin autorizador: se puede registrar pero no enviar -->
+                <q-banner v-if="isEditable && !page.props.has_authorizer" class="card-form q-mb-md bg-warning text-dark"
+                    dense rounded>
+                    <template v-slot:avatar>
+                        <q-icon name="warning" />
+                    </template>
+                    No tiene asignado un ciclo de autorización ni un autorizador. Puede registrar y guardar sus
+                    documentos, pero para enviar la rendición el administrador debe asignarle un autorizador.
+                </q-banner>
+
                 <!-- Información General (colapsable) -->
                 <q-expansion-item class="card-form q-mb-md overflow-hidden rounded-borders" icon="info"
                     label="Información General" header-class="text-subtitle2 text-weight-medium" default-value dense default-opened>
@@ -219,12 +229,14 @@
                                                     style="word-break: break-word;">
                                                     {{ doc.concept || 'Sin concepto' }}
                                                 </div>
+                                                <q-badge v-if="doc.lines_count > 0" color="secondary" outline
+                                                    :label="`Repartido en ${doc.lines_count} líneas`" />
                                             </div>
                                             <div class="text-caption text-grey q-mt-xs">
                                                 <span v-if="doc.date">{{ doc.date }}</span>
-                                                <span v-if="doc.document_number"> &middot; Factura #{{
+                                                <span v-if="doc.document_number"> &middot; N° {{
                                                     doc.document_number }}</span>
-                                                <span v-if="doc.nit"> &middot; NIT {{ doc.nit }}</span>
+                                                <span v-if="doc.nit"> &middot; NIT/CI {{ doc.nit }}</span>
                                                 <span v-if="doc.business_name"> &middot; {{ doc.business_name }}</span>
                                             </div>
                                         </div>
@@ -271,7 +283,7 @@
                                                 Compras</div>
                                             <div class="row q-col-gutter-sm q-mb-md">
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.document_number">
-                                                    <div class="text-caption text-grey">N. Factura</div>
+                                                    <div class="text-caption text-grey">N° Documento / Factura / Recibo</div>
                                                     <div class="text-body2">{{ doc.document_number }}</div>
                                                 </div>
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.authorization_number">
@@ -288,7 +300,7 @@
                                                     <div class="text-body2">{{ doc.control_code }}</div>
                                                 </div>
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.nit">
-                                                    <div class="text-caption text-grey">NIT</div>
+                                                    <div class="text-caption text-grey">NIT / CI / Doc. Identif.</div>
                                                     <div class="text-body2">{{ doc.nit }}</div>
                                                 </div>
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.business_name">
@@ -396,7 +408,7 @@
                 <q-card-section v-if="selectedFactura" class="q-pa-md">
                     <div class="row q-col-gutter-sm q-mb-md">
                         <div class="col-6">
-                            <div class="text-caption text-grey">N. Factura</div>
+                            <div class="text-caption text-grey">N° Documento / Factura / Recibo</div>
                             <div class="text-body2">{{ selectedFactura.numeroFactura }}</div>
                         </div>
                         <div class="col-6">
@@ -580,7 +592,7 @@ const statusMessage = computed(() => {
         'Anulado': `La rendición fue anulada: ${accountability.comments}`,
         'Rechazado': `La rendición fue rechazada: ${accountability.comments}`,
         'Autorizado': accountability.sap_exported
-            ? 'La rendición fue aprobada y exportada a SAP'
+            ? 'La rendición fue aprobada y exportada a SAP' + (accountability.sap_trans_id ? ` (asiento preliminar N° ${accountability.sap_trans_id})` : '')
             : 'La rendición fue aprobada. Pendiente de exportación a SAP',
     };
     return messages[accountability.status] || null;

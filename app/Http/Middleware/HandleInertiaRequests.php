@@ -44,6 +44,8 @@ class HandleInertiaRequests extends Middleware
                 'message' => fn () => $request->session()->get('message'),
                 'status' => fn () => $request->session()->get('status'),
                 'type' => fn () => $request->session()->get('type'),
+                // Número del asiento preliminar creado en SAP al autorizar/exportar
+                'sap_number' => fn () => $request->session()->get('sap_number'),
             ],
             'auth.user' => fn () => $request->user()
                 ? $request->user()->only(

@@ -311,7 +311,9 @@ function statusColor(status) {
 }
 
 function sapLocationLabel(row) {
-    if (row.status === 'Autorizado' && row.sap_exported) return 'Rendiciones + SAP';
+    if (row.status === 'Autorizado' && row.sap_exported) {
+        return row.sap_trans_id ? `Rendiciones + SAP · N° ${row.sap_trans_id}` : 'Rendiciones + SAP';
+    }
     if (row.status === 'Autorizado' && !row.sap_exported) return 'Pendiente SAP';
     return 'Solo Rendiciones';
 }

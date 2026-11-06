@@ -31,6 +31,7 @@ class ReportController extends Controller
                 'A.total',
                 'A.status',
                 'A.sap_exported',
+                'A.sap_trans_id',
                 DB::raw("U.name as user_name"),
                 DB::raw("P.name as profile_name"),
                 DB::raw("AR.name as area_name"),

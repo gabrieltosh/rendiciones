@@ -63,7 +63,7 @@
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <label class="form-label">
-                                Fecha <span class="text-red">*</span>
+                                Fecha del documento <span class="text-red">*</span>
                             </label>
                             <q-input
                                 v-model="form.date"
@@ -73,7 +73,7 @@
                                 :min="page.props.accountability.start_date"
                                 :max="page.props.accountability.end_date"
                                 class="input-theme"
-                                aria-label="Fecha del detalle"
+                                aria-label="Fecha del documento"
                                 name="date"
                             />
                             <div v-if="errors.date" class="container-error">
@@ -188,7 +188,7 @@
                         <div class="row q-col-gutter-md">
                             <div class="col-xs-12 col-sm-6 col-md-4">
                                 <label class="form-label">
-                                    N. Documento <span class="text-red">*</span>
+                                    N° Documento / N° Factura / N° Recibo <span class="text-red">*</span>
                                 </label>
                                 <q-input
                                     v-model="form.document_number"
@@ -279,14 +279,14 @@
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-4" v-if="document.nit_status">
-                                <label class="form-label">NIT</label>
+                                <label class="form-label">NIT / CI / Doc. Identif.</label>
                                 <q-input
                                     v-model="form.nit"
                                     dense
                                     outlined
                                     class="input-theme"
                                     @update:model-value="HandleChangeNIT()"
-                                    aria-label="NIT del proveedor"
+                                    aria-label="NIT, CI o documento de identidad del proveedor"
                                     name="nit"
                                     autocomplete="off"
                                 />
@@ -521,7 +521,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[1]"
-                                    v-model="form.distribution_rule_one"
+                                    v-model="form.distribution_rule_one" :disable="!!form.splits?.[1]"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 1"
@@ -536,7 +536,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[2]"
-                                    v-model="form.distribution_rule_second"
+                                    v-model="form.distribution_rule_second" :disable="!!form.splits?.[2]"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 2"
@@ -551,7 +551,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[3]"
-                                    v-model="form.distribution_rule_three"
+                                    v-model="form.distribution_rule_three" :disable="!!form.splits?.[3]"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 3"
@@ -566,7 +566,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[4]"
-                                    v-model="form.distribution_rule_four"
+                                    v-model="form.distribution_rule_four" :disable="!!form.splits?.[4]"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 4"
@@ -581,7 +581,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[5]"
-                                    v-model="form.distribution_rule_five"
+                                    v-model="form.distribution_rule_five" :disable="!!form.splits?.[5]"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 5"
@@ -592,6 +592,10 @@
                         </div>
                     </q-card>
                 </q-slide-transition>
+
+                <!-- Seccion: Reparto por líneas -->
+                <ExpenseDistribution v-if="Object.keys(document).length > 0" :form="form"
+                    :distribution="page.props.distribution" :accounts="page.props.accounts" :errors="errors" />
 
             </div>
         </div>
@@ -942,6 +946,8 @@
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import ExpenseDistribution from "@/components/accountability/ExpenseDistribution.vue";
+import { scrollToFirstError, firstError } from "@/utils/forms";
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
@@ -1087,6 +1093,12 @@ function HandleUpdateForm() {
         ]),
         form.value,
         {
+            // Ante un error se conserva lo cargado en el formulario
+            preserveState: "errors",
+            onError: (errors) => {
+                if (errors.general) $q.notify({ type: "negative", message: firstError(errors.general) });
+                scrollToFirstError();
+            },
             onSuccess: () => {
                 message.value = page.props.flash.message;
                 type.value = page.props.flash.type;

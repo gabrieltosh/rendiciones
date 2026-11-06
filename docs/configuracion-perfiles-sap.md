@@ -220,3 +220,13 @@ Al autorizar la rendición, el sistema:
 
 Credenciales y URL del Service Layer se configuran en la tabla `management`
 con `group = 'accountability'`.
+
+### Número del asiento en SAP
+
+Tras exportar, el número del asiento preliminar se guarda en `accountabilities.sap_trans_id`
+y se muestra en el mensaje de autorización y en los listados de rendiciones ("En SAP · N° …").
+
+- **DI API:** es la clave que devuelve el servicio (`GetNewObjectKey()`).
+- **Service Layer:** `JournalVouchersService_Add` no devuelve número, así que el asiento se
+  envía con `Reference` (Ref1) = `REND-{id de la rendición}` y luego se busca su número de
+  lote en `OBTF.BatchNum`. Esa referencia también sirve para buscar el asiento en SAP.

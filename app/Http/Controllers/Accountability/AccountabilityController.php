@@ -31,6 +31,10 @@ use App\Models\User;
 use App\Models\UserAuthorizationCycle;
 use Http;
 use App\Models\Audit;
+use App\Services\Accountability\ExpenseDistribution;
+use App\Services\Sap\DistributionRules;
+use Throwable;
+use Log;
 class AccountabilityController extends Controller
 {
     public function HandleGetReportAccountability($profile_id, $accountability_id)
@@ -59,13 +63,14 @@ class AccountabilityController extends Controller
             ->where('id', $accountability->user_id)->first();
 
         // Determine first level of cycle (if assigned) and notify accordingly
-        $cycleRecord = UserAuthorizationCycle::with('cycle.levels.levelUsers.user')
-            ->where('user_id', $user->id)
-            ->first();
+        $firstLevel = $this->HandleFirstCycleLevel($user->id);
 
-        $firstLevel = null;
-        if ($cycleRecord && $cycleRecord->cycle && $cycleRecord->cycle->levels->isNotEmpty()) {
-            $firstLevel = $cycleRecord->cycle->levels->first();
+        // Sin autorizador la rendición quedaría Pendiente sin que nadie la vea:
+        // se mantiene en borrador, con sus documentos, hasta que se asigne uno.
+        if (!$this->HandleHasAuthorizer($user, $firstLevel)) {
+            Session::flash('message', "No tiene asignado un ciclo de autorización ni un autorizador. La rendición y sus documentos quedan guardados como borrador; solicite al administrador que le asigne un autorizador y vuelva a enviarla.");
+            Session::flash('type', 'negative');
+            return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
         }
 
         Accountability::findOrFail($accountability_id)->fill([
@@ -75,14 +80,22 @@ class AccountabilityController extends Controller
 
         $params = Management::where('group', 'accountability')->get();
         if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-            if ($firstLevel) {
-                // Notify cycle level authorizers
-                $levelAuthorizers = User::whereIn('id', $firstLevel->levelUsers->pluck('user_id'))->get();
-                Notification::send($levelAuthorizers, new CreateAccountabilityNotification($accountability));
-            } else {
-                // Legacy: notify direct authorizers
-                $authorizations = User::whereIn('id', $user->user_authorization->pluck('auth_user_id'))->get();
-                Notification::send($authorizations, new CreateAccountabilityNotification($accountability));
+            // Un fallo del correo no debe revertir ni ocultar el envío ya guardado.
+            try {
+                if ($firstLevel) {
+                    // Notify cycle level authorizers
+                    $levelAuthorizers = User::whereIn('id', $firstLevel->levelUsers->pluck('user_id'))->get();
+                    Notification::send($levelAuthorizers, new CreateAccountabilityNotification($accountability));
+                } else {
+                    // Legacy: notify direct authorizers
+                    $authorizations = User::whereIn('id', $user->user_authorization->pluck('auth_user_id'))->get();
+                    Notification::send($authorizations, new CreateAccountabilityNotification($accountability));
+                }
+            } catch (Throwable $e) {
+                Log::warning('No se pudo notificar el envío de la rendición', [
+                    'accountability_id' => $accountability_id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
@@ -90,43 +103,82 @@ class AccountabilityController extends Controller
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
     }
+    private function HandleFirstCycleLevel(int $user_id)
+    {
+        $cycleRecord = UserAuthorizationCycle::with('cycle.levels.levelUsers.user')
+            ->where('user_id', $user_id)
+            ->first();
+
+        if ($cycleRecord && $cycleRecord->cycle && $cycleRecord->cycle->levels->isNotEmpty()) {
+            return $cycleRecord->cycle->levels->first();
+        }
+
+        return null;
+    }
+    /**
+     * El usuario tiene quién autorice su rendición: un ciclo cuyo primer nivel
+     * tiene usuarios o, en el sistema legado, autorizadores directos.
+     */
+    private function HandleHasAuthorizer(User $user, $firstLevel): bool
+    {
+        if ($firstLevel) {
+            return $firstLevel->levelUsers->isNotEmpty();
+        }
+
+        return $user->user_authorization->isNotEmpty();
+    }
     public function HandleUpdateDocument(DocumentRequest $request, $profile_id, $accountability_id)
     {
-        ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
-        $account = DetailAccounts::where('account_code', $acctCode)->first();
-        AccountabilityDetail::findOrFail($request->id)->fill([
-            'account' => $acctCode,
-            'account_name' => $aliasName ?? ($account->alias ?? $account->account_name),
-            'date' => $request->date,
-            'document_id' => $request->document_id,
-            'document_number' => $request->document_number,
-            'authorization_number' => $request->authorization_number,
-            'cuf' => $request->cuf,
-            'control_code' => $request->control_code,
-            'business_name' => $request->business_name,
-            'nit' => $request->nit,
-            'concept' => $request->concept,
-            'amount' => $request->amount,
-            'discount' => $request->discount,
-            'excento' => $request->excento,
-            'rate' => $request->rate,
-            'gift_card' => $request->gift_card,
-            'rate_zero' => $request->rate_zero,
-            'ice' => $request->ice,
-            'project_code' => $request->project_code,
-            'distribution_rule_one' => $request->distribution_rule_one['OcrCode'] ?? $request->distribution_rule_one['PrcCode'] ?? null,
-            'distribution_rule_second' => $request->distribution_rule_second['OcrCode'] ?? $request->distribution_rule_second['PrcCode'] ?? null,
-            'distribution_rule_three' => $request->distribution_rule_three['OcrCode'] ?? $request->distribution_rule_three['PrcCode'] ?? null,
-            'distribution_rule_four' => $request->distribution_rule_four['OcrCode'] ?? $request->distribution_rule_four['PrcCode'] ?? null,
-            'distribution_rule_five' => $request->distribution_rule_five['OcrCode'] ?? $request->distribution_rule_five['PrcCode'] ?? null,
-        ])->save();
-        AccountabilityField::where('accountability_detail_id', $request->id)->delete();
-        foreach ($request->field as $key => $field) {
-            AccountabilityField::create([
-                'value' => $field['value'],
-                'field_id' => $field['field_id'] ?? $field['id'],
-                'name' => $field['name'],
-                'accountability_detail_id' => $request->id
+        try {
+            DB::transaction(function () use ($request) {
+                ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
+                $account = DetailAccounts::where('account_code', $acctCode)->first();
+                $detail = AccountabilityDetail::findOrFail($request->id);
+                $detail->fill([
+                    'account' => $acctCode,
+                    'account_name' => $aliasName ?? ($account->alias ?? $account->account_name),
+                    'date' => $request->date,
+                    'document_id' => $request->document_id,
+                    'document_number' => $request->document_number,
+                    'authorization_number' => $request->authorization_number,
+                    'cuf' => $request->cuf,
+                    'control_code' => $request->control_code,
+                    'business_name' => $request->business_name,
+                    'nit' => $request->nit,
+                    'concept' => $request->concept,
+                    'amount' => $request->amount,
+                    'discount' => $request->discount,
+                    'excento' => $request->excento,
+                    'rate' => $request->rate,
+                    'gift_card' => $request->gift_card,
+                    'rate_zero' => $request->rate_zero,
+                    'ice' => $request->ice,
+                    'project_code' => $request->project_code,
+                    'distribution_rule_one' => DistributionRules::code($request->distribution_rule_one),
+                    'distribution_rule_second' => DistributionRules::code($request->distribution_rule_second),
+                    'distribution_rule_three' => DistributionRules::code($request->distribution_rule_three),
+                    'distribution_rule_four' => DistributionRules::code($request->distribution_rule_four),
+                    'distribution_rule_five' => DistributionRules::code($request->distribution_rule_five),
+                ])->save();
+                AccountabilityField::where('accountability_detail_id', $request->id)->delete();
+                foreach ($request->field as $key => $field) {
+                    AccountabilityField::create([
+                        'value' => $field['value'],
+                        'field_id' => $field['field_id'] ?? $field['id'],
+                        'name' => $field['name'],
+                        'accountability_detail_id' => $request->id
+                    ]);
+                }
+                ExpenseDistribution::sync($detail, $request->splits, $request->lines);
+            });
+        } catch (Throwable $e) {
+            // Se vuelve al formulario sin perder lo que el usuario cargó.
+            Log::error('No se pudo actualizar el documento de la rendición', [
+                'accountability_id' => $accountability_id,
+                'error' => $e->getMessage(),
+            ]);
+            return Redirect::back()->withErrors([
+                'general' => 'No se pudo actualizar el documento: ' . $e->getMessage(),
             ]);
         }
         Session::flash('message', "Documento actualizado correctamente");
@@ -140,14 +192,19 @@ class AccountabilityController extends Controller
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $accounts = $this->HandleBuildDetailAccounts($profile->id);
-        $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
+        $documents = Document::with('fields')->where('profile_id', $profile->id)->orderBy('name')->get();
         $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
         $data->account = $this->HandleMatchAccountKey($accounts, $data->account, $data->account_name);
-        $data->distribution_rule_one = $this->HandleGetDistribution($data->distribution_rule_one, 1);
-        $data->distribution_rule_second = $this->HandleGetDistribution($data->distribution_rule_second, 2);
-        $data->distribution_rule_three = $this->HandleGetDistribution($data->distribution_rule_three, 3);
-        $data->distribution_rule_four = $this->HandleGetDistribution($data->distribution_rule_four, 4);
-        $data->distribution_rule_five = $this->HandleGetDistribution($data->distribution_rule_five, 5);
+        $distribution = new DistributionRules();
+        $data->distribution_rule_one = $distribution->find($data->distribution_rule_one, 1);
+        $data->distribution_rule_second = $distribution->find($data->distribution_rule_second, 2);
+        $data->distribution_rule_three = $distribution->find($data->distribution_rule_three, 3);
+        $data->distribution_rule_four = $distribution->find($data->distribution_rule_four, 4);
+        $data->distribution_rule_five = $distribution->find($data->distribution_rule_five, 5);
+        $split = ExpenseDistribution::forForm($data, $accounts);
+        $data->unsetRelation('splits')->unsetRelation('lines');
+        $data->splits = $split['splits'];
+        $data->lines = $split['lines'];
 
         return Inertia::render(
             'accountability/Detail/EditDetailNew',
@@ -158,7 +215,7 @@ class AccountabilityController extends Controller
                 'documents' => $documents,
                 'suppliers' => $this->HandleGetSuppliers($params),
                 'data' => $data,
-                'distribution' => $this->HandleGetDistributions(),
+                'distribution' => $distribution->all(),
                 'projects' => $this->HandleGetProjects(),
             ]
         );
@@ -172,41 +229,55 @@ class AccountabilityController extends Controller
     }
     public function HandleStoreDocument(DocumentRequest $request, $profile_id, $accountability_id)
     {
-        ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
-        $account = DetailAccounts::where('account_code', $acctCode)->first();
-        $detail = AccountabilityDetail::create([
-            'accountability_id' => $accountability_id,
-            'account' => $acctCode,
-            'account_name' => $aliasName ?? ($account->alias ?? $account->account_name),
-            'date' => $request->date,
-            'document_id' => $request->document_id,
-            'document_number' => $request->document_number,
-            'authorization_number' => $request->authorization_number,
-            'cuf' => $request->cuf,
-            'control_code' => $request->control_code,
-            'business_name' => $request->business_name,
-            'nit' => $request->nit,
-            'concept' => $request->concept,
-            'amount' => $request->amount,
-            'discount' => $request->discount,
-            'excento' => $request->excento,
-            'rate' => $request->rate,
-            'gift_card' => $request->gift_card,
-            'rate_zero' => $request->rate_zero,
-            'ice' => $request->ice,
-            'project_code' => $request->project_code,
-            'distribution_rule_one' => $request->distribution_rule_one['OcrCode'] ?? $request->distribution_rule_one['PrcCode'] ?? null,
-            'distribution_rule_second' => $request->distribution_rule_second['OcrCode'] ?? $request->distribution_rule_second['PrcCode'] ?? null,
-            'distribution_rule_three' => $request->distribution_rule_three['OcrCode'] ?? $request->distribution_rule_three['PrcCode'] ?? null,
-            'distribution_rule_four' => $request->distribution_rule_four['OcrCode'] ?? $request->distribution_rule_four['PrcCode'] ?? null,
-            'distribution_rule_five' => $request->distribution_rule_five['OcrCode'] ?? $request->distribution_rule_five['PrcCode'] ?? null,
-        ]);
-        foreach ($request->field as $key => $field) {
-            AccountabilityField::create([
-                'value' => $field['value'],
-                'field_id' => $field['id'],
-                'name' => $field['name'],
-                'accountability_detail_id' => $detail->id
+        try {
+            DB::transaction(function () use ($request, $accountability_id) {
+                ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
+                $account = DetailAccounts::where('account_code', $acctCode)->first();
+                $detail = AccountabilityDetail::create([
+                    'accountability_id' => $accountability_id,
+                    'account' => $acctCode,
+                    'account_name' => $aliasName ?? ($account->alias ?? $account->account_name),
+                    'date' => $request->date,
+                    'document_id' => $request->document_id,
+                    'document_number' => $request->document_number,
+                    'authorization_number' => $request->authorization_number,
+                    'cuf' => $request->cuf,
+                    'control_code' => $request->control_code,
+                    'business_name' => $request->business_name,
+                    'nit' => $request->nit,
+                    'concept' => $request->concept,
+                    'amount' => $request->amount,
+                    'discount' => $request->discount,
+                    'excento' => $request->excento,
+                    'rate' => $request->rate,
+                    'gift_card' => $request->gift_card,
+                    'rate_zero' => $request->rate_zero,
+                    'ice' => $request->ice,
+                    'project_code' => $request->project_code,
+                    'distribution_rule_one' => DistributionRules::code($request->distribution_rule_one),
+                    'distribution_rule_second' => DistributionRules::code($request->distribution_rule_second),
+                    'distribution_rule_three' => DistributionRules::code($request->distribution_rule_three),
+                    'distribution_rule_four' => DistributionRules::code($request->distribution_rule_four),
+                    'distribution_rule_five' => DistributionRules::code($request->distribution_rule_five),
+                ]);
+                foreach ($request->field as $key => $field) {
+                    AccountabilityField::create([
+                        'value' => $field['value'],
+                        'field_id' => $field['id'],
+                        'name' => $field['name'],
+                        'accountability_detail_id' => $detail->id
+                    ]);
+                }
+                ExpenseDistribution::sync($detail, $request->splits, $request->lines);
+            });
+        } catch (Throwable $e) {
+            // Se vuelve al formulario sin perder lo que el usuario cargó.
+            Log::error('No se pudo guardar el documento de la rendición', [
+                'accountability_id' => $accountability_id,
+                'error' => $e->getMessage(),
+            ]);
+            return Redirect::back()->withErrors([
+                'general' => 'No se pudo guardar el documento: ' . $e->getMessage(),
             ]);
         }
         Session::flash('message', "Documento creado correctamente");
@@ -254,7 +325,7 @@ SQL;
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $accounts = $this->HandleBuildDetailAccounts($profile->id);
-        $documents = Document::with('fields')->where('profile_id', $profile->id)->get();
+        $documents = Document::with('fields')->where('profile_id', $profile->id)->orderBy('name')->get();
         return Inertia::render(
             'accountability/Detail/CreateDetailNew',
             [
@@ -262,7 +333,7 @@ SQL;
                 'accountability' => $accountability,
                 'accounts' => $accounts,
                 'documents' => $documents,
-                'distribution' => $this->HandleGetDistributions(),
+                'distribution' => (new DistributionRules())->all(),
                 'projects' => $this->HandleGetProjects(),
                 'suppliers' => $this->HandleGetSuppliers($params)
             ]
@@ -272,7 +343,7 @@ SQL;
     {
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $documents = AccountabilityDetail::where('accountability_id', $accountability_id)->get();
+        $documents = AccountabilityDetail::withCount('lines')->where('accountability_id', $accountability_id)->get();
 
         // Enrich with global aliases
         $allCodes = collect([$accountability->account_code])
@@ -305,6 +376,8 @@ SQL;
                 ];
             });
 
+        $owner = User::with('user_authorization')->find($accountability->user_id);
+
         return Inertia::render(
             'accountability/DetailAccountabilityNew',
             [
@@ -312,6 +385,9 @@ SQL;
                 'accountability' => $accountability,
                 'documents' => $documents,
                 'audits' => $audits,
+                'has_authorizer' => $owner
+                    ? $this->HandleHasAuthorizer($owner, $this->HandleFirstCycleLevel($owner->id))
+                    : false,
             ]
         );
     }
@@ -351,74 +427,6 @@ SQL;
                     DB::raw("CONCAT(T1.PrjCode,'-',T1.PrjName) as PrjName")
                 )
                 ->get();
-        }
-    }
-    public function HandleGetDistribution($code, $number)
-    {
-        $params_sap = Management::where('group', 'accountability')->get();
-        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
-            $data = array();
-            $db = Config::get('database.connections.hana.database');
-            $sql =
-                <<<SQL
-            select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName",T1."OcrCode"
-            from $db.OOCR as T1
-            where T1."DimCode" = $number
-            and T1."Active" = 'Y'
-            and T1."OcrCode" = '$code'
-            order by T1."OcrCode"
-SQL;
-            $data = Hana::query($sql);
-            return $data[0] ?? [];
-        } else {
-            $data = DB::connection('sap')
-                ->table('OPRC as T1')
-                ->select(
-                    DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
-                    'T1.PrcCode',
-                    'T1.PrcName'
-                )
-                ->where('T1.DimCode', $number)
-                ->where('T1.Locked', 'N')
-                ->where('T1.PrcCode', $code)
-                ->first();
-            return $data ?? [];
-        }
-    }
-    public function HandleGetDistributions()
-    {
-        $params_sap = Management::where('group', 'accountability')->get();
-        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
-            $data = array();
-            $db = Config::get('database.connections.hana.database');
-            for ($i = 1; $i <= 5; $i++) {
-                $sql =
-                    <<<SQL
-                select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name", T1."OcrName",T1."OcrCode"
-                from $db.OOCR as T1
-                where T1."DimCode" = $i
-                and T1."Active" = 'Y'
-                order by T1."OcrCode"
-SQL;
-                $data[$i] = Hana::query($sql);
-            }
-            return $data;
-        } else {
-            $data = array();
-            for ($i = 1; $i <= 5; $i++) {
-                $data[$i] =
-                    DB::connection('sap')
-                        ->table('OPRC as T1')
-                        ->select(
-                            DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
-                            'T1.PrcCode',
-                            'T1.PrcName'
-                        )
-                        ->where('T1.DimCode', $i)
-                        ->where('T1.Locked', 'N')
-                        ->get();
-            }
-            return $data;
         }
     }
     public function HandleGetUserEmployee($value)

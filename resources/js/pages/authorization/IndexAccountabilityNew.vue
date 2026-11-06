@@ -528,7 +528,8 @@ const filteredActiveRows = computed(() => {
             (row.account_alias && row.account_alias.toLowerCase().includes(needle)) ||
             (row.account_name && row.account_name.toLowerCase().includes(needle)) ||
             (row.user?.name && row.user.name.toLowerCase().includes(needle)) ||
-            (row.id && String(row.id).includes(needle))
+            (row.id && String(row.id).includes(needle)) ||
+            (row.sap_trans_id && String(row.sap_trans_id).includes(needle))
         );
     });
 });
@@ -544,7 +545,7 @@ function getStatusColor(status) {
 }
 
 function getSapLocationLabel(row) {
-    if (row.sap_exported) return 'En SAP';
+    if (row.sap_exported) return row.sap_trans_id ? `En SAP · N° ${row.sap_trans_id}` : 'En SAP';
     return 'Pendiente SAP';
 }
 

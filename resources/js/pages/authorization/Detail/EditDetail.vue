@@ -30,7 +30,7 @@
                             </div>
                         </div>
                         <div class="col-xs-12 col-sm-6">
-                            <div class="form-label">Fecha <span class="text-red">*</span></div>
+                            <div class="form-label">Fecha del documento <span class="text-red">*</span></div>
                             <q-input v-model="form.date" dense outlined type="date"
                                 :min="page.props.accountability.start_date"
                                 :max="page.props.accountability.end_date" class="input-theme" />
@@ -68,7 +68,7 @@
                     <div class="text-subtitle1 text-weight-medium q-mb-md">Libro de Compras</div>
                     <div class="row q-col-gutter-md">
                         <div class="col-xs-12 col-sm-6 col-md-4">
-                            <div class="form-label">N. Documento <span class="text-red">*</span></div>
+                            <div class="form-label">N° Documento / N° Factura / N° Recibo <span class="text-red">*</span></div>
                             <q-input v-model="form.document_number" dense outlined class="input-theme" type="number" />
                             <div v-if="errors.document_number" class="container-error">
                                 <ul v-for="(error, index) in errors.document_number" :key="index" class="message-error">
@@ -104,7 +104,7 @@
                             </div>
                         </div>
                         <div class="col-xs-12 col-sm-6 col-md-4" v-if="document.nit_status">
-                            <div class="form-label">NIT</div>
+                            <div class="form-label">NIT / CI / Doc. Identif.</div>
                             <q-input v-model="form.nit" dense outlined class="input-theme"
                                 @update:model-value="HandleChangeNIT()" />
                             <div v-if="errors.nit" class="container-error">
@@ -187,30 +187,34 @@
                         <div class="col-xs-12 col-sm-6">
                             <div class="form-label">Centro de Costo 1</div>
                             <q-select class="input-theme" dense outlined :options="options.distribution[1]"
-                                v-model="form.distribution_rule_one" option-label="Name" clearable />
+                                v-model="form.distribution_rule_one" :disable="!!form.splits?.[1]" option-label="Name" clearable />
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <div class="form-label">Centro de Costo 2</div>
                             <q-select class="input-theme" dense outlined :options="options.distribution[2]"
-                                v-model="form.distribution_rule_second" option-label="Name" clearable />
+                                v-model="form.distribution_rule_second" :disable="!!form.splits?.[2]" option-label="Name" clearable />
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <div class="form-label">Centro de Costo 3</div>
                             <q-select class="input-theme" dense outlined :options="options.distribution[3]"
-                                v-model="form.distribution_rule_three" option-label="Name" clearable />
+                                v-model="form.distribution_rule_three" :disable="!!form.splits?.[3]" option-label="Name" clearable />
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <div class="form-label">Centro de Costo 4</div>
                             <q-select class="input-theme" dense outlined :options="options.distribution[4]"
-                                v-model="form.distribution_rule_four" option-label="Name" clearable />
+                                v-model="form.distribution_rule_four" :disable="!!form.splits?.[4]" option-label="Name" clearable />
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <div class="form-label">Centro de Costo 5</div>
                             <q-select class="input-theme" dense outlined :options="options.distribution[5]"
-                                v-model="form.distribution_rule_five" option-label="Name" clearable />
+                                v-model="form.distribution_rule_five" :disable="!!form.splits?.[5]" option-label="Name" clearable />
                         </div>
                     </div>
                 </q-card>
+
+                <!-- Seccion: Reparto por líneas -->
+                <ExpenseDistribution v-if="Object.keys(document).length > 0" :form="form"
+                    :distribution="page.props.distribution" :accounts="page.props.accounts" :errors="errors" />
 
             </div>
         </div>
@@ -220,7 +224,8 @@
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import { scrollToFirstError } from "@/utils/forms";
+import ExpenseDistribution from "@/components/accountability/ExpenseDistribution.vue";
+import { scrollToFirstError, firstError } from "@/utils/forms";
 import { ref, onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
@@ -265,7 +270,12 @@ function HandleUpdateForm() {
         {
             onStart: () => (saving.value = true),
             onFinish: () => (saving.value = false),
-            onError: () => scrollToFirstError(),
+            // Ante un error se conserva lo cargado en el formulario
+            preserveState: "errors",
+            onError: (errors) => {
+                if (errors.general) $q.notify({ type: "negative", message: firstError(errors.general) });
+                scrollToFirstError();
+            },
             onSuccess: () => {
                 message.value = page.props.flash.message;
                 type.value = page.props.flash.type;
