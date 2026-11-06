@@ -40,6 +40,7 @@ export function emptyDocument() {
         discount_status: false,
         gift_card_status: false,
         rate_zero_status: false,
+        items_status: false,
         detail: [emptyDetailLine()],
         fields: [],
         for_delete: 0,

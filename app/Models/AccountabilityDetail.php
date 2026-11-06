@@ -40,6 +40,7 @@ class AccountabilityDetail extends Model implements Auditable
         'distribution_rule_three',
         'distribution_rule_four',
         'distribution_rule_five',
+        'sap_receipt_draft_entry',
     ];
     public function createdAt(): Attribute
     {
@@ -60,5 +61,8 @@ class AccountabilityDetail extends Model implements Auditable
     }
     public function lines(){
         return $this->hasMany(AccountabilityDetailLine::class,'accountability_detail_id','id')->orderBy('id');
+    }
+    public function items(){
+        return $this->hasMany(AccountabilityDetailItem::class,'accountability_detail_id','id')->orderBy('id');
     }
 }

@@ -9,6 +9,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Exporta el asiento preliminar por el Service Layer de SAP B1 (REST nativo).
@@ -43,7 +45,7 @@ class ServiceLayerExporter implements SapExporter
         return 'SL';
     }
 
-    public function addJournalVoucher(array $payload, string $idempotencyKey, array $udfTypes = []): SapExportResult
+    public function addJournalVoucher(array $payload, string $idempotencyKey, array $udfTypes = [], array $inventoryDrafts = []): SapExportResult
     {
         $login = Http::withoutVerifying()
             ->baseUrl($this->baseUrl)
@@ -67,23 +69,65 @@ class ServiceLayerExporter implements SapExporter
             ->withHeaders(['Cookie' => 'B1SESSION='.$session.'; ROUTEID=.node9']);
 
         try {
-            $response = $http->post('JournalVouchersService_Add', $payload);
+            // Primero las entradas de mercancías en borrador: si alguna falla no se crea nada.
+            $drafts = [];
+            try {
+                foreach ($inventoryDrafts as $documentId => $draft) {
+                    $response = $http->post('Drafts', $draft);
 
-            if (! $response->successful()) {
-                return SapExportResult::failure(
-                    $response->json()['error']['message']['value'] ?? 'Error al exportar a SAP',
-                    (string) ($response->json()['error']['code'] ?? '')
-                );
+                    if (! $response->successful()) {
+                        $this->deleteDrafts($http, $drafts);
+
+                        return SapExportResult::failure(
+                            'Entrada de mercancías: '.($response->json()['error']['message']['value'] ?? 'Error al crear el borrador en SAP'),
+                            (string) ($response->json()['error']['code'] ?? '')
+                        );
+                    }
+
+                    $drafts[$documentId] = (string) $response->json()['DocEntry'];
+                }
+
+                $response = $http->post('JournalVouchersService_Add', $payload);
+
+                if (! $response->successful()) {
+                    // Sin asiento, los borradores quedarían sueltos en SAP.
+                    $this->deleteDrafts($http, $drafts);
+
+                    return SapExportResult::failure(
+                        $response->json()['error']['message']['value'] ?? 'Error al exportar a SAP',
+                        (string) ($response->json()['error']['code'] ?? '')
+                    );
+                }
+
+                // JournalVouchersService_Add no devuelve el número del asiento borrador:
+                // se busca en SAP por la referencia con la que se envió.
+                $reference = $payload['JournalVoucher']['JournalEntry']['Reference'] ?? null;
+
+                return SapExportResult::success($reference ? $this->findVoucherNumber($reference) : null, $drafts);
+            } catch (Throwable $e) {
+                // Corte de conexión u otro error inesperado: no dejar borradores sueltos.
+                $this->deleteDrafts($http, $drafts);
+                throw $e;
             }
-
-            // JournalVouchersService_Add no devuelve el número del asiento borrador:
-            // se busca en SAP por la referencia con la que se envió.
-            $reference = $payload['JournalVoucher']['JournalEntry']['Reference'] ?? null;
-
-            return SapExportResult::success($reference ? $this->findVoucherNumber($reference) : null);
         } finally {
             // Libera la licencia del Service Layer en lugar de esperar el timeout de sesión.
             rescue(fn () => $http->post('Logout'), null, false);
+        }
+    }
+
+    /**
+     * Elimina los borradores ya creados. Si alguno no se puede borrar se registra para
+     * eliminarlo a mano en SAP (Borradores).
+     *
+     * @param  array<int, string>  $drafts  DocEntry por id de documento
+     */
+    private function deleteDrafts($http, array $drafts): void
+    {
+        foreach ($drafts as $docEntry) {
+            $deleted = rescue(fn () => $http->delete("Drafts($docEntry)")->successful(), false, false);
+            if (! $deleted) {
+                Log::warning('No se pudo eliminar el borrador de entrada de mercancías en SAP', ['DocEntry' => $docEntry]);
+            }
         }
     }
 

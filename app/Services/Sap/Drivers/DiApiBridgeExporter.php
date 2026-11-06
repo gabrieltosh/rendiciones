@@ -36,8 +36,15 @@ class DiApiBridgeExporter implements SapExporter
         return 'DI';
     }
 
-    public function addJournalVoucher(array $payload, string $idempotencyKey, array $udfTypes = []): SapExportResult
+    public function addJournalVoucher(array $payload, string $idempotencyKey, array $udfTypes = [], array $inventoryDrafts = []): SapExportResult
     {
+        if ($inventoryDrafts) {
+            return SapExportResult::failure(
+                'La rendición tiene facturas con ítems y el servicio DI API todavía no crea entradas de mercancías. '
+                .'Exporte por Service Layer (Configuración → Modo de Exportación = SL).'
+            );
+        }
+
         if ($this->baseUrl === '') {
             return SapExportResult::failure('No está configurada la URL del servicio DI API.');
         }

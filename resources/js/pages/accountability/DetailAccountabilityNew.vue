@@ -231,6 +231,10 @@
                                                 </div>
                                                 <q-badge v-if="doc.lines_count > 0" color="secondary" outline
                                                     :label="`Repartido en ${doc.lines_count} líneas`" />
+                                                <q-badge v-if="doc.items_count > 0" color="teal" outline
+                                                    :label="`${doc.items_count} artículo${doc.items_count !== 1 ? 's' : ''}`" />
+                                                <q-badge v-if="doc.sap_receipt_draft_entry" color="teal"
+                                                    :label="`Entrada de mercancías (borrador) N° ${doc.sap_receipt_draft_entry}`" />
                                             </div>
                                             <div class="text-caption text-grey q-mt-xs">
                                                 <span v-if="doc.date">{{ doc.date }}</span>

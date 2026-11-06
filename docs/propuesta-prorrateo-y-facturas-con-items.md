@@ -1,8 +1,7 @@
 # Propuesta: prorrateo de facturas y facturas con ítems
 
 Respuesta a las observaciones 10 y 11 de la revisión de Rendiciones. El prorrateo por
-líneas (sección 1) está implementado; las facturas con ítems (sección 2) tienen el diseño
-definido y están pendientes de implementar.
+líneas (sección 1) y las facturas con ítems (sección 2) están implementados.
 
 ---
 
@@ -182,6 +181,16 @@ inventario. El libro de compras sigue saliendo del asiento de la rendición (UDF
    - **DI API:** hay que agregar al servicio .NET (proyecto aparte) un endpoint para crear
      borradores de entrada de mercancías. Solo es necesario si alguna empresa exporta en
      modo `DI`.
+
+### Implementación
+
+- Validación: `App\Services\Accountability\ExpenseItems` (total contra el gasto, guardado).
+- Borradores: `App\Services\Sap\InventoryReceiptPayloadBuilder` y `ServiceLayerExporter`.
+- Artículos, almacenes y gasto en vivo: `ExpenseItemsController` (`sap.items`,
+  `sap.warehouses`, `accountability.expense-preview`).
+- Formulario: `resources/js/components/accountability/ExpenseItems.vue`.
+- En modo `DI` la exportación de una rendición con ítems se rechaza con un mensaje claro
+  hasta que el servicio .NET cree entradas de mercancías.
 
 ### Esfuerzo estimado
 

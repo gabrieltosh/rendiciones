@@ -32,6 +32,10 @@ class Document extends Model implements Auditable
         'discount_status',
         'gift_card_status',
         'rate_zero_status',
+        'items_status',
+    ];
+    protected $casts = [
+        'items_status' => 'boolean',
     ];
     public function detail(){
         return $this->hasMany(DocumentDetail::class,'document_id','id');

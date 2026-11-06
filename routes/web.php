@@ -14,6 +14,7 @@ use App\Http\Controllers\Administration\AuthorizationCycleController;
 use App\Http\Controllers\Administration\AccountAliasController;
 use App\Http\Controllers\Accountability\ProfileController as AccountabilityProfileController;
 use App\Http\Controllers\Accountability\AccountabilityController;
+use App\Http\Controllers\Accountability\ExpenseItemsController;
 use App\Http\Controllers\Authorization\AccountabilityController as AuthAccountabilityController;
 /*
 |--------------------------------------------------------------------------
@@ -40,6 +41,11 @@ Route::middleware('auth')->group(function() {
     Route::post('logout', [AuthController::class, 'HandleLogoutAuth'])->name('auth.logout');
 
     Route::post('siat/consulta', [AccountabilityController::class, 'HandleConsultaFactura'])->name('siat.consulta');
+
+    // Facturas con ítems: artículos y almacenes de SAP y gasto del documento sin IVA
+    Route::get('sap/items', [ExpenseItemsController::class, 'HandleSearchItems'])->name('sap.items');
+    Route::get('sap/warehouses', [ExpenseItemsController::class, 'HandleListWarehouses'])->name('sap.warehouses');
+    Route::post('accountability/expense-preview', [ExpenseItemsController::class, 'HandlePreviewExpense'])->name('accountability.expense-preview');
 
     Route::name('panel.')->prefix('panel')->group(function(){
 

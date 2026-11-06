@@ -221,7 +221,10 @@
                 </q-slide-transition>
 
                 <!-- Seccion: Reparto por líneas -->
-                <ExpenseDistribution v-if="Object.keys(document).length > 0" :form="form"
+                <!-- Seccion: Artículos (factura con ítems) -->
+                <ExpenseItems v-if="document.items_status" :form="form" :errors="errors" />
+
+                <ExpenseDistribution v-if="Object.keys(document).length > 0 && !document.items_status" :form="form"
                     :distribution="page.props.distribution" :accounts="page.props.accounts" :errors="errors" />
 
             </div>
@@ -272,6 +275,7 @@
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ExpenseDistribution from "@/components/accountability/ExpenseDistribution.vue";
+import ExpenseItems from "@/components/accountability/ExpenseItems.vue";
 import { scrollToFirstError, firstError } from "@/utils/forms";
 import { ref, onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
@@ -332,6 +336,7 @@ const form = ref({
     distribution_rule_five: null,
     splits: {},
     lines: [],
+    items: [],
 });
 
 function HandleChangeNIT() {
