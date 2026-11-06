@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Accountability;
 
+use App\Models\Document;
 use App\Services\Accountability\ExpenseDistribution;
+use App\Services\Accountability\ExpenseItems;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DocumentRequest extends FormRequest
@@ -38,11 +40,13 @@ class DocumentRequest extends FormRequest
             'splits.*.*.code'=>'required',
             'splits.*.*.percentage'=>'required|numeric|gt:0|max:100',
             'lines'=>'nullable|array',
+            'items'=>'nullable|array',
         ];
     }
     /**
      * Cada dimensión repartida debe sumar 100 % y el reparto no puede generar
-     * más líneas que el máximo.
+     * más líneas que el máximo. En una factura con ítems, los artículos deben
+     * sumar el gasto del documento sin IVA y no se admite reparto.
      */
     public function withValidator($validator): void
     {
@@ -50,6 +54,15 @@ class DocumentRequest extends FormRequest
             $splits = ExpenseDistribution::normalize($this->input('splits'));
             foreach (ExpenseDistribution::errors($splits) as $key => $message) {
                 $validator->errors()->add($key, $message);
+            }
+
+            $document = Document::find($this->input('document_id'));
+            if ($document && $document->items_status) {
+                $items = ExpenseItems::normalize($this->input('items'));
+                $expense = ExpenseItems::expenseFromInput($this->all());
+                foreach (ExpenseItems::errors($items, $expense, (bool) $splits) as $key => $message) {
+                    $validator->errors()->add($key, $message);
+                }
             }
         });
     }

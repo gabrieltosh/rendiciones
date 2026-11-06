@@ -32,6 +32,7 @@ use App\Models\UserAuthorizationCycle;
 use Http;
 use App\Models\Audit;
 use App\Services\Accountability\ExpenseDistribution;
+use App\Services\Accountability\ExpenseItems;
 use App\Services\Sap\DistributionRules;
 use Throwable;
 use Log;
@@ -170,6 +171,7 @@ class AccountabilityController extends Controller
                     ]);
                 }
                 ExpenseDistribution::sync($detail, $request->splits, $request->lines);
+                ExpenseItems::sync($detail, $request->items, (bool) Document::find($request->document_id)?->items_status);
             });
         } catch (Throwable $e) {
             // Se vuelve al formulario sin perder lo que el usuario cargó.
@@ -193,7 +195,7 @@ class AccountabilityController extends Controller
         $accountability = Accountability::where('id', $accountability_id)->first();
         $accounts = $this->HandleBuildDetailAccounts($profile->id);
         $documents = Document::with('fields')->where('profile_id', $profile->id)->orderBy('name')->get();
-        $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
+        $data = AccountabilityDetail::with('field', 'items')->where('id', $document_id)->first();
         $data->account = $this->HandleMatchAccountKey($accounts, $data->account, $data->account_name);
         $distribution = new DistributionRules();
         $data->distribution_rule_one = $distribution->find($data->distribution_rule_one, 1);
@@ -269,6 +271,7 @@ class AccountabilityController extends Controller
                     ]);
                 }
                 ExpenseDistribution::sync($detail, $request->splits, $request->lines);
+                ExpenseItems::sync($detail, $request->items, (bool) Document::find($request->document_id)?->items_status);
             });
         } catch (Throwable $e) {
             // Se vuelve al formulario sin perder lo que el usuario cargó.
@@ -343,7 +346,7 @@ SQL;
     {
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
-        $documents = AccountabilityDetail::withCount('lines')->where('accountability_id', $accountability_id)->get();
+        $documents = AccountabilityDetail::withCount(['lines', 'items'])->where('accountability_id', $accountability_id)->get();
 
         // Enrich with global aliases
         $allCodes = collect([$accountability->account_code])

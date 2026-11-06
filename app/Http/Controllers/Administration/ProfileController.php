@@ -227,6 +227,7 @@ SQL;
                 'discount_status' => $document['discount_status'],
                 'gift_card_status' => $document['gift_card_status'],
                 'rate_zero_status' => $document['rate_zero_status'],
+                'items_status' => (bool) ($document['items_status'] ?? false),
                 'profile_id' => $profile->id,
             ]);
             foreach ($document['detail'] as $item) {
@@ -409,6 +410,7 @@ SQL;
                     'discount_status' => $document['discount_status'],
                     'gift_card_status' => $document['gift_card_status'],
                     'rate_zero_status' => $document['rate_zero_status'],
+                    'items_status' => (bool) ($document['items_status'] ?? false),
                     'profile_id' => $request->id,
                 ]);
                 foreach ($document['detail'] as $item) {
@@ -461,6 +463,7 @@ SQL;
                         'discount_status' => $document['discount_status'],
                         'gift_card_status' => $document['gift_card_status'],
                         'rate_zero_status' => $document['rate_zero_status'],
+                        'items_status' => (bool) ($document['items_status'] ?? false),
                     ])->save();
                     foreach ($document['detail'] as $item) {
                         if (!isset($item['id'])) {
@@ -543,6 +546,7 @@ SQL;
                 'discount_status' => $document->discount_status,
                 'gift_card_status' => $document->gift_card_status,
                 'rate_zero_status' => $document->rate_zero_status,
+                'items_status' => $document->items_status,
             ]);
 
             foreach ($document->detail as $detail) {
@@ -624,6 +628,7 @@ SQL;
                     'discount_status',
                     'gift_card_status',
                     'rate_zero_status',
+                    'items_status',
                     DB::raw("0 as for_delete"),
                 )->orderBy('id', 'asc');
             },

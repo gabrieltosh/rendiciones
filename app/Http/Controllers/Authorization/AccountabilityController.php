@@ -34,8 +34,10 @@ use App\Models\AccountabilityLevelApproval;
 use App\Models\AuthorizationCycleLevel;
 use App\Models\AccountAlias;
 use App\Services\Accountability\ExpenseDistribution;
+use App\Services\Accountability\ExpenseItems;
 use App\Services\Sap\DistributionRules;
 use App\Services\Sap\DocumentLineCalculator;
+use App\Services\Sap\InventoryReceiptPayloadBuilder;
 use App\Services\Sap\JournalVoucherPayloadBuilder;
 use App\Services\Sap\SapExporterFactory;
 use App\Services\Sap\SapExportResult;
@@ -253,6 +255,7 @@ class AccountabilityController extends Controller
             'comments'         => $request->comments,
             'current_level_id' => null,
         ], $this->HandleSapExportAttributes($result)))->save();
+        $this->HandleSaveReceiptDrafts($result);
 
         Session::flash('message', $this->HandleSapExportMessage("Documento autorizado y exportado correctamente", $result));
         Session::flash('type', 'positive');
@@ -294,10 +297,20 @@ class AccountabilityController extends Controller
                 $payload['JournalVoucher']['JournalEntry']['Reference'] = $this->HandleSapReference($accountability);
             }
 
+            // Facturas con ítems: una entrada de mercancías en borrador por documento
+            $drafts = (new InventoryReceiptPayloadBuilder())->build(
+                $accountability,
+                $this->HandleSapReference($accountability)
+            );
+            if ($drafts) {
+                Log::info('SAP Export Inventory Drafts:', $drafts);
+            }
+
             return $exporter->addJournalVoucher(
                 $payload,
                 'acc-' . $accountability->id,
-                $builder->udfTypes()
+                $builder->udfTypes(),
+                $drafts
             );
         } catch (Throwable $e) {
             return SapExportResult::failure($e->getMessage());
@@ -315,11 +328,23 @@ class AccountabilityController extends Controller
      */
     private function HandleSapExportMessage(string $message, SapExportResult $result): string
     {
-        if ($result->key) {
-            return "{$message}. Asiento preliminar SAP N° {$result->key}";
+        $message = $result->key
+            ? "{$message}. Asiento preliminar SAP N° {$result->key}"
+            : "{$message}. No se pudo obtener el número del asiento en SAP";
+
+        if ($result->drafts) {
+            $message .= '. Entrada de mercancías (borrador) N° ' . implode(', ', $result->drafts);
         }
 
-        return "{$message}. No se pudo obtener el número del asiento en SAP";
+        return $message;
+    }
+
+    /** DocEntry del borrador de entrada de mercancías de cada factura con ítems. */
+    private function HandleSaveReceiptDrafts(SapExportResult $result): void
+    {
+        foreach ($result->drafts as $detailId => $docEntry) {
+            AccountabilityDetail::where('id', $detailId)->update(['sap_receipt_draft_entry' => $docEntry]);
+        }
     }
 
     /**
@@ -385,6 +410,7 @@ class AccountabilityController extends Controller
 
         if ($result->success) {
             $accountability->fill($this->HandleSapExportAttributes($result))->save();
+            $this->HandleSaveReceiptDrafts($result);
             Session::flash('message', $this->HandleSapExportMessage("Rendición exportada a SAP correctamente", $result));
             Session::flash('type', 'positive');
             Session::flash('sap_number', $result->key);
@@ -548,7 +574,7 @@ SQL;
 
         $accountability = Accountability::where('id', $accountability_id)->first();
         $profile = Profile::where('id', $accountability->profile_id)->first();
-        $documents = AccountabilityDetail::withCount('lines')->where('accountability_id', $accountability_id)->get();
+        $documents = AccountabilityDetail::withCount(['lines', 'items'])->where('accountability_id', $accountability_id)->get();
 
         // Enrich with aliases
         $generalAlias = GeneralAccounts::where('profile_id', $profile->id)
@@ -723,6 +749,7 @@ SQL;
                     ]);
                 }
                 ExpenseDistribution::sync($detail, $request->splits, $request->lines);
+                ExpenseItems::sync($detail, $request->items, (bool) Document::find($request->document_id)?->items_status);
             });
         } catch (Throwable $e) {
             // Se vuelve al formulario sin perder lo que el autorizador cargó.
@@ -776,6 +803,7 @@ SQL;
                     'distribution_rule_five' => DistributionRules::code($request->distribution_rule_five),
                 ]);
                 ExpenseDistribution::sync($detail, $request->splits, $request->lines);
+                ExpenseItems::sync($detail, $request->items, (bool) Document::find($request->document_id)?->items_status);
             });
         } catch (Throwable $e) {
             // Se vuelve al formulario sin perder lo que el autorizador cargó.
@@ -859,7 +887,7 @@ SQL;
         $accounts = $this->HandleBuildDetailAccounts($profile->id);
         $documents = Document::with('fields')->where('profile_id', $profile->id)->orderBy('name')->get();
         $suppliers = Supplier::get();
-        $data = AccountabilityDetail::with('field')->where('id', $document_id)->first();
+        $data = AccountabilityDetail::with('field', 'items')->where('id', $document_id)->first();
         $data->account = $this->HandleMatchAccountKey($accounts, $data->account, $data->account_name);
         $distribution = new DistributionRules();
         $data->distribution_rule_one = $distribution->find($data->distribution_rule_one, 1);

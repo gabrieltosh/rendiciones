@@ -50,6 +50,17 @@
                     </div>
                 </q-card-section>
 
+                <!-- Factura con ítems -->
+                <q-card-section class="q-pt-none">
+                    <q-checkbox v-model="document.items_status" dense color="primary"
+                        label="Factura con ítems (artículos de inventario)" />
+                    <div class="form-section-caption q-mt-xs">
+                        El usuario registra los artículos con cantidad, precio sin IVA y almacén. Al exportar se crea
+                        en SAP una entrada de mercancías en borrador contra la cuenta del gasto. Estos documentos no
+                        admiten reparto por líneas.
+                    </div>
+                </q-card-section>
+
                 <!-- Datos que se piden al registrar el gasto -->
                 <q-card-section class="q-pt-none">
                     <div class="text-subtitle2">Datos de la factura</div>
