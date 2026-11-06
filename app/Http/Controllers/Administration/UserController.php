@@ -17,8 +17,7 @@ use App\Models\Management;
 use App\Models\Area;
 use App\Models\AuthorizationCycle;
 use App\Models\UserAuthorizationCycle;
-use App\Helpers\Hana;
-use Config;
+use App\Services\Sap\DistributionRules;
 use Hash;
 class UserController extends Controller
 {
@@ -284,38 +283,6 @@ class UserController extends Controller
     }
     public function HandleGetDistributions()
     {
-        $params_sap = Management::where('group', 'accountability')->get();
-        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
-            $data = array();
-            $db = Config::get('database.connections.hana.database');
-            for ($i = 1; $i <= 5; $i++) {
-                $sql = <<<SQL
-                    select CONCAT(CONCAT(T1."OcrCode",'-'),T1."OcrName") as "Name",
-                           T1."OcrName" as "PrcName",
-                           T1."OcrCode" as "PrcCode"
-                    from {$db}.OOCR as T1
-                    where T1."DimCode" = {$i}
-                    and T1."Active" = 'Y'
-                    order by T1."OcrCode" asc
-SQL;
-                $data[$i] = collect(Hana::query($sql))->map(fn($row) => (object) $row)->values()->all();
-            }
-            return $data;
-        } else {
-            $data = array();
-            for ($i = 1; $i <= 5; $i++) {
-                $data[$i] = DB::connection('sap')
-                    ->table('OPRC as T1')
-                    ->select(
-                        DB::raw("CONCAT(T1.PrcCode,'-',T1.PrcName) as Name"),
-                        DB::raw('T1.PrcCode'),
-                        DB::raw('T1.PrcName')
-                    )
-                    ->where('T1.DimCode', $i)
-                    ->where('T1.Locked', 'N')
-                    ->get();
-            }
-            return $data;
-        }
+        return (new DistributionRules())->all();
     }
 }

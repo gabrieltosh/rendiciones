@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Accountability;
 
+use App\Services\Accountability\ExpenseDistribution;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DocumentRequest extends FormRequest
@@ -33,22 +34,44 @@ class DocumentRequest extends FormRequest
             //'nit'=>'required',
             'amount'=>'required',
             'field.*.value'=>'required',
+            'splits'=>'nullable|array',
+            'splits.*.*.code'=>'required',
+            'splits.*.*.percentage'=>'required|numeric|gt:0|max:100',
+            'lines'=>'nullable|array',
         ];
+    }
+    /**
+     * Cada dimensión repartida debe sumar 100 % y el reparto no puede generar
+     * más líneas que el máximo.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $splits = ExpenseDistribution::normalize($this->input('splits'));
+            foreach (ExpenseDistribution::errors($splits) as $key => $message) {
+                $validator->errors()->add($key, $message);
+            }
+        });
     }
     public function messages(): array
     {
         return [
             'account.required'=>'El campo Cuenta es obligatorio',
-            'date.required'=>'El campo Fecha es obligatorio',
+            'date.required'=>'El campo Fecha del documento es obligatorio',
             'document_id.required'=>'El campo Tipo de Documento es obligatorio',
             'concept.required'=>'El campo Concepto es obligatorio',
-            'document_number.required'=>'El campo Nº Documento es obligatorio',
+            'document_number.required'=>'El campo N° Documento / N° Factura / N° Recibo es obligatorio',
             'authorization_number.required'=>'El campo Nº Autorización es obligatorio',
             'control_code.required'=>'El campo Codigo de Control es obligatorio',
             'business_name.required'=>'El campo Razón Social es obligatorio',
-            'nit.required'=>'El campo NIT es obligatorio',
+            'nit.required'=>'El campo NIT / CI / Doc. Identif. es obligatorio',
             'amount.required'=>'El campo Monto es obligatorio',
             'field.*.value'=>'El campo es obligatorio',
+            'splits.*.*.code.required'=>'Seleccione el centro de costo',
+            'splits.*.*.percentage.required'=>'Ingrese el porcentaje',
+            'splits.*.*.percentage.numeric'=>'El porcentaje debe ser un número',
+            'splits.*.*.percentage.gt'=>'El porcentaje debe ser mayor a 0',
+            'splits.*.*.percentage.max'=>'El porcentaje no puede ser mayor a 100',
         ];
     }
 }

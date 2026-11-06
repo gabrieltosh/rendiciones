@@ -2,9 +2,12 @@
 
 namespace App\Services\Sap\Drivers;
 
+use App\Helpers\Hana;
 use App\Services\Sap\Contracts\SapExporter;
 use App\Services\Sap\SapExportResult;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -21,6 +24,8 @@ class ServiceLayerExporter implements SapExporter
 
     private string $password;
 
+    private bool $hana;
+
     /**
      * @param  Collection  $params  filas de `management` del grupo accountability
      */
@@ -30,6 +35,7 @@ class ServiceLayerExporter implements SapExporter
         $this->companyDB = (string) $params->where('name', 'bd_sap')->first()?->value;
         $this->username = (string) $params->where('name', 'user')->first()?->value;
         $this->password = (string) $params->where('name', 'password')->first()?->value;
+        $this->hana = $params->where('name', 'hana_enable')->first()?->value == 'SI';
     }
 
     public function mode(): string
@@ -70,11 +76,40 @@ class ServiceLayerExporter implements SapExporter
                 );
             }
 
-            // JournalVouchersService_Add no devuelve el número del asiento borrador.
-            return SapExportResult::success();
+            // JournalVouchersService_Add no devuelve el número del asiento borrador:
+            // se busca en SAP por la referencia con la que se envió.
+            $reference = $payload['JournalVoucher']['JournalEntry']['Reference'] ?? null;
+
+            return SapExportResult::success($reference ? $this->findVoucherNumber($reference) : null);
         } finally {
             // Libera la licencia del Service Layer en lugar de esperar el timeout de sesión.
             rescue(fn () => $http->post('Logout'), null, false);
         }
+    }
+
+    /**
+     * Número de lote (OBTF.BatchNum) del asiento preliminar con esa referencia (Ref1).
+     * Es informativo: si la consulta falla, la exportación igual se da por exitosa.
+     */
+    private function findVoucherNumber(string $reference): ?string
+    {
+        return rescue(function () use ($reference) {
+            if ($this->hana) {
+                $db = Config::get('database.connections.hana.database');
+                $reference = str_replace("'", "''", $reference);
+                $rows = Hana::query(
+                    "select top 1 \"BatchNum\" from $db.OBTF where \"Ref1\" = '$reference' order by \"BatchNum\" desc"
+                );
+                $number = is_array($rows) ? ($rows[0]['BatchNum'] ?? null) : null;
+            } else {
+                $number = DB::connection('sap')
+                    ->table('OBTF')
+                    ->where('Ref1', $reference)
+                    ->orderByDesc('BatchNum')
+                    ->value('BatchNum');
+            }
+
+            return $number !== null ? (string) $number : null;
+        }, null);
     }
 }

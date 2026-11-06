@@ -7,6 +7,7 @@ use App\Models\AccountabilityDetail;
 use App\Models\Management;
 use App\Models\Profile;
 use App\Models\User;
+use App\Services\Accountability\ExpenseDistribution;
 use Illuminate\Support\Collection;
 
 /**
@@ -20,6 +21,9 @@ use Illuminate\Support\Collection;
  */
 class JournalVoucherPayloadBuilder
 {
+    /** Largo de OJDT.Memo y JDT1.LineMemo en SAP B1. */
+    private const MEMO_LENGTH = 50;
+
     private Collection $management;
 
     public function __construct(Collection $management = null)
@@ -34,7 +38,7 @@ class JournalVoucherPayloadBuilder
     {
         $journal_entry_lines = [];
 
-        $documents = AccountabilityDetail::with('document.detail', 'field.document_field')
+        $documents = AccountabilityDetail::with('document.detail', 'field.document_field', 'lines')
             ->where('accountability_id', $accountability->id)
             ->orderBy('id', 'desc')
             ->get();
@@ -57,7 +61,7 @@ class JournalVoucherPayloadBuilder
             'AccountCode' => $accountability->account_code,
             'Debit' => 0,
             'Credit' => $debit,
-            'LineMemo' => $accountability->description,
+            'LineMemo' => $this->memo($accountability->description),
         ];
 
         // 'sin_empleado' no tiene un CardCode real que mandar (account_code es
@@ -69,7 +73,7 @@ class JournalVoucherPayloadBuilder
         $journal_entry_lines[] = $closing_line;
 
         $journalEntry = [
-            'Memo' => $accountability->description,
+            'Memo' => $this->memo($accountability->description),
             'ReferenceDate' => $accountability->end_date,
             'TaxDate' => $accountability->end_date,
             'DueDate' => $accountability->end_date,
@@ -104,20 +108,33 @@ class JournalVoucherPayloadBuilder
     {
         $result = (new DocumentLineCalculator())->calculate($document_line);
         $udfs = $this->buildUdfs($document_line, $result['exento']);
+        // Glosa de la línea: el comentario que el usuario cargó en el documento.
+        $lineMemo = $this->memo($document_line->concept);
 
-        $journal = [array_merge([
-            'AccountCode' => $document_line->account,
-            'Debit' => $result['expense'],
-            'Credit' => 0,
-            'LineMemo' => $document_line->concept,
-        ], $udfs)];
+        // Gasto: una línea, o una por cada línea del reparto con su cuenta y dimensiones.
+        $split = ExpenseDistribution::expenseLines($document_line, $result['expense']);
+        if ($split === null) {
+            $journal = [array_merge([
+                'AccountCode' => $document_line->account,
+                'Debit' => $result['expense'],
+                'Credit' => 0,
+                'LineMemo' => $lineMemo,
+            ], $udfs)];
+        } else {
+            $journal = array_map(fn ($line) => array_merge([
+                'AccountCode' => $line['account'],
+                'Debit' => $line['amount'],
+                'Credit' => 0,
+                'LineMemo' => $this->memo($line['concept']) ?? $lineMemo,
+            ], $udfs, $line['costing']), $split);
+        }
 
         foreach ($result['lines'] as $line) {
             $journal[] = array_merge([
                 'AccountCode' => $line['account'],
                 'Debit' => $line['debit'],
                 'Credit' => $line['credit'],
-                'LineMemo' => $document_line->concept,
+                'LineMemo' => $lineMemo,
             ], $udfs);
         }
 
@@ -164,6 +181,17 @@ class JournalVoucherPayloadBuilder
         }
 
         return $udfs;
+    }
+
+    /**
+     * Comentarios del asiento (OJDT.Memo / JDT1.LineMemo): SAP los guarda en 50
+     * caracteres y rechaza o descarta un texto más largo.
+     */
+    private function memo(?string $text): ?string
+    {
+        $text = trim(preg_replace('/\s+/u', ' ', (string) $text));
+
+        return $text === '' ? null : mb_substr($text, 0, self::MEMO_LENGTH);
     }
 
     private function udfName(string $field): ?string

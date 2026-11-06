@@ -312,7 +312,7 @@
                                     </template>
                                 </q-input>
                             </div>
-                            <div class="col-auto" v-if="!isAuthorized">
+                            <div class="col-auto" v-if="canEditDocuments">
                                 <q-btn
                                     color="primary"
                                     icon="add"
@@ -335,7 +335,7 @@
                                 {{ filter ? 'Sin resultados para la búsqueda' : 'No hay documentos registrados' }}
                             </div>
                             <q-btn
-                                v-if="!filter && !isAuthorized"
+                                v-if="!filter && canEditDocuments"
                                 color="primary"
                                 label="Crear Documento"
                                 icon="add"
@@ -374,13 +374,17 @@
                                         </div>
                                         <!-- Concepto + main info -->
                                         <div class="col">
-                                            <div class="text-body2 text-weight-medium" style="word-break: break-word;">
-                                                {{ doc.concept || 'Sin concepto' }}
+                                            <div class="row items-center q-gutter-xs">
+                                                <div class="text-body2 text-weight-medium" style="word-break: break-word;">
+                                                    {{ doc.concept || 'Sin concepto' }}
+                                                </div>
+                                                <q-badge v-if="doc.lines_count > 0" color="secondary" outline
+                                                    :label="`Repartido en ${doc.lines_count} líneas`" />
                                             </div>
                                             <div class="text-caption text-grey q-mt-xs">
                                                 <span v-if="doc.date">{{ doc.date }}</span>
-                                                <span v-if="doc.document_number"> &middot; Factura #{{ doc.document_number }}</span>
-                                                <span v-if="doc.nit"> &middot; NIT {{ doc.nit }}</span>
+                                                <span v-if="doc.document_number"> &middot; N° {{ doc.document_number }}</span>
+                                                <span v-if="doc.nit"> &middot; NIT/CI {{ doc.nit }}</span>
                                                 <span v-if="doc.business_name"> &middot; {{ doc.business_name }}</span>
                                             </div>
                                         </div>
@@ -412,7 +416,7 @@
                                                 <q-tooltip>Ver Factura SIAT</q-tooltip>
                                             </q-btn>
                                             <q-btn
-                                                v-if="!isAuthorized"
+                                                v-if="canEditDocuments"
                                                 flat
                                                 round
                                                 dense
@@ -425,7 +429,7 @@
                                                 <q-tooltip>Editar</q-tooltip>
                                             </q-btn>
                                             <q-btn
-                                                v-if="!isAuthorized"
+                                                v-if="canEditDocuments"
                                                 flat
                                                 round
                                                 dense
@@ -452,7 +456,7 @@
                                             </div>
                                             <div class="row q-col-gutter-sm q-mb-md">
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.document_number">
-                                                    <div class="text-caption text-grey">N. Factura</div>
+                                                    <div class="text-caption text-grey">N° Documento / Factura / Recibo</div>
                                                     <div class="text-body2">{{ doc.document_number }}</div>
                                                 </div>
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.authorization_number">
@@ -468,7 +472,7 @@
                                                     <div class="text-body2">{{ doc.control_code }}</div>
                                                 </div>
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.nit">
-                                                    <div class="text-caption text-grey">NIT</div>
+                                                    <div class="text-caption text-grey">NIT / CI / Doc. Identif.</div>
                                                     <div class="text-body2">{{ doc.nit }}</div>
                                                 </div>
                                                 <div class="col-xs-6 col-sm-4 col-md-3" v-if="doc.business_name">
@@ -577,7 +581,7 @@
                 <q-card-section v-if="selectedFactura" class="q-pa-md">
                     <div class="row q-col-gutter-sm q-mb-md">
                         <div class="col-6">
-                            <div class="text-caption text-grey">N. Factura</div>
+                            <div class="text-caption text-grey">N° Documento / Factura / Recibo</div>
                             <div class="text-body2">{{ selectedFactura.numeroFactura }}</div>
                         </div>
                         <div class="col-6">
@@ -759,6 +763,9 @@ const isAuthorized = computed(() => {
     return accountability.status === "Autorizado";
 });
 
+// Los documentos (y su reparto) se pueden corregir hasta que la rendición se exporta a SAP
+const canEditDocuments = computed(() => !accountability.sap_exported);
+
 // True if the accountability is using a cycle AND the current level has a next one
 const hasNextLevel = computed(() => {
     if (!cycleChain || !cycleChain.current_level_id) return false;
@@ -807,7 +814,9 @@ const statusMessage = computed(() => {
         Pendiente: "La rendición está pendiente de autorización",
         Anulado: `La rendición fue anulada: ${accountability.comments}`,
         Rechazado: `La rendición fue rechazada: ${accountability.comments}`,
-        Autorizado: "La rendición fue aprobada y exportada",
+        Autorizado: accountability.sap_trans_id
+            ? `La rendición fue aprobada y exportada (asiento preliminar SAP N° ${accountability.sap_trans_id})`
+            : "La rendición fue aprobada y exportada",
     };
     return messages[accountability.status] || null;
 });
@@ -833,6 +842,15 @@ function toggleExpand(id) {
 
 function notifyFlash() {
     documents.value = page.props.documents;
+    // Con número de asiento se muestra un diálogo para que pueda anotarlo y buscarlo en SAP
+    if (page.props.flash.sap_number) {
+        $q.dialog({
+            title: "Rendición exportada a SAP",
+            message: `${page.props.flash.message}.`,
+            ok: { label: "Aceptar", color: "primary", noCaps: true },
+        });
+        return;
+    }
     $q.notify({
         type: page.props.flash.type,
         message: page.props.flash.message,

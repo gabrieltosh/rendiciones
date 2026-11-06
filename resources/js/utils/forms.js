@@ -38,3 +38,8 @@ export function useHashTab(defaultTab, tabs) {
     });
     return tab;
 }
+
+// Primer mensaje de un error de validación: Laravel los comparte como arreglo por campo
+export function firstError(error) {
+    return Array.isArray(error) ? error[0] : error;
+}

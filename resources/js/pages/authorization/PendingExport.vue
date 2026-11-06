@@ -235,6 +235,14 @@ function HandleReExport(id) {
                 onFinish: () => (exportingId.value = null),
                 onSuccess: () => {
                     data.value = page.props.data;
+                    if (page.props.flash.sap_number) {
+                        $q.dialog({
+                            title: "Rendición exportada a SAP",
+                            message: `${page.props.flash.message}.`,
+                            ok: { label: "Aceptar", color: "primary", noCaps: true },
+                        });
+                        return;
+                    }
                     $q.notify({ type: page.props.flash.type, message: page.props.flash.message });
                 },
             }

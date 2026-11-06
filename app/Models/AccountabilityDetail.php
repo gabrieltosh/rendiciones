@@ -55,4 +55,10 @@ class AccountabilityDetail extends Model implements Auditable
     public function document(){
         return $this->belongsTo(Document::class,'document_id','id');
     }
+    public function splits(){
+        return $this->hasMany(AccountabilityDetailSplit::class,'accountability_detail_id','id')->orderBy('dimension')->orderBy('id');
+    }
+    public function lines(){
+        return $this->hasMany(AccountabilityDetailLine::class,'accountability_detail_id','id')->orderBy('id');
+    }
 }
