@@ -521,7 +521,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[1]"
-                                    v-model="form.distribution_rule_one" :disable="!!form.splits?.[1]"
+                                    v-model="form.distribution_rule_one" :disable="!!form.split_active"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 1"
@@ -536,7 +536,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[2]"
-                                    v-model="form.distribution_rule_second" :disable="!!form.splits?.[2]"
+                                    v-model="form.distribution_rule_second" :disable="!!form.split_active"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 2"
@@ -551,7 +551,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[3]"
-                                    v-model="form.distribution_rule_three" :disable="!!form.splits?.[3]"
+                                    v-model="form.distribution_rule_three" :disable="!!form.split_active"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 3"
@@ -566,7 +566,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[4]"
-                                    v-model="form.distribution_rule_four" :disable="!!form.splits?.[4]"
+                                    v-model="form.distribution_rule_four" :disable="!!form.split_active"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 4"
@@ -581,7 +581,7 @@
                                     dense
                                     outlined
                                     :options="options.distribution[5]"
-                                    v-model="form.distribution_rule_five" :disable="!!form.splits?.[5]"
+                                    v-model="form.distribution_rule_five" :disable="!!form.split_active"
                                     option-label="Name"
                                     clearable
                                     aria-label="Centro de costo 5"
