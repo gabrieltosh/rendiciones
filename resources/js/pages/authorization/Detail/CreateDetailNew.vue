@@ -189,31 +189,31 @@
                             <div class="col-xs-12 col-sm-6">
                                 <div class="form-label">Centro de Costo 1</div>
                                 <q-select class="input-theme" dense outlined :options="options.distribution[1]"
-                                    v-model="form.distribution_rule_one" :disable="!!form.splits?.[1]" option-value="PrcCode" option-label="Name"
+                                    v-model="form.distribution_rule_one" :disable="!!form.split_active" option-value="PrcCode" option-label="Name"
                                     emit-value map-options clearable />
                             </div>
                             <div class="col-xs-12 col-sm-6">
                                 <div class="form-label">Centro de Costo 2</div>
                                 <q-select class="input-theme" dense outlined :options="options.distribution[2]"
-                                    v-model="form.distribution_rule_second" :disable="!!form.splits?.[2]" option-value="PrcCode"
+                                    v-model="form.distribution_rule_second" :disable="!!form.split_active" option-value="PrcCode"
                                     option-label="Name" emit-value map-options clearable />
                             </div>
                             <div class="col-xs-12 col-sm-6">
                                 <div class="form-label">Centro de Costo 3</div>
                                 <q-select class="input-theme" dense outlined :options="options.distribution[3]"
-                                    v-model="form.distribution_rule_three" :disable="!!form.splits?.[3]" option-value="PrcCode"
+                                    v-model="form.distribution_rule_three" :disable="!!form.split_active" option-value="PrcCode"
                                     option-label="Name" emit-value map-options clearable />
                             </div>
                             <div class="col-xs-12 col-sm-6">
                                 <div class="form-label">Centro de Costo 4</div>
                                 <q-select class="input-theme" dense outlined :options="options.distribution[4]"
-                                    v-model="form.distribution_rule_four" :disable="!!form.splits?.[4]" option-value="PrcCode" option-label="Name"
+                                    v-model="form.distribution_rule_four" :disable="!!form.split_active" option-value="PrcCode" option-label="Name"
                                     emit-value map-options clearable />
                             </div>
                             <div class="col-xs-12 col-sm-6">
                                 <div class="form-label">Centro de Costo 5</div>
                                 <q-select class="input-theme" dense outlined :options="options.distribution[5]"
-                                    v-model="form.distribution_rule_five" :disable="!!form.splits?.[5]" option-value="PrcCode" option-label="Name"
+                                    v-model="form.distribution_rule_five" :disable="!!form.split_active" option-value="PrcCode" option-label="Name"
                                     emit-value map-options clearable />
                             </div>
                         </div>

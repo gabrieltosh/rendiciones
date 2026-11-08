@@ -6,7 +6,8 @@
                     <div class="text-subtitle1 text-weight-medium">Reparto por líneas</div>
                     <div class="text-caption text-grey">
                         Reparta el gasto entre varios centros de costo. Las líneas del asiento salen de
-                        combinar los repartos de cada dimensión.
+                        combinar los repartos de cada dimensión. Con el reparto activo, los centros de
+                        costo se asignan solo aquí (no en Datos Contables).
                     </div>
                 </div>
                 <div class="col-auto">
@@ -31,15 +32,14 @@
                                 <div class="col form-label q-mb-none">Centro de Costo {{ dim }}</div>
                                 <div class="col-auto">
                                     <q-btn v-if="!form.splits[dim]" flat dense no-caps size="12px" color="primary"
-                                        icon="call_split" label="Repartir" @click="HandleStartSplit(dim)" />
+                                        icon="add" label="Asignar" @click="HandleStartSplit(dim)" />
                                     <q-btn v-else flat dense no-caps size="12px" color="negative" icon="close"
-                                        label="Quitar reparto" @click="HandleRemoveSplit(dim)" />
+                                        label="Quitar" @click="HandleRemoveSplit(dim)" />
                                 </div>
                             </div>
 
                             <div v-if="!form.splits[dim]" class="text-caption text-grey">
-                                Sin reparto: todas las líneas usan el valor de Datos Contables
-                                <span v-if="singleCode(dim)">({{ codeLabel(dim, singleCode(dim)) }})</span>.
+                                Sin centro de costo asignado.
                             </div>
 
                             <template v-else>
@@ -147,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, toRaw, onBeforeUnmount } from "vue";
 import { useQuasar } from "quasar";
 import { firstError } from "@/utils/forms";
 
@@ -177,6 +177,29 @@ if (!props.form.splits || Array.isArray(props.form.splits)) props.form.splits = 
 if (!Array.isArray(props.form.lines)) props.form.lines = [];
 
 const open = ref(Object.keys(props.form.splits).length > 0);
+
+// Con el reparto activo, los centros de costo salen solo del reparto: los de Datos
+// Contables pasan al reparto (100 %) y se vacían. Las páginas deshabilitan esos
+// selects mientras form.split_active sea verdadero.
+function absorbDocumentCodes() {
+    DIMENSIONS.forEach((dim) => {
+        const code = singleCode(dim);
+        if (code && !props.form.splits[dim]) props.form.splits[dim] = [{ code, percentage: 100 }];
+        props.form[DIMENSION_FIELDS[dim]] = null;
+    });
+}
+
+watch(open, (value) => {
+    props.form.split_active = value;
+    if (value) absorbDocumentCodes();
+}, { immediate: true });
+
+// Si el reparto deja de mostrarse (p. ej. se cambia a un documento con ítems), se
+// descarta y Datos Contables vuelve a habilitarse.
+onBeforeUnmount(() => {
+    props.form.split_active = false;
+    props.form.splits = {};
+});
 const filtered = ref({ ...props.distribution });
 const filteredAccounts = ref(props.accounts);
 
@@ -243,7 +266,12 @@ const combinations = computed(() => {
 watch(
     () => combinations.value.map((combo) => combo.combination).join(","),
     () => {
-        const previous = Object.fromEntries((props.form.lines || []).map((line) => [line.combination, line]));
+        // toRaw: las líneas leídas del form reactivo son proxies de Vue. Guardadas dentro de un
+        // array nuevo quedarían como proxies en page.props (los formularios de edición comparten
+        // el objeto) e Inertia no puede clonarlas a history.replaceState (DataCloneError).
+        const previous = Object.fromEntries(
+            toRaw(props.form.lines || []).map((line) => [line.combination, toRaw(line)])
+        );
         props.form.lines = combinations.value.map(
             (combo) => previous[combo.combination] ?? { combination: combo.combination, account: null, concept: null }
         );
@@ -256,10 +284,7 @@ function lineFor(combo) {
 }
 
 function HandleStartSplit(dim) {
-    props.form.splits[dim] = [
-        { code: singleCode(dim), percentage: 50 },
-        { code: null, percentage: 50 },
-    ];
+    props.form.splits[dim] = [{ code: null, percentage: 100 }];
 }
 
 function HandleRemoveSplit(dim) {
@@ -277,7 +302,7 @@ function HandleToggle(value) {
     }
     $q.dialog({
         title: "Quitar reparto",
-        message: "Se eliminará el reparto y el gasto volverá a exportarse en una sola línea. ¿Continuar?",
+        message: "Se eliminará el reparto y el gasto volverá a exportarse en una sola línea. Deberá elegir los centros de costo en Datos Contables. ¿Continuar?",
         cancel: { label: "Cancelar", flat: true, noCaps: true },
         ok: { label: "Quitar", color: "negative", noCaps: true },
         persistent: true,

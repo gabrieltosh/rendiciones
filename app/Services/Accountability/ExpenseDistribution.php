@@ -18,8 +18,9 @@ use Illuminate\Support\Collection;
  *
  *   CC1: A 50 · B 50   y   CC2: X 30 · Y 70   →   A·X 15, A·Y 35, B·X 15, B·Y 35
  *
- * Una dimensión sin reparto no multiplica las líneas: todas llevan el valor del
- * documento. Cada línea puede tener su propia cuenta y glosa; si no, usa las del
+ * Con reparto, los centros de costo salen solo del reparto (una dimensión con un
+ * único código al 100 % no multiplica las líneas); una dimensión sin códigos queda
+ * vacía y no se usan los de Datos Contables. Cada línea puede tener su propia cuenta y glosa; si no, usa las del
  * documento. Solo se reparte la línea de gasto: impuestos y retenciones se calculan
  * como siempre sobre el total (DocumentLineCalculator).
  */
@@ -172,9 +173,10 @@ class ExpenseDistribution
             return;
         }
 
-        // El documento guarda el primer código de cada dimensión repartida: lo usan
-        // las líneas de impuestos y los listados.
-        $first = [];
+        // Con reparto, los centros de costo salen solo del reparto: los de Datos Contables
+        // no se usan. El documento guarda el primer código de cada dimensión repartida
+        // (lo usan las líneas de impuestos y los listados) y deja vacías las demás.
+        $first = array_fill_keys(self::DIMENSION_FIELDS, null);
         foreach ($splits as $dim => $rows) {
             $first[self::DIMENSION_FIELDS[$dim]] = $rows[0]['code'];
             foreach ($rows as $row) {
@@ -196,7 +198,7 @@ class ExpenseDistribution
 
             $dims = [];
             foreach (self::DIMENSION_FIELDS as $dim => $field) {
-                $dims[$field] = $combo['codes'][$dim] ?? $detail->{$field};
+                $dims[$field] = $combo['codes'][$dim] ?? null;
             }
 
             AccountabilityDetailLine::create(array_merge([
