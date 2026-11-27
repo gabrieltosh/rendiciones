@@ -109,14 +109,51 @@
                             <div class="text-body1 text-grey q-mt-md">
                                 {{ filter ? 'Sin resultados para la búsqueda' : 'No hay rendiciones pendientes de autorización' }}
                             </div>
+                            <q-btn v-if="filter" flat no-caps color="primary" label="Limpiar búsqueda" class="q-mt-sm"
+                                @click="filter = ''" />
+                            <q-btn v-else flat no-caps color="primary" icon="task_alt" label="Ver autorizadas" class="q-mt-sm"
+                                @click="activeTab = 'authorized'" />
+                        </div>
+
+                        <!-- Aprobación en lote: solo niveles intermedios (la autorización final se revisa en el detalle) -->
+                        <div v-if="filteredPending.length && intermediateRows.length" data-tour="bulk-approve"
+                            class="row items-center q-col-gutter-sm q-mb-md">
+                            <div class="col-auto">
+                                <q-checkbox
+                                    :model-value="allIntermediateSelected"
+                                    toggle-indeterminate
+                                    dense
+                                    :label="selectedIds.length
+                                        ? `${selectedIds.length} seleccionada${selectedIds.length !== 1 ? 's' : ''}`
+                                        : `Seleccionar niveles intermedios (${intermediateRows.length})`"
+                                    @update:model-value="HandleToggleAllIntermediate"
+                                />
+                            </div>
+                            <div class="col text-caption text-grey">
+                                Solo se aprueban en lote los niveles intermedios; la autorización final se hace en el detalle de cada rendición.
+                            </div>
+                            <div v-if="selectedIds.length" class="col-auto">
+                                <q-btn unelevated no-caps color="positive" icon="done_all"
+                                    :label="`Aprobar nivel (${selectedIds.length})`" :loading="bulkBusy"
+                                    @click="HandleBulkApprove(selectedIds)" />
+                            </div>
                         </div>
 
                         <!-- Tarjetas -->
-                        <div data-tour="pending-list" v-else-if="viewMode === 'grid'" class="row q-col-gutter-md">
+                        <div data-tour="pending-list" v-if="filteredPending.length && viewMode === 'grid'" class="row q-col-gutter-md">
                             <div v-for="row in sortedPendingForGrid" :key="row.id" class="col-xs-12 col-sm-6 col-md-4">
-                                <q-card data-tour="pending-card" flat bordered class="acc-card full-height">
+                                <q-card data-tour="pending-card" flat bordered class="acc-card full-height cursor-pointer"
+                                    :class="{ 'acc-card--selected': selectedIds.includes(row.id) }"
+                                    role="link" tabindex="0" :aria-label="`Abrir rendición #${row.id}`"
+                                    @click="HandleDetailAccountability(row.id)"
+                                    @keyup.enter.self="HandleDetailAccountability(row.id)">
                                     <q-card-section class="q-pb-sm">
                                         <div class="row items-start no-wrap q-gutter-sm">
+                                            <div v-if="row.is_intermediate" class="col-auto" @click.stop>
+                                                <q-checkbox :model-value="selectedIds.includes(row.id)" dense
+                                                    :aria-label="`Seleccionar rendición #${row.id} para aprobar el nivel`"
+                                                    @update:model-value="HandleToggleSelect(row.id)" />
+                                            </div>
                                             <div class="col" style="min-width: 0;">
                                                 <div class="text-body2 text-weight-medium ellipsis">
                                                     {{ row.description || 'Sin descripción' }}
@@ -181,14 +218,18 @@
                                                     {{ balanceInfo(row.total, row.spent).label }}: {{ money(balanceInfo(row.total, row.spent).balance, row) }}
                                                 </div>
                                             </div>
-                                            <div data-tour="card-actions" class="col-auto q-gutter-xs">
+                                            <div data-tour="card-actions" class="col-auto q-gutter-xs" @click.stop>
+                                                <q-btn v-if="row.is_intermediate" flat round dense size="sm" icon="check" color="positive"
+                                                    aria-label="Aprobar nivel" :disable="bulkBusy" @click="HandleBulkApprove([row.id])">
+                                                    <q-tooltip>Aprobar nivel</q-tooltip>
+                                                </q-btn>
                                                 <q-btn flat round dense size="sm" icon="visibility" color="primary"
                                                     aria-label="Ver detalle de rendición" @click="HandleDetailAccountability(row.id)">
                                                     <q-tooltip>Ver detalle</q-tooltip>
                                                 </q-btn>
                                                 <q-btn flat round dense size="sm" icon="edit" color="secondary"
-                                                    aria-label="Editar rendición" @click="HandleEditAccountability(row.id)">
-                                                    <q-tooltip>Editar</q-tooltip>
+                                                    aria-label="Editar encabezado de la rendición" @click="HandleEditAccountability(row.id)">
+                                                    <q-tooltip>Editar encabezado</q-tooltip>
                                                 </q-btn>
                                             </div>
                                         </div>
@@ -199,7 +240,7 @@
 
                         <!-- Tabla -->
                         <q-table data-tour="pending-list"
-                            v-else
+                            v-else-if="filteredPending.length"
                             :rows="filteredPending"
                             :columns="pendingColumns"
                             row-key="id"
@@ -213,7 +254,14 @@
                             :pagination-label="(start, end, total) => `${start}-${end} de ${total}`"
                         >
                             <template v-slot:body="props">
-                                <q-tr :props="props">
+                                <q-tr :props="props" class="cursor-pointer"
+                                    :class="{ 'acc-row--selected': selectedIds.includes(props.row.id) }"
+                                    @click="HandleDetailAccountability(props.row.id)">
+                                    <q-td key="select" :props="props" @click.stop>
+                                        <q-checkbox v-if="props.row.is_intermediate" :model-value="selectedIds.includes(props.row.id)" dense
+                                            :aria-label="`Seleccionar rendición #${props.row.id} para aprobar el nivel`"
+                                            @update:model-value="HandleToggleSelect(props.row.id)" />
+                                    </q-td>
                                     <q-td key="id" :props="props">{{ props.row.id }}</q-td>
                                     <q-td key="description" :props="props">
                                         <span class="ellipsis" style="max-width: 200px; display: inline-block;">
@@ -235,15 +283,19 @@
                                         {{ money(balanceInfo(props.row.total, props.row.spent).balance, props.row) }}
                                         <q-tooltip>{{ balanceInfo(props.row.total, props.row.spent).label }}</q-tooltip>
                                     </q-td>
-                                    <q-td key="actions" :props="props">
+                                    <q-td key="actions" :props="props" @click.stop>
                                         <div class="q-gutter-xs no-wrap">
+                                            <q-btn v-if="props.row.is_intermediate" flat round dense size="sm" icon="check" color="positive"
+                                                aria-label="Aprobar nivel" :disable="bulkBusy" @click="HandleBulkApprove([props.row.id])">
+                                                <q-tooltip>Aprobar nivel</q-tooltip>
+                                            </q-btn>
                                             <q-btn flat round dense size="sm" icon="visibility" color="primary"
                                                 aria-label="Ver detalle de rendición" @click="HandleDetailAccountability(props.row.id)">
                                                 <q-tooltip>Ver detalle</q-tooltip>
                                             </q-btn>
                                             <q-btn flat round dense size="sm" icon="edit" color="secondary"
-                                                aria-label="Editar rendición" @click="HandleEditAccountability(props.row.id)">
-                                                <q-tooltip>Editar</q-tooltip>
+                                                aria-label="Editar encabezado de la rendición" @click="HandleEditAccountability(props.row.id)">
+                                                <q-tooltip>Editar encabezado</q-tooltip>
                                             </q-btn>
                                         </div>
                                     </q-td>
@@ -305,7 +357,7 @@
                             @request="HandleLoadAuthorized"
                         >
                             <template v-slot:body="props">
-                                <q-tr :props="props">
+                                <q-tr :props="props" class="cursor-pointer" @click="HandleDetailAccountability(props.row.id)">
                                     <q-td key="id" :props="props">{{ props.row.id }}</q-td>
                                     <q-td key="description" :props="props">
                                         <span class="ellipsis" style="max-width: 200px; display: inline-block;">
@@ -328,7 +380,7 @@
                                                 ? (props.row.sap_trans_id ? `En SAP · N° ${props.row.sap_trans_id}` : 'En SAP')
                                                 : 'Pendiente SAP'" />
                                     </q-td>
-                                    <q-td key="actions" :props="props">
+                                    <q-td key="actions" :props="props" @click.stop>
                                         <div class="q-gutter-xs no-wrap">
                                             <q-btn flat round dense size="sm" icon="visibility" color="primary"
                                                 aria-label="Ver detalle de rendición" @click="HandleDetailAccountability(props.row.id)">
@@ -348,11 +400,13 @@
 
             </div>
         </div>
+        <EditHeaderDialog v-model="headerDialog" :accountability-id="headerId" from="index" />
     </Layout>
 </template>
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
+import EditHeaderDialog from "@/components/authorization/EditHeaderDialog.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
@@ -409,6 +463,7 @@ function sentTooltip(row) {
 
 // ── Pendientes ──────────────────────────────────────────────
 const pendingColumns = [
+    { name: "select", align: "center", label: "", field: "is_intermediate", style: "width: 40px" },
     { name: "id", align: "center", label: "ID", field: "id", sortable: true, style: "width: 60px" },
     { name: "description", align: "left", label: "Descripción", field: "description", sortable: true },
     { name: "user_name", align: "left", label: "Realizado por", field: (row) => row.user?.name, sortable: true },
@@ -435,6 +490,57 @@ const filteredPending = computed(() => {
 const sortedPendingForGrid = computed(() =>
     [...filteredPending.value].sort((a, b) => (a.submitted_ts ?? 0) - (b.submitted_ts ?? 0))
 );
+
+// ── Aprobación en lote de niveles intermedios ───────────────
+// La autorización final no se ofrece aquí: exporta a SAP y requiere revisar el detalle
+const selectedIds = ref([]);
+const bulkBusy = ref(false);
+const intermediateRows = computed(() => filteredPending.value.filter((row) => row.is_intermediate));
+// Si cambia la búsqueda o los datos, solo quedan seleccionadas las visibles
+watch(intermediateRows, (rows) => {
+    const visible = new Set(rows.map((row) => row.id));
+    selectedIds.value = selectedIds.value.filter((id) => visible.has(id));
+});
+const allIntermediateSelected = computed(() => {
+    if (!selectedIds.value.length) return false;
+    return selectedIds.value.length === intermediateRows.value.length ? true : null;
+});
+
+function HandleToggleSelect(id) {
+    selectedIds.value = selectedIds.value.includes(id)
+        ? selectedIds.value.filter((value) => value !== id)
+        : [...selectedIds.value, id];
+}
+
+function HandleToggleAllIntermediate() {
+    selectedIds.value = allIntermediateSelected.value === true ? [] : intermediateRows.value.map((row) => row.id);
+}
+
+function HandleBulkApprove(ids) {
+    if (bulkBusy.value || !ids.length) return;
+    const single = ids.length === 1;
+    $q.dialog({
+        title: "Aprobar nivel",
+        message: single
+            ? `La rendición #${ids[0]} avanzará al siguiente nivel de autorización.`
+            : `Las ${ids.length} rendiciones seleccionadas avanzarán al siguiente nivel de autorización.`,
+        cancel: { label: "Cancelar", flat: true, noCaps: true },
+        ok: { label: "Aprobar nivel", color: "positive", noCaps: true },
+        persistent: true,
+        prompt: { model: "", type: "textarea", label: single ? "Comentario (opcional)" : "Comentario para todas (opcional)" },
+    }).onOk((comments) => {
+        router.post(
+            route("panel.accountability.authorization.bulk-approve"),
+            { ids: [...ids], comments: typeof comments === "string" && comments.trim() ? comments.trim() : null },
+            {
+                preserveScroll: true,
+                onStart: () => (bulkBusy.value = true),
+                onFinish: () => (bulkBusy.value = false),
+                onSuccess: () => (selectedIds.value = []),
+            }
+        );
+    });
+}
 
 // ── Ver todas (Administrador) ───────────────────────────────
 const toggling = ref(false);
@@ -526,8 +632,12 @@ onMounted(() => {
     }
 });
 
+// La cabecera se edita en un diálogo, sin salir de la bandeja
+const headerDialog = ref(false);
+const headerId = ref(null);
 function HandleEditAccountability(id) {
-    router.visit(route("panel.accountability.authorization.edit", id));
+    headerId.value = id;
+    headerDialog.value = true;
 }
 
 function HandleDetailAccountability(id) {
@@ -550,6 +660,10 @@ function HandleGetReport(id) {
 
 .acc-card:hover {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.acc-card--selected {
+    outline: 2px solid var(--q-positive);
 }
 
 .full-height {

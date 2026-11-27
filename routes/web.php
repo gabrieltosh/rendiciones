@@ -62,6 +62,8 @@ Route::middleware('auth')->group(function() {
                 Route::put('','HandleUpdateUser')->name('update');
                 Route::get('{id}/edit','HandleEditUser')->name('edit');
                 Route::get('create','HandleCreateUser')->name('create');
+                // Asignación rápida de ciclo y perfiles desde la lista de usuarios
+                Route::put('{id}/access','HandleUpdateUserAccess')->name('access');
             });
             Route::delete('{id}/profile',[ProfileController::class,'HandleDeleteProfile'])->name('profile.delete');
             Route::name('profile.')->prefix('profile')->controller(ProfileController::class)->group(function(){
@@ -118,6 +120,8 @@ Route::middleware('auth')->group(function() {
                 Route::get('pending-export','HandleIndexPendingExport')->name('pending-export');
                 Route::get('authorized','HandleIndexAuthorized')->name('authorized');
                 Route::get('employees','HandleSearchEmployees')->name('employees');
+                // Aprobación en lote de niveles intermedios desde la bandeja
+                Route::post('bulk-approve','HandleBulkApproveLevel')->name('bulk-approve');
                 Route::get('{id}/edit-data','HandleGetEditData')->name('edit-data');
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
                 Route::put('','HandleUpdateAccountability')->name('update');

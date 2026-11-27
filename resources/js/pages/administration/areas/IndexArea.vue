@@ -51,7 +51,7 @@
                             </q-input>
                         </template>
                         <template v-slot:body="props">
-                            <q-tr :props="props">
+                            <q-tr :props="props" :class="{ 'bg-blue-1': props.row.id === highlightId }">
                                 <q-td key="id" :props="props">{{ props.row.id }}</q-td>
                                 <q-td key="name" :props="props">
                                     <span class="text-weight-medium">{{ props.row.name }}</span>
@@ -69,7 +69,7 @@
                                         color="primary"
                                         icon="eva-edit-2-outline"
                                         aria-label="Editar área"
-                                        @click="HandleEditArea(props.row.id)"
+                                        @click="HandleEditArea(props.row)"
                                     >
                                         <q-tooltip>Editar</q-tooltip>
                                     </q-btn>
@@ -98,7 +98,7 @@
                                     </q-card-section>
                                     <q-card-actions align="right" class="q-pt-none">
                                         <q-btn flat dense no-caps size="sm" color="primary" icon="eva-edit-2-outline"
-                                            label="Editar" @click="HandleEditArea(props.row.id)" />
+                                            label="Editar" @click="HandleEditArea(props.row)" />
                                         <q-btn flat dense no-caps size="sm" color="negative" icon="eva-trash-2-outline"
                                             label="Eliminar" @click="HandleDeleteArea(props.row)" />
                                     </q-card-actions>
@@ -111,29 +111,60 @@
                                 <div class="q-mt-sm">
                                     {{ table.filter ? 'Sin resultados para la búsqueda' : 'No hay áreas registradas' }}
                                 </div>
+                                <q-btn v-if="!table.filter" flat no-caps color="primary" icon="add" label="Crear la primera área"
+                                    class="q-mt-sm" @click="HandleCreateArea()" />
                             </div>
                         </template>
                     </q-table>
                 </q-card>
             </div>
         </div>
+
+        <!-- Crear / editar sin salir de la lista -->
+        <q-dialog v-model="dialog.open" :persistent="saving">
+            <q-card data-tour="area-form" style="width: 560px; max-width: 96vw;">
+                <q-card-section class="row items-center q-pb-none">
+                    <div class="text-h6">{{ form.id ? 'Editar área' : 'Crear área' }}</div>
+                    <q-space />
+                    <q-btn icon="close" flat round dense v-close-popup aria-label="Cerrar" :disable="saving" />
+                </q-card-section>
+                <q-form @submit.prevent="HandleSaveForm()">
+                    <q-card-section class="q-gutter-y-md">
+                        <FormField label="Nombre" required :error="formErrors.name" input-id="area-name">
+                            <q-input v-model="form.name" for="area-name" dense outlined class="input-theme" autofocus />
+                        </FormField>
+                        <FormField label="Descripción" hint="Opcional, para identificarla mejor" :error="formErrors.description" input-id="area-description">
+                            <q-input v-model="form.description" for="area-description" dense outlined class="input-theme" />
+                        </FormField>
+                    </q-card-section>
+                    <q-card-actions align="right" class="q-px-md q-pb-md">
+                        <q-btn flat color="secondary" label="Cancelar" no-caps :disable="saving" v-close-popup />
+                        <q-btn data-tour="save-area" type="submit" color="primary" icon="eva-checkmark-outline"
+                            :label="form.id ? 'Guardar cambios' : 'Crear Área'" no-caps unelevated :loading="saving" />
+                    </q-card-actions>
+                </q-form>
+            </q-card>
+        </q-dialog>
     </Layout>
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import { ref } from "vue";
+import FormField from "@/components/FormField.vue";
+import { ref, computed } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
 
-defineProps({
+const props = defineProps({
     title: String,
     data: Object,
+    errors: { type: Object, default: () => ({}) },
 });
 const $q = useQuasar();
 const page = usePage();
-let data = ref(page.props.data);
+// Siempre los datos actuales: la lista se actualiza sin recargar la página tras guardar
+const data = computed(() => props.data ?? []);
 
 const table = ref({
     filter: "",
@@ -146,11 +177,46 @@ const table = ref({
     ],
 });
 
-function HandleCreateArea() {
-    router.visit(route("panel.area.create"));
+// ── Crear / editar en un diálogo ────────────────────────────
+const dialog = ref({ open: false });
+const form = ref({ id: null, name: null, description: null });
+const saving = ref(false);
+const highlightId = ref(null);
+// Los errores de validación solo se muestran tras intentar guardar en este diálogo
+const showErrors = ref(false);
+const formErrors = computed(() => (showErrors.value ? props.errors ?? {} : {}));
+
+function HandleOpenDialog(values) {
+    form.value = { id: null, name: null, description: null, ...values };
+    showErrors.value = false;
+    dialog.value.open = true;
 }
-function HandleEditArea(id) {
-    router.visit(route("panel.area.edit", id));
+function HandleCreateArea() {
+    HandleOpenDialog({});
+}
+function HandleEditArea(row) {
+    HandleOpenDialog({ id: row.id, name: row.name, description: row.description });
+}
+function HandleSaveForm() {
+    const editing = !!form.value.id;
+    const options = {
+        preserveState: true,
+        preserveScroll: true,
+        onStart: () => {
+            saving.value = true;
+            showErrors.value = true;
+        },
+        onFinish: () => (saving.value = false),
+        onSuccess: () => {
+            dialog.value.open = false;
+            // Resalta la fila guardada (al crear, la más reciente queda primera)
+            highlightId.value = editing ? form.value.id : data.value[0]?.id ?? null;
+            setTimeout(() => (highlightId.value = null), 3000);
+        },
+    };
+    editing
+        ? router.put(route("panel.area.update"), form.value, options)
+        : router.post(route("panel.area.store"), form.value, options);
 }
 function HandleDeleteArea(row) {
     $q.dialog({
@@ -160,11 +226,7 @@ function HandleDeleteArea(row) {
         ok: { label: "Eliminar", color: "negative", noCaps: true },
         persistent: true,
     }).onOk(() => {
-        router.delete(route("panel.area.delete", row.id), {
-            onSuccess: () => {
-                data.value = page.props.data;
-            },
-        });
+        router.delete(route("panel.area.delete", row.id), { preserveScroll: true });
     });
 }
 </script>

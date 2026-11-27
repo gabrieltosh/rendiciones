@@ -13,8 +13,10 @@
                     <template #actions>
                         <q-btn flat color="secondary" label="Cancelar" no-caps :disable="saving"
                             @click="router.visit(route('panel.profile.index'))" />
+                        <q-btn outline color="primary" icon="save" label="Guardar y seguir editando" no-caps
+                            :loading="saving === 'stay'" :disable="!!saving" @click="HandleUpdateForm(true)" />
                         <q-btn data-tour="save-profile" color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
-                            :loading="saving" @click="HandleUpdateForm()" />
+                            :loading="saving === 'close'" :disable="!!saving" @click="HandleUpdateForm()" />
                     </template>
                 </PageHeader>
 
@@ -50,6 +52,7 @@ defineProps({
 const $q = useQuasar();
 const page = usePage();
 const tab = useHashTab("general", ["general", "employees", "general_accounts", "detail_accounts", "documents"]);
+// false | 'stay' | 'close': qué botón de guardado está en curso
 const saving = ref(false);
 
 const documentOptions = {
@@ -60,25 +63,34 @@ const documentOptions = {
 
 const form = ref(page.props.profile);
 
-function HandleUpdateForm() {
+// Solo se confirma cuando el guardado elimina documentos; si no, se guarda directamente
+function HandleUpdateForm(stay = false) {
+    if (saving.value) return;
     const deleted = form.value.documents.filter((d) => d.for_delete == 1).length;
+    if (!deleted) return HandleSubmit(stay);
     $q.dialog({
         title: "Guardar cambios",
-        message: deleted
-            ? `¿Guardar los cambios del perfil? Se eliminarán ${deleted} documento(s).`
-            : "¿Guardar los cambios del perfil?",
+        message: `Al guardar se eliminarán ${deleted} documento(s) del perfil. ¿Desea continuar?`,
         cancel: { label: "Cancelar", flat: true, noCaps: true },
-        ok: { label: "Guardar", color: "primary", noCaps: true },
+        ok: { label: "Guardar", color: "negative", noCaps: true },
         persistent: true,
-    }).onOk(() => {
-        router.put(route("panel.profile.update"), form.value, {
-            onStart: () => (saving.value = true),
-            onFinish: () => (saving.value = false),
-            onError: (errors) => {
-                tab.value = firstSectionWithError(errors, profileSections) ?? tab.value;
-                scrollToFirstError();
-            },
-        });
+    }).onOk(() => HandleSubmit(stay));
+}
+
+function HandleSubmit(stay) {
+    router.put(route("panel.profile.update"), { ...form.value, stay }, {
+        // Al seguir editando se conserva la pestaña y la posición, con los datos recién guardados
+        preserveState: stay,
+        preserveScroll: stay,
+        onStart: () => (saving.value = stay ? "stay" : "close"),
+        onFinish: () => (saving.value = false),
+        onSuccess: () => {
+            if (stay) form.value = page.props.profile;
+        },
+        onError: (errors) => {
+            tab.value = firstSectionWithError(errors, profileSections) ?? tab.value;
+            scrollToFirstError();
+        },
     });
 }
 </script>

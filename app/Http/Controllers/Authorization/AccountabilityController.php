@@ -134,6 +134,22 @@ class AccountabilityController extends Controller
 
         // Record approval when using cycle system
         if ($currentLevel) {
+            $nextLevel = $currentLevel->nextLevel();
+            if ($nextLevel) {
+                $this->HandleAdvanceLevel($accountability, $currentLevel, $nextLevel, $request->user()->id, $request->comments);
+
+                // Sigue con la próxima rendición que le toca revisar, sin volver a la bandeja
+                $message = "Nivel aprobado. La rendición #{$accountability->id} avanzó al nivel: {$nextLevel->name}";
+                $nextId = $this->HandleNextPendingId($request->user(), $accountability->id);
+                if ($nextId) {
+                    Session::flash('message', "{$message}. Se muestra la siguiente pendiente (#{$nextId}).");
+                    Session::flash('type', 'positive');
+                    return Redirect::route('panel.accountability.authorization.detail.index', $nextId);
+                }
+                Session::flash('message', "{$message}. No tiene más rendiciones pendientes.");
+                Session::flash('type', 'positive');
+                return Redirect::route('panel.accountability.authorization.index');
+            }
             $this->HandleRecordApproval(
                 $accountability->id,
                 $currentLevel->id,
@@ -141,33 +157,6 @@ class AccountabilityController extends Controller
                 'aprobado',
                 $request->comments
             );
-            $nextLevel = $currentLevel->nextLevel();
-            if ($nextLevel) {
-                // Advance to next level
-                $accountability->fill([
-                    'current_level_id' => $nextLevel->id,
-                ])->save();
-
-                // Notify next level authorizers
-                try {
-                    $params = Management::where('group', 'accountability')->get();
-                    if ($params->where('name', 'notification_email')->first()?->value == 'SI') {
-                        foreach ($nextLevel->users as $nextUser) {
-                            $nextUser->notify(new CreateAccountabilityNotification($accountability));
-                        }
-                    }
-                } catch (Throwable $e) {
-                    Log::warning('No se pudo notificar al siguiente nivel', [
-                        'accountability_id' => $accountability->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-
-                $levelName = $nextLevel->name;
-                Session::flash('message', "Nivel aprobado. La rendición avanzó al nivel: {$levelName}");
-                Session::flash('type', 'positive');
-                return Redirect::route('panel.accountability.authorization.index');
-            }
         }
 
         // No more levels (or legacy system) — fully authorize.
@@ -186,6 +175,94 @@ class AccountabilityController extends Controller
         $this->HandleNotifyStatus($accountability);
 
         return $redirectOnFinish;
+    }
+
+    /**
+     * Aprueba un nivel intermedio: registra la aprobación, pasa la rendición al
+     * siguiente nivel y avisa a sus autorizadores (un fallo del correo no revierte nada).
+     */
+    private function HandleAdvanceLevel(Accountability $accountability, AuthorizationCycleLevel $currentLevel, AuthorizationCycleLevel $nextLevel, $userId, $comments): void
+    {
+        $this->HandleRecordApproval($accountability->id, $currentLevel->id, $userId, 'aprobado', $comments);
+        $accountability->fill(['current_level_id' => $nextLevel->id])->save();
+
+        try {
+            $params = Management::where('group', 'accountability')->get();
+            if ($params->where('name', 'notification_email')->first()?->value == 'SI') {
+                foreach ($nextLevel->users as $nextUser) {
+                    $nextUser->notify(new CreateAccountabilityNotification($accountability));
+                }
+            }
+        } catch (Throwable $e) {
+            Log::warning('No se pudo notificar al siguiente nivel', [
+                'accountability_id' => $accountability->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /** La próxima rendición que el usuario debe autorizar (la que más tiempo lleva esperando). */
+    private function HandleNextPendingId($user, $excludeId): ?int
+    {
+        $id = Accountability::pendingAuthorizationFor($user->id)
+            ->where('id', '!=', $excludeId)
+            ->orderBy('submitted_at')
+            ->orderBy('id')
+            ->value('id');
+
+        return $id ? (int) $id : null;
+    }
+
+    /**
+     * Aprobación en lote desde la bandeja, solo de niveles intermedios: la autorización
+     * final (que exporta a SAP) requiere la revisión contable en el detalle de cada rendición.
+     * Cada rendición se valida con HandleCanAuthorize, igual que al aprobarla una por una.
+     */
+    public function HandleBulkApproveLevel(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1|max:100',
+            'ids.*' => 'integer',
+            'comments' => 'nullable|string|max:1000',
+        ], [
+            'ids.required' => 'Seleccione al menos una rendición.',
+        ]);
+
+        $user = $request->user();
+        $comments = trim((string) $request->comments) !== '' ? trim((string) $request->comments) : null;
+        $approved = [];
+        $skipped = [];
+
+        foreach (array_unique(array_map('intval', $request->ids)) as $id) {
+            $accountability = Accountability::find($id);
+            if (!$accountability || !$this->HandleCanAuthorize($accountability, $user)) {
+                $skipped[] = "#{$id} (ya no le corresponde autorizarla)";
+                continue;
+            }
+            $currentLevel = $accountability->current_level_id
+                ? AuthorizationCycleLevel::find($accountability->current_level_id)
+                : null;
+            $nextLevel = $currentLevel?->nextLevel();
+            if (!$nextLevel) {
+                $skipped[] = "#{$id} (es la autorización final: hágala desde el detalle)";
+                continue;
+            }
+            $this->HandleAdvanceLevel($accountability, $currentLevel, $nextLevel, $user->id, $comments);
+            $approved[] = $id;
+        }
+
+        $count = count($approved);
+        $message = $count
+            ? "Se aprobó el nivel de {$count} rendici" . ($count === 1 ? 'ón' : 'ones') . '.'
+            : 'No se aprobó ninguna rendición.';
+        if ($skipped) {
+            $message .= ' Sin aprobar: ' . implode(', ', $skipped) . '.';
+        }
+
+        return Redirect::back()->with([
+            'message' => $message,
+            'type' => $skipped ? ($count ? 'warning' : 'negative') : 'positive',
+        ]);
     }
 
     public function HandleExportSAP($accountability_id, Request $request)
@@ -518,6 +595,16 @@ SQL;
             ]);
         }
 
+        // Reintento desde el detalle de la rendición: se vuelve al detalle, donde se ve
+        // el resultado y, si falló, se puede corregir y reintentar sin salir de la pantalla.
+        if ($request->input('from') === 'detail') {
+            Session::flash('message', $result->success
+                ? $this->HandleSapExportMessage('Rendición exportada a SAP', $result)
+                : 'SAP rechazó la exportación: ' . $result->errorMessage);
+            Session::flash('type', $result->success ? 'positive' : 'negative');
+            return Redirect::route('panel.accountability.authorization.detail.index', $accountability->id);
+        }
+
         if ($result->success) {
             Session::flash('message', $this->HandleSapExportMessage("Rendición exportada a SAP correctamente", $result));
             Session::flash('type', 'positive');
@@ -643,12 +730,16 @@ SQL;
             $a->spent = round((float) $a->detail_sum_amount, 2);
 
             $a->level_label = null;
+            // Nivel intermedio: se puede aprobar en lote desde la bandeja (no exporta a SAP)
+            $a->is_intermediate = false;
             if ($a->relationLoaded('currentLevel') && $a->currentLevel) {
                 $levels = $a->currentLevel->cycle?->levels ?? collect();
                 $position = $levels->search(fn ($l) => $l->id === $a->currentLevel->id);
                 $a->level_label = $position === false
                     ? $a->currentLevel->name
                     : ($position + 1) . ' de ' . $levels->count() . ' · ' . $a->currentLevel->name;
+                $a->is_intermediate = $a->status === 'Pendiente'
+                    && $levels->contains(fn ($l) => $l->order > $a->currentLevel->order);
             }
 
             $sent = $a->submitted_at ?? ($a->updated_at ? \Carbon\Carbon::parse($a->updated_at) : null);
@@ -732,10 +823,19 @@ SQL;
         $account = GeneralAccounts::where('account_code', $acctCode)->first();
         $auth_accountability = Accountability::findOrFail($request->id);
         $auth_profile = Profile::where('id', $auth_accountability->profile_id)->first();
-        $fromPending = $request->input('from') === 'pending-export';
-        $back = $fromPending
-            ? Redirect::route('panel.accountability.authorization.pending-export')
-            : Redirect::route('panel.accountability.authorization.index');
+        // Vuelve a la pantalla desde la que se editó: detalle, Pendientes SAP o bandeja
+        $back = match ($request->input('from')) {
+            'detail' => Redirect::route('panel.accountability.authorization.detail.index', $auth_accountability->id),
+            'pending-export' => Redirect::route('panel.accountability.authorization.pending-export'),
+            // Bandeja: se vuelve a la misma URL (conserva "Ver todas" y filtros)
+            'index' => Redirect::back(),
+            default => Redirect::route('panel.accountability.authorization.index'),
+        };
+
+        // Una rendición anulada no se modifica (el botón ya no se muestra; se valida igual aquí)
+        if ($auth_accountability->status === 'Anulado') {
+            return $back->with(['message' => 'La rendición está anulada y no se puede modificar.', 'type' => 'negative']);
+        }
 
         // Una rendición ya registrada en SAP no se modifica: el asiento quedaría distinto.
         if ($auth_accountability->sap_exported) {
@@ -828,9 +928,21 @@ SQL;
                     && $accountability->status !== null),
                 'can_authorize' => $this->HandleCanAuthorize($accountability, $request->user()),
                 'can_annul' => !$accountability->sap_exported && $accountability->status !== 'Anulado',
+                // La cabecera se corrige desde el mismo detalle mientras no esté en SAP ni anulada
+                'can_edit_header' => !$accountability->sap_exported && $accountability->status !== 'Anulado',
                 'has_next_level' => (bool) $currentLevel?->nextLevel(),
+                // Intentos de exportación a SAP (para corregir y reintentar desde el detalle)
+                'export_logs' => SapExportLog::with('user:id,name')
+                    // Sin el asiento enviado (payload): solo se muestra el resultado de cada intento
+                    ->select('id', 'accountability_id', 'user_id', 'success', 'mode', 'sap_key', 'message', 'created_at')
+                    ->where('accountability_id', $accountability->id)
+                    ->orderByDesc('id')
+                    ->limit(20)
+                    ->get(),
                 // Solo tras un fallo real de exportación (HandleExportSAP): ofrece autorizar sin SAP
                 'sap_error' => Session::get('sap_error'),
+                // Documento recién creado o editado: el detalle se desplaza hasta él
+                'focus' => (int) $request->query('focus') ?: null,
             ]
         );
     }
@@ -1060,7 +1172,8 @@ SQL;
         }
         Session::flash('message', "Documento actualizado correctamente");
         Session::flash('type', 'positive');
-        return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id);
+        // focus: el detalle se ubica en el documento editado (misma pestaña y posición)
+        return Redirect::route('panel.accountability.authorization.detail.index', ['id' => $accountability_id, 'focus' => $request->id]);
 
     }
     public function HandleStoreDocument(DocumentRequest $request, $accountability_id)
@@ -1069,7 +1182,7 @@ SQL;
             return $rejected;
         }
         try {
-            DB::transaction(function () use ($request, $accountability_id) {
+            $detailId = DB::transaction(function () use ($request, $accountability_id) {
                 ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
                 $account = DetailAccounts::where('account_code', $acctCode)->first();
                 $detail = AccountabilityDetail::create([
@@ -1110,6 +1223,7 @@ SQL;
                 }
                 ExpenseDistribution::sync($detail, $request->splits, $request->lines);
                 ExpenseItems::sync($detail, $request->items, (bool) Document::find($request->document_id)?->items_status);
+                return $detail->id;
             });
         } catch (Throwable $e) {
             // Se vuelve al formulario sin perder lo que el autorizador cargó.
@@ -1123,7 +1237,7 @@ SQL;
         }
         Session::flash('message', "Documento creado correctamente");
         Session::flash('type', 'positive');
-        return Redirect::route('panel.accountability.authorization.detail.index', [$accountability_id]);
+        return Redirect::route('panel.accountability.authorization.detail.index', ['id' => $accountability_id, 'focus' => $detailId]);
     }
     public function HandleCreateDocument($accountability_id)
     {

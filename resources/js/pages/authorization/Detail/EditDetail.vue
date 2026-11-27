@@ -50,7 +50,11 @@ defineProps({
 const $q = useQuasar();
 const page = usePage();
 
-const detailUrl = route("panel.accountability.authorization.detail.index", page.props.accountability.id);
+// Al volver (cancelar o atrás) el detalle se ubica en este mismo documento
+const detailUrl = route("panel.accountability.authorization.detail.index", {
+    id: page.props.accountability.id,
+    focus: page.props.data.id,
+});
 
 const form = ref(page.props.data);
 form.value.document_id = parseInt(form.value.document_id);

@@ -2,92 +2,103 @@
     <Head :title="title" />
     <Login>
         <q-page-container>
-            <div class="row">
-                <div
-                    class="col-xs-12 col-sm-12 col-md-6 col-lg-6 login-container"
-                >
-                    <q-page class="flex flex-center">
-                        <q-form
-                            @submit.prevent="HandleAuthLogin()"
-                            class="q-gutter-md login-form"
-                        >
-                            <div class="q-px-md q-pb-sm">
-                                <h4 class="title-login q-pa-none q-ma-none q-mb-sm">
-                                    Iniciar sesión
-                                </h4>
-                                <p class="text-login q-pa-none q-ma-none">
+            <q-page class="login-page">
+                <div class="login-wrap">
+                    <div class="login-brand">
+                        <div class="login-brand__icon" aria-hidden="true">
+                            <q-icon name="eva-briefcase-outline" size="22px" />
+                        </div>
+                        <div>
+                            <div class="login-brand__title">Rendiciones</div>
+                            <div class="login-brand__caption">Gastos y viáticos</div>
+                        </div>
+                    </div>
+
+                    <q-card class="login-card">
+                        <q-form @submit.prevent="HandleAuthLogin()" class="login-form">
+                            <div class="login-header">
+                                <h1 class="title-login">Iniciar sesión</h1>
+                                <p class="text-login">
                                     Ingresa tu usuario y contraseña para acceder al
                                     sistema de rendiciones.
                                 </p>
                             </div>
-                            <q-input
-                                outlined
-                                v-model="auth.email"
-                                label="Usuario"
-                                name="username"
-                                autocomplete="username"
-                                autofocus
-                                :error="!!errors.email"
-                                :error-message="firstError(errors.email)"
-                            >
-                                <template v-slot:prepend>
-                                    <q-icon name="eva-person-outline" />
-                                </template>
-                            </q-input>
-                            <q-input
-                                outlined
-                                :type="showPassword ? 'text' : 'password'"
-                                v-model="auth.password"
-                                label="Contraseña"
-                                name="password"
-                                autocomplete="current-password"
-                                :error="!!errors.password"
-                                :error-message="firstError(errors.password)"
-                            >
-                                <template v-slot:prepend>
-                                    <q-icon name="eva-lock-outline" />
-                                </template>
-                                <template v-slot:append>
-                                    <q-btn
-                                        flat
-                                        round
-                                        dense
-                                        :icon="showPassword ? 'eva-eye-off-outline' : 'eva-eye-outline'"
-                                        :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-                                        @click="showPassword = !showPassword"
-                                    />
-                                </template>
-                            </q-input>
+
+                            <div>
+                                <label class="form-label" for="login-username">Usuario</label>
+                                <q-input
+                                    for="login-username"
+                                    outlined
+                                    v-model="auth.email"
+                                    name="username"
+                                    autocomplete="username"
+                                    placeholder="Tu usuario"
+                                    autofocus
+                                    class="login-input"
+                                    :error="!!errors.email"
+                                    :error-message="firstError(errors.email)"
+                                >
+                                    <template v-slot:prepend>
+                                        <q-icon name="eva-person-outline" size="18px" />
+                                    </template>
+                                </q-input>
+                            </div>
+
+                            <div>
+                                <label class="form-label" for="login-password">Contraseña</label>
+                                <q-input
+                                    for="login-password"
+                                    outlined
+                                    :type="showPassword ? 'text' : 'password'"
+                                    v-model="auth.password"
+                                    name="password"
+                                    autocomplete="current-password"
+                                    placeholder="••••••••"
+                                    class="login-input"
+                                    :error="!!errors.password"
+                                    :error-message="firstError(errors.password)"
+                                >
+                                    <template v-slot:prepend>
+                                        <q-icon name="eva-lock-outline" size="18px" />
+                                    </template>
+                                    <template v-slot:append>
+                                        <q-btn
+                                            flat
+                                            round
+                                            dense
+                                            size="sm"
+                                            :icon="showPassword ? 'eva-eye-off-outline' : 'eva-eye-outline'"
+                                            :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                                            @click="showPassword = !showPassword"
+                                        />
+                                    </template>
+                                </q-input>
+                            </div>
+
                             <q-toggle
                                 v-model="auth.accept"
                                 label="Mantener sesión iniciada"
                                 color="primary"
+                                dense
                             />
 
-                            <div>
-                                <q-btn
-                                    class="full-width login-btn"
-                                    label="Iniciar sesión"
-                                    type="submit"
-                                    color="primary"
-                                    no-caps
-                                    unelevated
-                                    :loading="loading"
-                                />
-                            </div>
-                            <div class="text-caption text-grey q-px-xs">
-                                ¿Olvidaste tu contraseña? Comunícate con el
-                                administrador del sistema.
-                            </div>
+                            <q-btn
+                                class="full-width login-btn"
+                                label="Iniciar sesión"
+                                type="submit"
+                                color="primary"
+                                no-caps
+                                unelevated
+                                :loading="loading"
+                            />
                         </q-form>
-                    </q-page>
+                    </q-card>
+
+                    <div class="login-help">
+                        ¿Olvidaste tu contraseña? Comunícate con el administrador del sistema.
+                    </div>
                 </div>
-                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 gt-sm image-container">
-                    <q-page class="flex flex-center q-pa-none q-ma-none">
-                        <img :src="Dark.isActive?'/images/login_dark.jpg':'/images/login.jpg'" alt="" >
-                    </q-page>
-                </div>
-            </div>
+            </q-page>
         </q-page-container>
     </Login>
 </template>
@@ -95,7 +106,6 @@
 import Login from "@/layouts/AuthLayout.vue";
 import { ref } from "vue";
 import { router, Head } from "@inertiajs/vue3";
-import { Dark } from "quasar";
 defineProps({
     errors: Object,
     title: String,
@@ -121,58 +131,94 @@ function HandleAuthLogin() {
 }
 </script>
 <style lang="scss">
-body.screen--xs {
-    .login-form {
-        width: 85%;
-    }
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px 56px;
+    background:
+        radial-gradient(60% 50% at 50% 0%, var(--ui-primary-soft) 0%, transparent 70%),
+        var(--ui-bg-page);
 }
-body.screen--sm {
-    .login-form {
-        width: 60%;
-    }
-}
-.login-container {
+.login-wrap {
     width: 100%;
+    max-width: 400px;
+}
+.login-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.login-brand__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--q-primary);
+    color: #fff;
+}
+.login-brand__title {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--ui-text-highlighted);
+}
+.login-brand__caption {
+    font-size: 12px;
+    color: var(--ui-text-muted);
+}
+.login-card.q-card {
+    padding: 28px 24px 24px;
+    box-shadow: var(--ui-shadow-xs);
 }
 .login-form {
-    width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.login-header {
+    text-align: center;
+    margin-bottom: 4px;
+}
+.title-login {
+    margin: 0 0 4px;
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--ui-text-highlighted);
+}
+.text-login {
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--ui-text-muted);
+}
+.login-input.q-field--outlined .q-field__control {
+    height: 40px;
+    min-height: 40px;
+}
+.login-input .q-field__marginal {
+    height: 40px;
+}
+.login-input .q-field__bottom {
+    padding-left: 2px;
+}
+.login-input.q-field--with-bottom {
+    padding-bottom: 20px;
 }
 .login-btn {
-    height: 44px;
-    font-weight: 600;
+    height: 40px;
+    font-weight: 500;
 }
-
-.title-login{
-    font-weight: 700;
-    color: #344767;
-    letter-spacing: -0.05rem;
-    font-size: 1.5rem;
-    line-height: 1.375;
-}
-.text-login{
-    font-size: 0.95rem;
-    line-height: 1.625;
-    font-weight: 400;
-    color: rgb(103 116 142 / 1);
-}
-.image-container {
-  width: 900px; /* Ancho del contenedor */
-  height: 500px; /* Altura del contenedor */
-  overflow: hidden; /* Para ocultar cualquier parte de la imagen que exceda el contenedor */
-}
-
-.image-container img {
-  max-width: 100%; /* Asegura que la imagen no se extienda más allá del ancho del contenedor */
-  max-height: 100%; /* Asegura que la imagen no se extienda más allá de la altura del contenedor */
-  display: block; /* Evita que la imagen tenga espacio adicional por debajo */
-}
-.body--dark {
-    .title-login{
-        color: white;
-    }
-    .text-login{
-        color: rgb(255, 255, 255);
-        opacity: 0.5;
-    }
+.login-help {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ui-text-muted);
 }
 </style>

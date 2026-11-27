@@ -45,6 +45,18 @@
                                 aria-label="Imprimir reporte de rendición"
                                 @click="HandleGetReport()"
                             />
+                            <q-btn data-tour="edit-header-detail"
+                                v-if="can_edit_header"
+                                color="primary"
+                                icon="edit"
+                                label="Editar encabezado"
+                                size="12px"
+                                no-caps
+                                outline
+                                aria-label="Editar encabezado de la rendición"
+                                :disable="!!busy"
+                                @click="headerDialog = true"
+                            />
                             <q-btn data-tour="annul-button"
                                 v-if="can_annul"
                                 color="grey"
@@ -86,9 +98,47 @@
                     </div>
                 </q-card>
 
+                <!-- Pendiente de exportación: corregir y reintentar desde aquí -->
+                <q-card v-if="pendingSap" data-tour="sap-panel" flat bordered class="card-form q-mb-md sap-panel">
+                    <q-card-section class="row items-start q-col-gutter-md">
+                        <div class="col-auto">
+                            <q-avatar :color="lastExport && !lastExport.success ? 'red-1' : 'orange-1'"
+                                :text-color="lastExport && !lastExport.success ? 'negative' : 'warning'"
+                                :icon="lastExport && !lastExport.success ? 'cloud_off' : 'cloud_upload'" />
+                        </div>
+                        <div class="col">
+                            <div class="text-subtitle2 text-weight-medium">Autorizada, pendiente de exportación a SAP</div>
+                            <template v-if="lastExport && !lastExport.success">
+                                <div class="text-caption text-negative q-mt-xs" style="word-break: break-word;">
+                                    <strong>Último error de SAP:</strong> {{ lastExport.message }}
+                                </div>
+                                <div class="text-caption text-grey">
+                                    {{ lastExport.created_at }} · {{ lastExport.user?.name || "—" }}
+                                    · {{ export_logs.length }} intento{{ export_logs.length !== 1 ? "s" : "" }}
+                                </div>
+                            </template>
+                            <div v-else class="text-caption text-grey q-mt-xs">
+                                Todavía no se intentó exportar. Revise los datos y exporte cuando estén correctos.
+                            </div>
+                            <div class="text-caption q-mt-sm">
+                                Corrija lo necesario aquí mismo (encabezado o documentos) y vuelva a exportar.
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-auto row q-gutter-sm justify-end items-center">
+                            <q-btn v-if="export_logs.length" flat dense no-caps color="grey-8" icon="history"
+                                label="Historial" @click="logsDialog = true" />
+                            <q-btn v-if="can_edit_header" outline no-caps color="primary" icon="edit"
+                                label="Editar encabezado" :disable="!!busy" @click="headerDialog = true" />
+                            <q-btn data-tour="export-from-detail" unelevated no-caps color="positive" icon="cloud_upload"
+                                label="Exportar a SAP" :loading="busy === 'export'" :disable="!!busy"
+                                @click="HandleExportFromDetail" />
+                        </div>
+                    </q-card-section>
+                </q-card>
+
                 <!-- Status Banner -->
                 <q-banner data-tour="status-banner"
-                    v-if="statusMessage"
+                    v-if="statusMessage && !pendingSap"
                     :class="['card-form q-mb-md text-white', 'bg-' + statusBannerColor]"
                     dense
                     rounded
@@ -373,11 +423,11 @@
                                 <q-btn data-tour="add-document"
                                     color="primary"
                                     icon="add"
-                                    label="Nuevo"
+                                    label="Agregar documento"
                                     size="12px"
                                     no-caps
                                     unelevated
-                                    aria-label="Crear nuevo documento"
+                                    aria-label="Agregar documento"
                                     @click="HandleCreateDocument()"
                                 />
                             </div>
@@ -407,10 +457,12 @@
                         <div data-tour="documents-list" v-else class="q-gutter-md">
                             <q-card data-tour="document-card"
                                 v-for="(doc, i) in filteredDocuments"
+                                :id="`doc-${doc.id}`"
                                 :key="doc.id"
                                 flat
                                 bordered
                                 class="doc-card"
+                                :class="{ 'doc-card--focus': focusedDoc === doc.id }"
                             >
                                 <!-- Card Header -->
                                 <q-card-section class="q-py-sm">
@@ -829,12 +881,18 @@
                 </q-card-actions>
             </q-card>
         </q-dialog>
+        <!-- Editar encabezado sin salir del detalle -->
+        <EditHeaderDialog v-model="headerDialog" :accountability-id="accountability.id" from="detail" />
+        <!-- Intentos de exportación a SAP -->
+        <ExportLogsDialog v-model="logsDialog" :accountability-id="accountability.id" :logs="export_logs" />
     </Layout>
 </template>
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, computed, reactive, watch } from "vue";
+import EditHeaderDialog from "@/components/authorization/EditHeaderDialog.vue";
+import ExportLogsDialog from "@/components/authorization/ExportLogsDialog.vue";
+import { ref, computed, reactive, watch, onMounted, nextTick } from "vue";
 import { Head, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar, openURL } from "quasar";
@@ -858,9 +916,14 @@ const props = defineProps({
     status_change: { type: Object, default: null },
     can_authorize: Boolean,
     can_annul: Boolean,
+    can_edit_header: Boolean,
     has_next_level: Boolean,
+    // Intentos de exportación a SAP, del más reciente al más antiguo
+    export_logs: { type: Array, default: () => [] },
     // Mensaje de error de SAP: solo viene tras un fallo real de exportación al autorizar
     sap_error: { type: String, default: null },
+    // Documento recién creado o editado: se muestra y resalta al volver al detalle
+    focus: { type: Number, default: null },
 });
 
 const $q = useQuasar();
@@ -995,6 +1058,16 @@ function toggleExpand(id) {
     expandedRows.value[id] = !expandedRows.value[id];
 }
 
+// Al volver de crear o editar un documento se ubica en él, sin tener que buscarlo
+const focusedDoc = ref(null);
+onMounted(async () => {
+    if (!props.focus || !documents.value.some((d) => d.id === props.focus)) return;
+    focusedDoc.value = props.focus;
+    await nextTick();
+    document.getElementById(`doc-${props.focus}`)?.scrollIntoView({ block: "center" });
+    setTimeout(() => (focusedDoc.value = null), 2500);
+});
+
 // ── Vista contable (se carga al abrir la pestaña) ───────────
 const detailTab = ref("documents");
 const preview = reactive({ loading: false, error: null, data: null });
@@ -1052,6 +1125,34 @@ async function HandleConsultaFactura(doc) {
     }
 }
 
+// ── Cabecera y exportación desde el mismo detalle ───────────
+const headerDialog = ref(false);
+const logsDialog = ref(false);
+const lastExport = computed(() => props.export_logs?.[0] ?? null);
+
+// Reintenta la exportación sin salir del detalle: el servidor vuelve aquí con el
+// resultado (si falla, el panel muestra el nuevo error para corregir y reintentar)
+function HandleExportFromDetail() {
+    if (busy.value) return;
+    $q.dialog({
+        title: "Exportar a SAP",
+        message: "Se creará el asiento preliminar en SAP con los datos actuales de la rendición (puede revisarlo en la pestaña Vista contable). ¿Desea continuar?",
+        cancel: { label: "Cancelar", flat: true, noCaps: true },
+        ok: { label: "Exportar", color: "positive", noCaps: true },
+        persistent: true,
+    }).onOk(() => {
+        router.post(
+            route("panel.accountability.authorization.detail.re-export", accountability.value.id),
+            { from: "detail" },
+            {
+                preserveScroll: true,
+                onStart: () => (busy.value = "export"),
+                onFinish: () => (busy.value = null),
+            }
+        );
+    });
+}
+
 function HandleBack() {
     router.visit(
         props.from === "pending-export"
@@ -1091,11 +1192,14 @@ function HandleDeleteDocument(id) {
 // Envía la acción una sola vez: mientras corre, todos los botones quedan deshabilitados
 function HandlePost(action, url, payload, options = {}) {
     if (busy.value) return;
+    // Si vuelve al mismo detalle (p. ej. fallo de SAP) se conserva esta instancia, para que
+    // el diálogo "Autorizar sin SAP" siga controlando los botones. Si la respuesta es OTRA
+    // rendición ("siguiente pendiente") se monta limpia: sin la búsqueda, pestaña ni scroll
+    // de la anterior, que podrían ocultar documentos que hay que revisar.
+    const sameAccountability = (page) => page.props?.accountability?.id === accountability.value.id;
     router.post(url, payload, {
-        preserveScroll: true,
-        // Si vuelve al mismo detalle (p. ej. fallo de SAP) se conserva esta instancia,
-        // para que el diálogo "Autorizar sin SAP" siga controlando el estado de los botones
-        preserveState: true,
+        preserveScroll: sameAccountability,
+        preserveState: sameAccountability,
         ...options,
         onStart: () => (busy.value = action),
         onFinish: () => (busy.value = null),
@@ -1156,7 +1260,7 @@ function HandleAuthorizeStatus() {
     $q.dialog({
         title: isIntermediate ? "Aprobar nivel" : "Autorizar rendición",
         message: isIntermediate
-            ? "¿Está seguro de aprobar este nivel? La rendición avanzará al siguiente nivel de autorización."
+            ? "¿Está seguro de aprobar este nivel? La rendición avanzará al siguiente nivel de autorización y se abrirá su siguiente rendición pendiente, si la hay."
             : "¿Está seguro de autorizar esta rendición? Se exportará a SAP.",
         cancel: { label: "Cancelar", flat: true, noCaps: true },
         ok: { label: isIntermediate ? "Aprobar y avanzar" : "Autorizar", color: "positive", noCaps: true },
@@ -1225,6 +1329,10 @@ function HandleGetReport() {
 
 .doc-card:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.doc-card--focus {
+    outline: 2px solid var(--q-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

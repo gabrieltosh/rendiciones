@@ -27,6 +27,8 @@
                     row-key="id"
                     class="table-theme"
                     :filter="filter"
+                    v-model:expanded="expanded"
+                    :pagination="{ rowsPerPage: 15 }"
                     flat
                     separator="horizontal"
                     :table-header-class="{ 'table-header-theme': true }"
@@ -59,7 +61,7 @@
                     </template>
 
                     <template v-slot:body="props">
-                        <q-tr :props="props">
+                        <q-tr :props="props" :class="{ 'bg-blue-1': props.row.id === highlightId }">
                             <q-td auto-width>
                                 <q-btn data-tour="expand-levels"
                                     flat round dense size="sm"
@@ -157,6 +159,8 @@
                             <div class="q-mt-sm">
                                 {{ filter ? 'Sin resultados para la búsqueda' : 'No hay ciclos de autorización configurados' }}
                             </div>
+                            <q-btn v-if="!filter" flat no-caps color="primary" icon="add" label="Crear el primer ciclo"
+                                class="q-mt-sm" @click="router.visit(route('panel.authorization-cycle.create'))" />
                         </div>
                     </template>
                 </q-table>
@@ -169,15 +173,28 @@
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { Head, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
 
-defineProps({ title: String, data: Array });
+const props = defineProps({
+    title: String,
+    data: Array,
+    // Ciclo recién guardado: se resalta con sus niveles desplegados
+    highlight: { type: Number, default: null },
+});
 
 const $q = useQuasar();
 const filter = ref("");
+const expanded = ref([]);
+const highlightId = ref(null);
+onMounted(() => {
+    if (!props.highlight || !(props.data ?? []).some((row) => row.id === props.highlight)) return;
+    expanded.value = [props.highlight];
+    highlightId.value = props.highlight;
+    setTimeout(() => (highlightId.value = null), 3000);
+});
 
 const columns = [
     { name: "name",        label: "Nombre",      field: "name",        align: "left",   sortable: true },

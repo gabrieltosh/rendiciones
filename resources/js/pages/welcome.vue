@@ -29,11 +29,11 @@
                             @keydown.enter="router.visit(route('panel.accountability.authorization.index'))"
                         >
                             <q-card-section class="row items-center no-wrap">
-                                <q-avatar size="48px" color="orange-1" text-color="orange-9" icon="eva-checkmark-square-outline" />
+                                <q-avatar square size="40px" font-size="20px" color="orange-1" text-color="orange-9" icon="eva-checkmark-square-outline" class="stat-icon stat-icon--orange" />
                                 <div class="col q-ml-md">
-                                    <div class="text-caption text-grey">Por autorizar</div>
-                                    <div class="text-h5 text-weight-bold stat-number">{{ review.authorization }}</div>
-                                    <div class="text-caption">
+                                    <div class="stat-label">Por autorizar</div>
+                                    <div class="stat-value stat-number">{{ review.authorization }}</div>
+                                    <div class="stat-hint">
                                         {{ review.authorization ? 'Rendiciones esperando tu revisión' : 'No tienes rendiciones pendientes' }}
                                     </div>
                                 </div>
@@ -51,11 +51,11 @@
                             @keydown.enter="router.visit(route('panel.accountability.authorization.pending-export'))"
                         >
                             <q-card-section class="row items-center no-wrap">
-                                <q-avatar size="48px" color="blue-1" text-color="primary" icon="eva-cloud-upload-outline" />
+                                <q-avatar square size="40px" font-size="20px" color="blue-1" text-color="primary" icon="eva-cloud-upload-outline" class="stat-icon stat-icon--blue" />
                                 <div class="col q-ml-md">
-                                    <div class="text-caption text-grey">Pendientes de exportar a SAP</div>
-                                    <div class="text-h5 text-weight-bold stat-number">{{ review.pending_sap }}</div>
-                                    <div class="text-caption">
+                                    <div class="stat-label">Pendientes de exportar a SAP</div>
+                                    <div class="stat-value stat-number">{{ review.pending_sap }}</div>
+                                    <div class="stat-hint">
                                         {{ review.pending_sap ? 'Autorizadas que aún no llegan a SAP' : 'Todo exportado correctamente' }}
                                     </div>
                                 </div>
@@ -66,7 +66,7 @@
                 </div>
 
                 <!-- Resumen de mis rendiciones -->
-                <div class="text-subtitle2 text-grey-8 q-mb-sm section-title">Mis rendiciones</div>
+                <h2 class="section-title">Mis rendiciones</h2>
                 <div data-tour="summary-cards" class="row q-col-gutter-md q-mb-md">
                     <div
                         v-for="card in summaryCards"
@@ -76,14 +76,22 @@
                         <q-card class="card-form full-height">
                             <q-card-section>
                                 <div class="row items-center no-wrap q-mb-sm">
-                                    <q-icon :name="statusIcon(card.status)" :color="statusColor(card.status)" size="20px" />
-                                    <span class="text-caption text-weight-medium q-ml-xs ellipsis">{{ card.label }}</span>
+                                    <span class="stat-label ellipsis col">{{ card.label }}</span>
+                                    <q-avatar
+                                        square
+                                        size="28px"
+                                        font-size="16px"
+                                        class="stat-icon"
+                                        :color="statusColor(card.status) + '-1'"
+                                        :text-color="statusColor(card.status) + '-9'"
+                                        :icon="statusIcon(card.status)"
+                                    />
                                 </div>
-                                <div class="text-h5 text-weight-bold stat-number">{{ card.count }}</div>
-                                <div class="text-caption text-grey stat-number">
+                                <div class="stat-value stat-number">{{ card.count }}</div>
+                                <div class="stat-hint stat-number">
                                     Total {{ formatAmount(card.amount) }}
                                 </div>
-                                <div class="text-caption text-grey-6 q-mt-xs gt-xs">{{ card.hint }}</div>
+                                <div class="stat-hint q-mt-xs gt-xs">{{ card.hint }}</div>
                             </q-card-section>
                         </q-card>
                     </div>
@@ -91,8 +99,8 @@
 
                 <!-- Últimas rendiciones -->
                 <q-card data-tour="recent-accountabilities" class="card-form">
-                    <q-card-section class="row items-center q-pb-sm">
-                        <div class="text-subtitle1 text-weight-medium col">Últimas rendiciones</div>
+                    <q-card-section class="row items-center q-py-sm">
+                        <h2 class="card-title col">Últimas rendiciones</h2>
                         <q-btn
                             flat
                             dense
@@ -106,8 +114,8 @@
                     <q-separator />
 
                     <div v-if="recent.length === 0" class="text-center q-pa-xl">
-                        <q-icon name="receipt_long" size="64px" color="grey-4" aria-hidden="true" />
-                        <div class="text-body1 text-grey q-mt-md">Aún no registraste rendiciones</div>
+                        <q-icon name="receipt_long" size="40px" class="empty-icon" aria-hidden="true" />
+                        <div class="empty-title q-mt-md">Aún no registraste rendiciones</div>
                         <div class="text-caption text-grey">Elige un perfil y crea tu primera rendición de gastos.</div>
                         <q-btn
                             color="primary"
@@ -130,7 +138,10 @@
                         >
                             <q-item-section avatar>
                                 <q-avatar
-                                    size="38px"
+                                    square
+                                    size="34px"
+                                    font-size="18px"
+                                    class="stat-icon"
                                     :color="statusColor(row.status) + '-1'"
                                     :text-color="statusColor(row.status) + '-9'"
                                     :icon="statusIcon(row.status)"
@@ -209,17 +220,59 @@ function HandleOpenAccountability(row) {
     font-variant-numeric: tabular-nums;
 }
 .section-title {
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-size: 0.72rem;
+    margin: 8px 0 10px;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--ui-text-highlighted);
+}
+.card-title {
+    margin: 0;
+    font-size: 15px;
+    line-height: 24px;
+    font-weight: 600;
+    color: var(--ui-text-highlighted);
+}
+.stat-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ui-text-muted);
+}
+.stat-value {
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ui-text-highlighted);
+}
+.stat-hint {
+    font-size: 12.5px;
+    line-height: 18px;
+    color: var(--ui-text-muted);
+}
+.stat-icon {
+    border-radius: 8px;
+}
+.empty-icon {
+    color: var(--ui-text-dimmed);
+    background: var(--ui-bg-elevated);
+    border-radius: 999px;
+    padding: 12px;
+    box-sizing: content-box;
+}
+.empty-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ui-text-highlighted);
 }
 .action-card {
     cursor: pointer;
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 .action-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    transform: translateY(-1px);
+    border-color: var(--ui-border-accented);
+    background-color: var(--ui-bg-muted);
 }
 .action-card:focus-visible {
     outline: 2px solid var(--q-primary);
@@ -231,9 +284,6 @@ function HandleOpenAccountability(row) {
 @media (prefers-reduced-motion: reduce) {
     .action-card {
         transition: none;
-    }
-    .action-card:hover {
-        transform: none;
     }
 }
 </style>

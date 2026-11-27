@@ -1,24 +1,29 @@
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { router } from "@inertiajs/vue3";
-import { LocalStorage } from "quasar";
 import { tours } from "./definitions";
+import { processes } from "./processes";
 
 /*
  * Manual interactivo (driver.js).
  *
- * Cada página Inertia tiene un recorrido en ./definitions.js, indexado por el
- * nombre del componente (p. ej. "accountability/IndexAccountabilityNew"). Los
- * pasos apuntan a elementos marcados con data-tour="..." en las páginas. Un paso
- * cuyo elemento no está en pantalla (lista vacía, sección que no aplica al rol)
- * se muestra centrado con su ejemplo (`example`): así la guía se entiende aunque
- * el usuario todavía no tenga datos.
+ * Cada página Inertia (indexada por el nombre del componente, p. ej.
+ * "accountability/IndexAccountabilityNew") puede tener varios tutoriales:
+ *  - "Recorrido de la pantalla": los pasos de ./definitions.js.
+ *  - Tutoriales de procesos ("Cargar una factura escaneando el QR",
+ *    "Autorizar una rendición"…): ./processes.js.
  *
- * - El botón "?" de la cabecera dispara el evento window 'start-tour'.
- * - La primera vez que un usuario entra a una pantalla con guía, se ofrece sola.
+ * Los tutoriales nunca se inician solos: el usuario los elige en el menú del botón
+ * "Ayuda" de la cabecera (o en su menú de usuario).
+ *
+ * Los pasos apuntan a elementos marcados con data-tour="...". Un paso cuyo elemento
+ * no está en pantalla (lista vacía, diálogo cerrado, sección que no aplica al rol)
+ * se muestra centrado con su ejemplo (`example`), así se entiende aunque el
+ * usuario todavía no tenga datos; con `optional: true` se omite.
  */
 
-const SEEN_PREFIX = "tour-seen:";
+export const OVERVIEW_ID = "overview";
+
 let installed = false;
 let active = null;
 
@@ -26,13 +31,15 @@ function currentComponent() {
     return router.page?.component ?? null;
 }
 
-function currentUser() {
-    return router.page?.props?.auth?.user ?? null;
-}
-
-function seenKey(component) {
-    const user = currentUser();
-    return `${SEEN_PREFIX}${user?.username ?? user?.email ?? "anon"}:${component}`;
+function buildContext(props = router.page?.props ?? {}) {
+    const user = props?.auth?.user ?? null;
+    return {
+        user,
+        role: user?.type,
+        isAdmin: user?.type === "Administrador",
+        isAuthorizer: user?.type === "Administrador" || user?.type === "Autorizador",
+        props,
+    };
 }
 
 // Tarjeta de datos de ejemplo que acompaña a un paso (HTML simple, sin estilos externos)
@@ -61,14 +68,14 @@ function findElement(selector) {
     return Array.from(document.querySelectorAll(selector)).find(isOnScreen) ?? null;
 }
 
-function buildSteps(definition, context) {
-    const raw = typeof definition.steps === "function" ? definition.steps(context) : definition.steps;
-    return raw
+function buildSteps(rawSteps, context) {
+    const raw = typeof rawSteps === "function" ? rawSteps(context) : rawSteps;
+    return (raw || [])
         .filter((step) => !step.when || step.when(context))
         .map((step) => {
             const selector = step.target ? `[data-tour="${step.target}"]` : step.element;
             const element = selector ? findElement(selector) : null;
-            // Sin elemento visible: paso centrado, solo si trae texto útil (ejemplo u "optional: false")
+            // Sin elemento visible: se omite si es opcional; si no, va centrado con su ejemplo
             if (selector && !element && step.optional) return null;
             const description = `${step.text ?? ""}${exampleHtml(element ? step.exampleAlways && step.example : step.example)}`;
             return {
@@ -84,23 +91,39 @@ function buildSteps(definition, context) {
         .filter(Boolean);
 }
 
-export function hasTour(component = currentComponent()) {
-    return Boolean(component && tours[component]);
+/**
+ * Tutoriales disponibles en una página para el usuario actual:
+ * [{ id, title, description, icon, steps }]. El recorrido de la pantalla va primero.
+ */
+export function tutorialsFor(component = currentComponent(), props = router.page?.props) {
+    if (!component) return [];
+    const context = buildContext(props);
+    const list = [];
+
+    const overview = tours[component];
+    if (overview?.steps) {
+        list.push({
+            id: OVERVIEW_ID,
+            title: "Recorrido de la pantalla",
+            description: overview.description ?? "Qué es cada parte de esta pantalla.",
+            icon: "explore",
+            steps: overview.steps,
+        });
+    }
+
+    for (const tutorial of processes[component] ?? []) {
+        if (tutorial.when && !tutorial.when(context)) continue;
+        list.push({ icon: "school", ...tutorial });
+    }
+
+    return list;
 }
 
-export function startTour(component = currentComponent()) {
-    const definition = tours[component];
-    if (!definition) return false;
+export function startTour(tutorialId = OVERVIEW_ID, component = currentComponent()) {
+    const tutorial = tutorialsFor(component).find((t) => t.id === tutorialId) ?? tutorialsFor(component)[0];
+    if (!tutorial) return false;
 
-    const user = currentUser();
-    const context = {
-        user,
-        role: user?.type,
-        isAdmin: user?.type === "Administrador",
-        isAuthorizer: user?.type === "Administrador" || user?.type === "Autorizador",
-        props: router.page?.props ?? {},
-    };
-    const steps = buildSteps(definition, context);
+    const steps = buildSteps(tutorial.steps, buildContext());
     if (!steps.length) return false;
 
     active?.destroy();
@@ -118,7 +141,6 @@ export function startTour(component = currentComponent()) {
         doneBtnText: "Entendido",
         steps,
         onDestroyed: () => {
-            LocalStorage.set(seenKey(component), true);
             active = null;
         },
     });
@@ -126,28 +148,11 @@ export function startTour(component = currentComponent()) {
     return true;
 }
 
-// Ofrece la guía la primera vez que el usuario abre una pantalla que la tiene
-function offerFirstTime() {
-    const component = currentComponent();
-    if (!hasTour(component) || tours[component].auto === false) return;
-    if (LocalStorage.getItem(seenKey(component))) return;
-    // Se espera a que la página termine de pintarse (tablas, tarjetas)
-    setTimeout(() => {
-        if (currentComponent() === component && !active) startTour(component);
-    }, 900);
-}
-
+// El evento window 'start-tour' (detail: { id }) inicia un tutorial de la página actual
 export function installTours() {
     if (installed) return;
     installed = true;
-    window.addEventListener("start-tour", () => startTour());
-    router.on("navigate", () => {
-        active?.destroy();
-        offerFirstTime();
-    });
-}
-
-// Para la primera carga (la visita inicial no emite 'navigate' en todas las versiones)
-export function offerInitialTour() {
-    offerFirstTime();
+    window.addEventListener("start-tour", (event) => startTour(event.detail?.id));
+    // Al cambiar de página se cierra cualquier tutorial abierto
+    router.on("navigate", () => active?.destroy());
 }

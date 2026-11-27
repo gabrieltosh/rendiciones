@@ -2,7 +2,7 @@
     <div class="form-field" :class="{ 'form-field--error': hasError }">
         <label v-if="label" class="form-label" :for="inputId">
             {{ label }}
-            <span v-if="required" class="text-negative" aria-hidden="true">*</span>
+            <span v-if="required" class="form-field__required" aria-hidden="true">*</span>
         </label>
         <slot />
         <div v-if="hasError" class="form-field__error" role="alert">

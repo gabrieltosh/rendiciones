@@ -99,7 +99,10 @@
                             <q-td key="id" :props="props">{{ props.row.id }}</q-td>
                             <q-td key="user_name" :props="props">{{ props.row.user?.name }}</q-td>
                             <q-td key="profile_name" :props="props">{{ props.row.profile?.name }}</q-td>
-                            <q-td key="description" :props="props">{{ props.row.description }}</q-td>
+                            <q-td key="description" :props="props">
+                                <a href="#" class="text-primary text-weight-medium" style="text-decoration: none;"
+                                    @click.prevent="HandleOpenDetail(props.row.id)">{{ props.row.description }}</a>
+                            </q-td>
                             <q-td key="employee_name" :props="props">{{ props.row.employee_name || '—' }}</q-td>
                             <q-td key="total" :props="props" class="text-right stat-number">
                                 {{ formatMoney(props.row.total, props.row.profile?.type_currency) }}
@@ -118,7 +121,13 @@
                                 <span v-else class="text-caption text-grey">Sin intentos</span>
                             </q-td>
                             <q-td key="actions" :props="props">
-                                <div class="q-gutter-xs">
+                                <div class="row no-wrap items-center justify-center q-gutter-xs">
+                                    <q-btn data-tour="open-detail" unelevated dense no-caps no-wrap color="primary"
+                                        icon="build" label="Revisar y corregir" class="q-px-sm"
+                                        aria-label="Revisar y corregir la rendición" :disable="batch.running"
+                                        @click="HandleOpenDetail(props.row.id)">
+                                        <q-tooltip>Abre la rendición: corrija encabezado o documentos y exporte desde ahí</q-tooltip>
+                                    </q-btn>
                                     <q-btn data-tour="export-one" flat round dense size="sm" icon="cloud_upload" color="positive"
                                         aria-label="Exportar a SAP" :loading="exportingId === props.row.id"
                                         :disable="batch.running || (exportingId !== null && exportingId !== props.row.id)"
@@ -131,13 +140,9 @@
                                             :label="props.row.export_logs.length" />
                                         <q-tooltip>Historial de exportación</q-tooltip>
                                     </q-btn>
-                                    <q-btn flat round dense size="sm" icon="visibility" color="primary"
-                                        aria-label="Ver detalle" @click="HandleOpenDetail(props.row.id)">
-                                        <q-tooltip>Ver detalle</q-tooltip>
-                                    </q-btn>
                                     <q-btn data-tour="edit-header" flat round dense size="sm" icon="edit" color="secondary"
-                                        aria-label="Editar" :disable="batch.running" @click="HandleOpenEdit(props.row.id)">
-                                        <q-tooltip>Editar</q-tooltip>
+                                        aria-label="Editar encabezado" :disable="batch.running" @click="HandleOpenEdit(props.row.id)">
+                                        <q-tooltip>Editar encabezado rápido</q-tooltip>
                                     </q-btn>
                                 </div>
                             </q-td>
@@ -156,85 +161,17 @@
             </div>
         </div>
 
-        <!-- ── Historial de exportación ──────────────────────────────── -->
-        <q-dialog v-model="logsDialog">
-            <q-card style="width: 900px; max-width: 95vw;">
-                <q-card-section class="row items-center q-pb-none">
-                    <div class="text-h6 title-form">Historial de exportación · Rendición #{{ logsRow?.id }}</div>
-                    <q-space />
-                    <q-btn icon="close" flat round dense v-close-popup aria-label="Cerrar" />
-                </q-card-section>
-                <q-card-section>
-                    <q-markup-table v-if="logsRow?.export_logs?.length" flat bordered dense separator="horizontal"
-                        class="table-theme">
-                        <thead>
-                            <tr class="table-header-theme">
-                                <th class="text-left">Fecha</th>
-                                <th class="text-left">Usuario</th>
-                                <th class="text-left">Resultado</th>
-                                <th class="text-left">Modo</th>
-                                <th class="text-left">Asiento</th>
-                                <th class="text-left">Mensaje</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="log in logsRow.export_logs" :key="log.id">
-                                <td style="white-space: nowrap;">{{ log.created_at }}</td>
-                                <td>{{ log.user?.name || '—' }}</td>
-                                <td>
-                                    <q-badge :color="log.success ? 'positive' : 'negative'"
-                                        :label="log.success ? 'Exportada' : 'Error'" />
-                                </td>
-                                <td>{{ log.mode || '—' }}</td>
-                                <td>{{ log.sap_key || '—' }}</td>
-                                <td style="white-space: normal; min-width: 280px;">{{ log.message }}</td>
-                            </tr>
-                        </tbody>
-                    </q-markup-table>
-                    <div v-else class="text-center text-grey q-pa-lg">
-                        Todavía no hay intentos de exportación registrados.
-                    </div>
-                </q-card-section>
-            </q-card>
-        </q-dialog>
-
-        <!-- ── Modal Edición ─────────────────────────────────────────── -->
-        <q-dialog v-model="editDialog" persistent>
-            <q-card style="width: 900px; max-width: 95vw;">
-                <q-card-section class="row items-center q-pb-none">
-                    <div class="text-h6 title-form">Editar Rendición</div>
-                    <q-space />
-                    <q-btn icon="close" flat round dense v-close-popup aria-label="Cerrar" :disable="editSaving" />
-                </q-card-section>
-
-                <q-card-section v-if="editLoading" class="text-center q-py-xl">
-                    <q-spinner size="40px" color="primary" />
-                </q-card-section>
-
-                <q-card-section v-else-if="editData">
-                    <AccountabilityHeaderForm
-                        v-model="editForm"
-                        :profile="editData.profile"
-                        :accounts="editData.accounts"
-                        :employees="editData.employees"
-                        :errors="editErrors"
-                    />
-                </q-card-section>
-
-                <q-card-actions align="right">
-                    <q-btn flat label="Cancelar" color="secondary" v-close-popup no-caps :disable="editSaving" />
-                    <q-btn label="Guardar cambios" color="primary" @click="HandleUpdateForm" no-caps unelevated
-                        :loading="editSaving" :disable="editSaving || !editData" />
-                </q-card-actions>
-            </q-card>
-        </q-dialog>
+        <!-- Intentos de exportación y edición rápida del encabezado -->
+        <ExportLogsDialog v-model="logsDialog" :accountability-id="logsRow?.id" :logs="logsRow?.export_logs ?? []" />
+        <EditHeaderDialog v-model="editDialog" :accountability-id="editId" from="pending-export" />
     </Layout>
 </template>
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import AccountabilityHeaderForm from "@/components/authorization/AccountabilityHeaderForm.vue";
+import EditHeaderDialog from "@/components/authorization/EditHeaderDialog.vue";
+import ExportLogsDialog from "@/components/authorization/ExportLogsDialog.vue";
 import { ref, reactive, watch } from "vue";
 import { formatMoney } from "@/utils/accountability";
 import { Head, usePage, router } from "@inertiajs/vue3";
@@ -378,51 +315,13 @@ function HandleOpenDetail(id) {
     router.visit(route("panel.accountability.authorization.detail.index", id) + "?from=pending-export");
 }
 
-// ── Modal de edición ────────────────────────────────────────
+// ── Edición rápida del encabezado (diálogo compartido con el detalle) ──
 const editDialog = ref(false);
-const editLoading = ref(false);
-const editSaving = ref(false);
-const editData = ref(null);
-const editForm = ref({});
-const editErrors = ref({});
+const editId = ref(null);
 
-async function HandleOpenEdit(id) {
-    editData.value = null;
-    editErrors.value = {};
-    editLoading.value = true;
+function HandleOpenEdit(id) {
+    editId.value = id;
     editDialog.value = true;
-
-    try {
-        const res = await axios.get(route("panel.accountability.authorization.edit-data", id), {
-            headers: { Accept: "application/json" },
-        });
-        editData.value = res.data;
-        editForm.value = { ...res.data.accountability, from: "pending-export" };
-    } catch {
-        $q.notify({ type: "negative", message: "Error al cargar los datos." });
-        editDialog.value = false;
-    } finally {
-        editLoading.value = false;
-    }
-}
-
-function HandleUpdateForm() {
-    if (editSaving.value) return;
-    editErrors.value = {};
-    router.put(route("panel.accountability.authorization.update"), editForm.value, {
-        preserveScroll: true,
-        onStart: () => (editSaving.value = true),
-        onSuccess: () => {
-            // Si el servidor rechazó el cambio (p. ej. ya exportada) el aviso lo muestra el layout
-            if (page.props.flash?.type !== "negative") editDialog.value = false;
-        },
-        onError: (errors) => {
-            editErrors.value = errors;
-        },
-        onFinish: () => {
-            editSaving.value = false;
-        },
-    });
 }
 </script>
 

@@ -179,7 +179,10 @@ const form = ref({
     name: cycleData.name,
     description: cycleData.description ?? "",
     is_active: cycleData.is_active,
+    // El id permite actualizar cada nivel en su lugar aunque se reordenen (el historial
+    // de aprobaciones queda asociado al nivel correcto); los niveles nuevos van sin id
     levels: cycleData.levels.map((l) => ({
+        id: l.id,
         name: l.name,
         users: l.users.map((u) => u.id),
     })),
