@@ -36,7 +36,7 @@
                                     : router.visit(route('panel.accountability.authorization.index'))"
                             />
                                 <q-btn
-                                    v-if="accountability.status !== 'Anulado'"
+                                    v-if="accountability.status !== 'Anulado' && !accountability.sap_exported"
                                     color="grey"
                                     label="Anular"
                                     size="12px"

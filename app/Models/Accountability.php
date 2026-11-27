@@ -62,6 +62,10 @@ class Accountability extends Model implements Auditable
     public function currentLevel(){
         return $this->belongsTo(AuthorizationCycleLevel::class,'current_level_id','id');
     }
+    /** Intentos de exportación a SAP, del más reciente al más antiguo. */
+    public function exportLogs(){
+        return $this->hasMany(SapExportLog::class,'accountability_id','id')->orderByDesc('id');
+    }
     public function levelApprovals(){
         return $this->hasMany(AccountabilityLevelApproval::class,'accountability_id','id');
     }

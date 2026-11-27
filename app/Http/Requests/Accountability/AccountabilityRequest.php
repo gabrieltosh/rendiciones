@@ -4,6 +4,7 @@ namespace App\Http\Requests\Accountability;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Models\Profile;
+use App\Models\Accountability;
 
 class AccountabilityRequest extends FormRequest
 {
@@ -22,15 +23,18 @@ class AccountabilityRequest extends FormRequest
      */
     public function rules(): array
     {
-        $profile = Profile::where('id', $this->route('profile_id'))->first();
+        // En autorización la ruta no trae profile_id: se toma el perfil de la rendición
+        $profileId = $this->route('profile_id')
+            ?? Accountability::where('id', $this->input('id'))->value('profile_id');
+        $profile = $profileId ? Profile::where('id', $profileId)->first() : null;
         $employeeRule = ($profile && !$profile->sin_empleado) ? 'required' : 'nullable';
         return [
             'employee' => $employeeRule,
             'account'=>'required',
-            'total'=>'required',
+            'total'=>'required|numeric',
             'description'=>'required',
             'start_date'=>'required',
-            'end_date'=>'required',
+            'end_date'=>'required|after_or_equal:start_date',
         ];
     }
     public function messages(): array
@@ -38,9 +42,11 @@ class AccountabilityRequest extends FormRequest
         return [
             'account.required'=>'El campo Cuenta es obligatorio',
             'total.required'=>'El campo Monto Recepcionado es obligatorio',
+            'total.numeric'=>'El Monto Recepcionado debe ser un número',
             'description.required'=>'El campo Description es obligatorio',
             'start_date.required'=>'El campo Fecha Inicio es obligatorio',
             'end_date.required'=>'El campo Fecha Final es obligatorio',
+            'end_date.after_or_equal'=>'La Fecha Final no puede ser anterior a la Fecha Inicio',
             'employee.required'=>'El campo Empleado es obligatorio'
         ];
     }
