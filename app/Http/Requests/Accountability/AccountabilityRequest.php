@@ -40,13 +40,13 @@ class AccountabilityRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'account.required'=>'El campo Cuenta es obligatorio',
-            'total.required'=>'El campo Monto Recepcionado es obligatorio',
-            'total.numeric'=>'El Monto Recepcionado debe ser un número',
-            'description.required'=>'El campo Description es obligatorio',
-            'start_date.required'=>'El campo Fecha Inicio es obligatorio',
-            'end_date.required'=>'El campo Fecha Final es obligatorio',
-            'end_date.after_or_equal'=>'La Fecha Final no puede ser anterior a la Fecha Inicio',
+            'account.required'=>'El campo Cuenta de la rendición es obligatorio',
+            'total.required'=>'El campo Monto recibido es obligatorio',
+            'total.numeric'=>'El Monto recibido debe ser un número',
+            'description.required'=>'El campo Descripción es obligatorio',
+            'start_date.required'=>'El campo Fecha de inicio es obligatorio',
+            'end_date.required'=>'El campo Fecha final es obligatorio',
+            'end_date.after_or_equal'=>'La Fecha final no puede ser anterior a la Fecha de inicio',
             'employee.required'=>'El campo Empleado es obligatorio'
         ];
     }

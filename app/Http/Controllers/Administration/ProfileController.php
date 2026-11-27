@@ -605,7 +605,7 @@ SQL;
 
     public function HandleEditProfile($id)
     {
-        Session::put('title', 'Editar Profile');
+        Session::put('title', 'Editar Perfil');
         $field_document_type = Management::where('name', 'document_type')->first();
         $profile = Profile::where('id', $id)->with([
             'documents' => function ($q) {

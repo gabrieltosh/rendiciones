@@ -14,13 +14,13 @@
                     <template #actions>
                         <q-btn flat color="secondary" label="Cancelar" no-caps :disable="saving"
                             @click="router.visit(route('panel.authorization-cycle.index'))" />
-                        <q-btn color="primary" icon="eva-checkmark-outline" label="Guardar ciclo" no-caps unelevated
+                        <q-btn data-tour="save-cycle" color="primary" icon="eva-checkmark-outline" label="Guardar ciclo" no-caps unelevated
                             :loading="saving" @click="HandleUpdate()" />
                     </template>
                 </PageHeader>
 
                 <!-- Datos del ciclo -->
-                <q-card class="card-form q-pa-md q-mb-md">
+                <q-card data-tour="cycle-data" class="card-form q-pa-md q-mb-md">
                     <div class="form-section-title q-mb-md">Datos del ciclo</div>
                     <div class="row q-col-gutter-md">
                         <div class="col-xs-12 col-sm-8">
@@ -29,7 +29,7 @@
                                     placeholder="Ej: Aprobación Gerencial" />
                             </FormField>
                         </div>
-                        <div class="col-xs-12 col-sm-4">
+                        <div data-tour="cycle-status" class="col-xs-12 col-sm-4">
                             <FormField label="Estado" hint="Solo los ciclos activos se asignan a usuarios">
                                 <q-toggle v-model="form.is_active" :label="form.is_active ? 'Activo' : 'Inactivo'" color="positive" />
                             </FormField>
@@ -43,14 +43,14 @@
                 </q-card>
 
                 <!-- Niveles -->
-                <q-card class="card-form q-pa-md">
+                <q-card data-tour="cycle-levels" class="card-form q-pa-md">
                     <div class="row items-center q-mb-md">
                         <div class="col">
                             <div class="form-section-title">Niveles de autorización</div>
                             <div class="form-section-caption">La rendición pasa por cada nivel en orden; basta con que apruebe uno de sus autorizadores.</div>
                         </div>
                         <div class="col-auto">
-                            <q-btn outline color="primary" icon="add" label="Agregar nivel" no-caps
+                            <q-btn data-tour="add-level" outline color="primary" icon="add" label="Agregar nivel" no-caps
                                 @click="HandleAddLevel()" />
                         </div>
                     </div>
@@ -79,7 +79,7 @@
 
                             <!-- Card -->
                             <div class="col q-pb-md">
-                                <q-card flat bordered>
+                                <q-card data-tour="level-card" flat bordered>
                                     <q-card-section class="q-py-sm">
                                         <div class="row items-center q-col-gutter-sm no-wrap">
                                             <div class="col">
@@ -94,7 +94,7 @@
                                                     />
                                                 </FormField>
                                             </div>
-                                            <div class="col-auto q-gutter-xs">
+                                            <div data-tour="level-order" class="col-auto q-gutter-xs">
                                                 <q-btn flat round dense size="sm" icon="arrow_upward" color="grey"
                                                     :disable="idx === 0" aria-label="Subir nivel" @click="HandleMoveLevel(idx, -1)">
                                                     <q-tooltip>Subir</q-tooltip>
@@ -112,7 +112,7 @@
                                     </q-card-section>
                                     <q-separator />
                                     <q-card-section class="q-py-sm">
-                                        <FormField label="Autorizadores" required :error="errors[`levels.${idx}.users`]">
+                                        <FormField data-tour="level-approvers" label="Autorizadores" required :error="errors[`levels.${idx}.users`]">
                                             <q-select
                                                 v-model="level.users"
                                                 :options="filteredUsers"

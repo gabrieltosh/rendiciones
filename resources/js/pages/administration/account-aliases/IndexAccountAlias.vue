@@ -9,17 +9,17 @@
                 icon="eva-pricetags-outline"
             >
                 <template #actions>
-                    <q-btn flat color="primary" icon="download" label="Plantilla" no-caps
+                    <q-btn data-tour="alias-template" flat color="primary" icon="download" label="Plantilla" no-caps
                         :href="route('panel.account-alias.template')" type="a" target="_blank" />
-                    <q-btn outline color="primary" icon="upload_file" label="Importar Excel" no-caps
+                    <q-btn data-tour="alias-import" outline color="primary" icon="upload_file" label="Importar Excel" no-caps
                         @click="importDialog = true" />
-                    <q-btn color="primary" icon="add" label="Nuevo Alias" no-caps unelevated
+                    <q-btn data-tour="new-alias" color="primary" icon="add" label="Nuevo Alias" no-caps unelevated
                         @click="HandleOpenCreate" />
                 </template>
             </PageHeader>
 
             <q-card class="card-form">
-                <q-table
+                <q-table data-tour="aliases-table"
                     :rows="aliases"
                     :columns="columns"
                     row-key="id"
@@ -52,7 +52,7 @@
                                 <span class="text-primary text-weight-medium">{{ props.row.alias }}</span>
                             </q-td>
                             <q-td key="actions" :props="props">
-                                <q-btn flat round dense size="sm" color="primary" icon="eva-edit-2-outline"
+                                <q-btn data-tour="edit-alias" flat round dense size="sm" color="primary" icon="eva-edit-2-outline"
                                     aria-label="Editar alias" @click="HandleStartEdit(props.row)">
                                     <q-tooltip>Editar</q-tooltip>
                                 </q-btn>
@@ -187,6 +187,32 @@
                 </q-card>
             </q-dialog>
 
+            <!-- Dialog: códigos omitidos en la importación -->
+            <q-dialog v-model="skippedDialog">
+                <q-card style="width: 420px; max-width: 96vw;">
+                    <q-card-section class="row items-center q-pb-none">
+                        <q-icon name="warning" color="warning" size="24px" class="q-mr-sm" />
+                        <div class="text-h6">Códigos omitidos</div>
+                        <q-space />
+                        <q-btn icon="close" flat round dense v-close-popup aria-label="Cerrar" />
+                    </q-card-section>
+                    <q-card-section>
+                        <div class="text-caption text-grey q-mb-sm">
+                            Estos códigos de formato no se encontraron en SAP y no se importaron
+                            ({{ skippedCodes.length }}):
+                        </div>
+                        <q-list dense bordered separator class="rounded-borders" style="max-height: 50vh; overflow-y: auto;">
+                            <q-item v-for="code in skippedCodes" :key="code">
+                                <q-item-section>{{ code }}</q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-card-section>
+                    <q-card-actions align="right" class="q-px-md q-py-sm">
+                        <q-btn flat label="Cerrar" no-caps v-close-popup />
+                    </q-card-actions>
+                </q-card>
+            </q-dialog>
+
             </div>
         </div>
     </Layout>
@@ -215,6 +241,8 @@ const importDialog = ref(false);
 const importFile   = ref(null);
 const importErrors = ref([]);
 const importing    = ref(false);
+const skippedCodes  = ref([]);
+const skippedDialog = ref(false);
 const treeFilter   = ref("");
 const selectedLabel = ref(null);
 const selectedNode  = ref(null);
@@ -295,7 +323,6 @@ function HandleSave() {
                 preserveState: false,
                 onSuccess: () => {
                     dialog.value = false;
-                    $q.notify({ type: "positive", message: "Alias actualizado correctamente" });
                 },
             }
         );
@@ -313,7 +340,6 @@ function HandleSave() {
                 preserveState: false,
                 onSuccess: () => {
                     dialog.value = false;
-                    $q.notify({ type: "positive", message: "Alias creado correctamente" });
                 },
             }
         );
@@ -334,11 +360,14 @@ async function HandleImport() {
     formData.append('file', importFile.value);
 
     try {
-        await axios.post(route('panel.account-alias.import'), formData, {
+        const { data } = await axios.post(route('panel.account-alias.import'), formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
         importDialog.value = false;
-        $q.notify({ type: 'positive', message: 'Importación completada correctamente' });
+        $q.notify({ type: data.type || 'positive', message: data.message || 'Importación completada' });
+        // Mostrar los códigos que no se encontraron en SAP
+        skippedCodes.value = data.skipped_codes || [];
+        skippedDialog.value = skippedCodes.value.length > 0;
         router.reload({ preserveScroll: true });
     } catch (e) {
         const errors = e.response?.data?.errors;
@@ -360,9 +389,6 @@ function HandleDelete(row) {
     }).onOk(() => {
         router.delete(route("panel.account-alias.delete", row.id), {
             preserveState: false,
-            onSuccess: () => {
-                $q.notify({ type: "positive", message: "Alias eliminado correctamente" });
-            },
         });
     });
 }

@@ -6,7 +6,6 @@ use App\Http\Controllers\Panel\PanelController;
 use App\Http\Controllers\Administration\UserController;
 use App\Http\Controllers\Administration\ManagementController;
 use App\Http\Controllers\Administration\ProfileController;
-use App\Http\Controllers\Administration\DocumentController;
 use App\Http\Controllers\Administration\SupplierController;
 use App\Http\Controllers\Administration\AreaController;
 use App\Http\Controllers\Administration\ReportController;
@@ -15,6 +14,8 @@ use App\Http\Controllers\Administration\AccountAliasController;
 use App\Http\Controllers\Accountability\ProfileController as AccountabilityProfileController;
 use App\Http\Controllers\Accountability\AccountabilityController;
 use App\Http\Controllers\Accountability\ExpenseItemsController;
+use App\Http\Controllers\Accountability\SupplierLookupController;
+use App\Http\Controllers\Accountability\DocumentLookupController;
 use App\Http\Controllers\Authorization\AccountabilityController as AuthAccountabilityController;
 /*
 |--------------------------------------------------------------------------
@@ -26,8 +27,6 @@ use App\Http\Controllers\Authorization\AccountabilityController as AuthAccountab
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::get('test',[PanelController::class,'test']);
-
 Route::middleware('guest')->group(function() {
 
     Route::get('login', [AuthController::class, 'HandleIndexAuth'])->name('login');
@@ -73,14 +72,6 @@ Route::middleware('auth')->group(function() {
                 Route::get('create','HandleCreateProfile')->name('create');
                 Route::post('{id}/copy','HandleCopyProfile')->name('copy');
             });
-            Route::delete('{id}/document',[DocumentController::class,'HandleDeleteDocument'])->name('document.delete');
-            Route::name('document.')->prefix('document')->controller(DocumentController::class)->group(function(){
-                Route::get('','HandleIndexDocument')->name('index');
-                Route::post('','HandleStoreDocument')->name('store');
-                Route::put('','HandleUpdateDocument')->name('update');
-                Route::get('{id}/edit','HandleEditDocument')->name('edit');
-                Route::get('create','HandleCreateDocument')->name('create');
-            });
             Route::delete('{id}/area',[AreaController::class,'HandleDeleteArea'])->name('area.delete');
             Route::name('area.')->prefix('area')->controller(AreaController::class)->group(function(){
                 Route::get('','HandleIndexArea')->name('index');
@@ -98,7 +89,6 @@ Route::middleware('auth')->group(function() {
                 Route::get('create','HandleCreateSupplier')->name('create');
             });
             Route::get('report/audit-log', [ReportController::class, 'HandleIndexAuditLog'])->name('report.audit-log');
-
             Route::name('account-alias.')->prefix('account-alias')->controller(AccountAliasController::class)->group(function () {
                 Route::get('', 'HandleIndexAccountAlias')->name('index');
                 Route::post('', 'HandleStoreAlias')->name('store');
@@ -122,9 +112,11 @@ Route::middleware('auth')->group(function() {
         // ── Administrador + Autorizador ──────────────────────────────────────
         Route::middleware('role:Administrador,Autorizador')->group(function(){
             Route::get('report/accountability', [ReportController::class, 'HandleIndexReport'])->name('report.accountability');
+            Route::get('report/accountability/export', [ReportController::class, 'HandleExportReport'])->name('report.accountability.export');
             Route::name('accountability.authorization.')->prefix('accountability/authorization')->controller(AuthAccountabilityController::class)->group(function(){
                 Route::get('','HandleIndexAccountability')->name('index');
                 Route::get('pending-export','HandleIndexPendingExport')->name('pending-export');
+                Route::get('authorized','HandleIndexAuthorized')->name('authorized');
                 Route::get('employees','HandleSearchEmployees')->name('employees');
                 Route::get('{id}/edit-data','HandleGetEditData')->name('edit-data');
                 Route::get('{id}/edit','HandleEditAccountability')->name('edit');
@@ -136,6 +128,7 @@ Route::middleware('auth')->group(function() {
                     Route::post('force-authorize','HandleForceAuthorize')->name('force-authorize');
                     Route::post('re-export','HandleReExportSAP')->name('re-export');
                     Route::get('','HandleDetailAccountability')->name('index');
+                    Route::get('preview','HandlePreviewAccountability')->name('preview');
                     Route::get('create','HandleCreateDocument')->name('create');
                     Route::post('store','HandleStoreDocument')->name('store');
                     Route::post('update','HandleUpdateDocument')->name('update');
@@ -146,6 +139,10 @@ Route::middleware('auth')->group(function() {
         });
 
         // ── Todos los usuarios autenticados (Solicitante) ────────────────────
+        // Búsquedas livianas de los formularios de documentos (solicitante y autorizador)
+        Route::get('supplier-lookup', [SupplierLookupController::class, 'HandleSearchSuppliers'])->name('supplier-lookup');
+        Route::get('document-duplicate', [DocumentLookupController::class, 'HandleCheckDuplicateDocument'])->name('document-duplicate');
+
         Route::name('accountability.')->prefix('accountability')->group(function(){
             Route::get('profiles',[AccountabilityProfileController::class,'HandleIndexProfiles'])->name('profiles');
             Route::name('manage.')->prefix('{profile_id}/manage')->controller(AccountabilityController::class)->group(function(){

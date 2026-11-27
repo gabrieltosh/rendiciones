@@ -9,7 +9,7 @@
                     icon="eva-layers-outline"
                 >
                     <template #actions>
-                        <q-btn
+                        <q-btn data-tour="create-profile"
                             color="primary"
                             icon="add"
                             label="Crear Perfil"
@@ -21,7 +21,7 @@
                 </PageHeader>
 
                 <q-card class="card-form">
-                    <q-table
+                    <q-table data-tour="profiles-table"
                         :rows="data"
                         :columns="table.columns"
                         row-key="id"
@@ -31,6 +31,7 @@
                         separator="horizontal"
                         :table-header-class="{ 'table-header-theme': true }"
                         :pagination="{ rowsPerPage: 15 }"
+                        :grid="$q.screen.xs"
                     >
                         <template v-slot:top>
                             <div class="text-subtitle1 text-weight-medium">Lista de Perfiles</div>
@@ -64,7 +65,7 @@
                                     {{ props.row.created_at }}
                                 </q-td>
                                 <q-td key="actions" :props="props">
-                                    <q-btn
+                                    <q-btn data-tour="edit-profile"
                                         flat
                                         round
                                         dense
@@ -76,7 +77,7 @@
                                     >
                                         <q-tooltip>Editar</q-tooltip>
                                     </q-btn>
-                                    <q-btn
+                                    <q-btn data-tour="copy-profile"
                                         flat
                                         round
                                         dense
@@ -88,7 +89,7 @@
                                     >
                                         <q-tooltip>Duplicar</q-tooltip>
                                     </q-btn>
-                                    <q-btn
+                                    <q-btn data-tour="delete-profile"
                                         flat
                                         round
                                         dense
@@ -102,6 +103,27 @@
                                     </q-btn>
                                 </q-td>
                             </q-tr>
+                        </template>
+                        <template v-slot:item="props">
+                            <div class="col-12 q-pa-xs">
+                                <q-card flat bordered class="card-grid">
+                                    <q-card-section class="q-pb-xs">
+                                        <div class="row items-center no-wrap">
+                                            <div class="text-weight-medium col ellipsis">{{ props.row.name }}</div>
+                                            <q-badge outline color="blue-grey" :label="props.row.type_currency" />
+                                        </div>
+                                        <div class="text-caption text-grey">Creado: {{ props.row.created_at }}</div>
+                                    </q-card-section>
+                                    <q-card-actions align="right" class="q-pt-none">
+                                        <q-btn flat dense no-caps size="sm" color="primary" icon="eva-edit-2-outline"
+                                            label="Editar" @click="HandleEditProfile(props.row.id)" />
+                                        <q-btn flat dense no-caps size="sm" color="teal" icon="content_copy"
+                                            label="Duplicar" @click="HandleCopyProfile(props.row)" />
+                                        <q-btn flat dense no-caps size="sm" color="negative" icon="eva-trash-2-outline"
+                                            label="Eliminar" @click="HandleDeleteProfile(props.row)" />
+                                    </q-card-actions>
+                                </q-card>
+                            </div>
                         </template>
                         <template v-slot:no-data>
                             <div class="full-width text-center q-pa-xl text-grey">
@@ -159,10 +181,6 @@ function HandleCopyProfile(row) {
         router.post(route("panel.profile.copy", row.id), {}, {
             onSuccess: () => {
                 data.value = page.props.data;
-                $q.notify({
-                    type: page.props.flash.type,
-                    message: page.props.flash.message,
-                });
             },
         });
     });
@@ -178,10 +196,6 @@ function HandleDeleteProfile(row) {
         router.delete(route("panel.profile.delete", row.id), {
             onSuccess: () => {
                 data.value = page.props.data;
-                $q.notify({
-                    type: page.props.flash.type,
-                    message: page.props.flash.message,
-                });
             },
         });
     });

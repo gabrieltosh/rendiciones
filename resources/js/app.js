@@ -1,7 +1,7 @@
 import "@quasar/extras/material-icons/material-icons.css";
-import "@quasar/extras/mdi-v6/mdi-v6.css";
 import "quasar/src/css/index.sass";
 import "@quasar/extras/eva-icons/eva-icons.css";
+import "../css/app.scss";
 
 import { createInertiaApp } from "@inertiajs/vue3";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
@@ -13,10 +13,6 @@ import { ZiggyVue } from 'ziggy-js';
 import { Notify,Dialog } from "quasar";
 const appName = import.meta.env.VITE_APP_NAME;
 
-import lottie from "lottie-web";
-import { defineElement } from "@lordicon/element";
-
-defineElement(lottie.loadAnimation);
 
 
 createInertiaApp({

@@ -41,7 +41,43 @@ class Accountability extends Model implements Auditable
         // la interpreta como año-día-mes; con el cast usa $dateFormat (ISO 8601).
         'sap_exported_at' => 'datetime',
         'current_level_id' => 'integer',
+        'submission_round' => 'integer',
+        'submitted_at' => 'datetime',
     ];
+
+    /**
+     * Cada vez que la rendición pasa a "Pendiente" desde otro estado (borrador o
+     * rechazada) es un envío nuevo: empieza otra ronda de aprobaciones. Se hace aquí
+     * para que cualquier camino que envíe la rendición la cuente.
+     */
+    protected static function booted()
+    {
+        static::saving(function (Accountability $accountability) {
+            if ($accountability->isDirty('status')
+                && $accountability->status === 'Pendiente'
+                && $accountability->getOriginal('status') !== 'Pendiente') {
+                $accountability->submission_round = (int) $accountability->submission_round + 1;
+                $accountability->submitted_at = now();
+            }
+        });
+    }
+
+    /** Ronda de aprobaciones vigente (al menos 1, para datos anteriores a las rondas). */
+    public function currentRound(): int
+    {
+        return max(1, (int) $this->submission_round);
+    }
+
+    /** Acciones de los autorizadores en la ronda vigente, en orden cronológico (para el PDF). */
+    public function currentRoundApprovals()
+    {
+        return $this->levelApprovals()
+            ->with('user:id,name', 'level:id,name,order')
+            ->where('round', $this->currentRound())
+            ->orderBy('acted_at')
+            ->orderBy('id')
+            ->get();
+    }
     public function createdAt(): Attribute
     {
         return Attribute::make(

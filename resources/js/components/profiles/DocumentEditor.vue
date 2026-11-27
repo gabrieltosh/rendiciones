@@ -1,5 +1,5 @@
 <template>
-    <q-card flat bordered class="doc-card" :class="{ 'doc-card--deleted': deleted, 'doc-card--error': hasErrors }">
+    <q-card data-tour="document-editor" flat bordered class="doc-card" :class="{ 'doc-card--deleted': deleted, 'doc-card--error': hasErrors }">
         <!-- Cabecera del documento -->
         <q-card-section class="row items-center no-wrap q-py-sm cursor-pointer" @click="expanded = !expanded">
             <q-avatar size="30px" :color="deleted ? 'grey-5' : 'primary'" text-color="white"
@@ -13,6 +13,7 @@
                 <div class="text-caption text-grey ellipsis">
                     {{ documentTypeLabel || 'Sin tipo de documento SAP' }}
                     · {{ activeLines(document.detail).length }} línea(s) de prorrateo
+                    · {{ formatPercentage(percentageTotal) }} %
                 </div>
             </div>
             <q-badge v-if="hasErrors" color="negative" label="Revisar" class="q-mr-sm" />
@@ -62,7 +63,7 @@
                 </q-card-section>
 
                 <!-- Datos que se piden al registrar el gasto -->
-                <q-card-section class="q-pt-none">
+                <q-card-section data-tour="invoice-flags" class="q-pt-none">
                     <div class="text-subtitle2">Datos de la factura</div>
                     <div class="form-section-caption q-mb-sm">
                         Marca los campos que el usuario deberá completar al registrar este documento.
@@ -102,7 +103,7 @@
                 </q-card-section>
 
                 <!-- Prorrateo del asiento -->
-                <q-card-section class="q-pt-none">
+                <q-card-section data-tour="proration-section" class="q-pt-none">
                     <div class="row items-center q-mb-sm">
                         <div class="col">
                             <div class="text-subtitle2">Prorrateo del asiento</div>
@@ -178,7 +179,30 @@
                                 </td>
                             </tr>
                         </tbody>
+                        <tfoot v-if="activeLines(document.detail).length">
+                            <tr>
+                                <td colspan="3" class="text-right text-weight-medium">Total porcentajes</td>
+                                <td class="text-weight-bold" :class="percentageOverflow ? 'text-negative' : ''"
+                                    style="font-variant-numeric: tabular-nums">
+                                    {{ formatPercentage(percentageTotal) }} %
+                                </td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
                     </q-markup-table>
+                    <q-banner v-if="percentageOverflow" dense rounded class="bg-red-1 text-negative q-mt-sm">
+                        <template v-slot:avatar>
+                            <q-icon name="eva-alert-triangle-outline" color="negative" />
+                        </template>
+                        La suma de porcentajes de este documento es {{ formatPercentage(percentageTotal) }} %:
+                        no puede superar el 100 %. Revisa las líneas de prorrateo.
+                    </q-banner>
+                    <q-banner v-else-if="invalidPercentages" dense rounded class="bg-orange-1 text-orange-9 q-mt-sm">
+                        <template v-slot:avatar>
+                            <q-icon name="eva-alert-circle-outline" color="warning" />
+                        </template>
+                        Cada porcentaje debe estar entre 0 y 100.
+                    </q-banner>
                 </q-card-section>
 
                 <!-- Campos adicionales -->
@@ -287,6 +311,24 @@ const hasErrors = computed(() => Object.keys(props.errors || {}).some((key) => k
 const documentTypeLabel = computed(
     () => props.options.document_types?.find((t) => t.FldValue === props.document.type_document_sap)?.Descr
 );
+
+// Suma de porcentajes de las líneas activas del prorrateo (solo informativo:
+// los tipos IVA, IT, IUE y RC-IVA son tasas, por lo que no tienen que sumar 100)
+const percentageTotal = computed(() =>
+    activeLines(props.document.detail).reduce((sum, line) => sum + (Number(line.percentage) || 0), 0)
+);
+const percentageOverflow = computed(() => percentageTotal.value > 100.0001);
+const invalidPercentages = computed(() =>
+    activeLines(props.document.detail).some((line) => {
+        if (line.percentage === null || line.percentage === "") return false;
+        const value = Number(line.percentage);
+        return Number.isNaN(value) || value < 0 || value > 100;
+    })
+);
+
+function formatPercentage(value) {
+    return Number(value || 0).toLocaleString("es-BO", { maximumFractionDigits: 4 });
+}
 
 function errorFor(path) {
     return props.errors?.[prefix.value + path];

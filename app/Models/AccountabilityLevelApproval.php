@@ -10,10 +10,11 @@ class AccountabilityLevelApproval extends Model
     use HasFactory;
 
     protected $table = 'accountability_level_approvals';
-    protected $fillable = ['accountability_id', 'level_id', 'user_id', 'status', 'comments', 'acted_at'];
+    protected $fillable = ['accountability_id', 'level_id', 'user_id', 'status', 'comments', 'acted_at', 'round'];
     protected $dateFormat = 'Y-m-d\TH:i:s';
     protected $casts = [
         'acted_at' => 'datetime',
+        'round' => 'integer',
     ];
 
     public function accountability()
