@@ -7,7 +7,7 @@ namespace App\Services\Sap;
  * a partir de la configuración de su Document (prorrateo y campos adicionales).
  *
  * Única fuente del cálculo: la usan el export a SAP (JournalVoucherPayloadBuilder)
- * y la vista previa del asiento (AccountabilityController::HandleFormatLineReport).
+ * y la vista contable del asiento (AccountabilityController::HandlePreviewAccountability).
  *
  *  1. importe      = monto del documento ± campos adicionales (Crédito suma, Débito resta).
  *  2. bruto        = importe / (1 − Σ% de las líneas Grossing Up con "calculation").

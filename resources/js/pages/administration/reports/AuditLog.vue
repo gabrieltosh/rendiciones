@@ -10,7 +10,7 @@
             />
 
             <!-- Filtros -->
-            <q-card class="card-form q-mb-md">
+            <q-card data-tour="audit-filters" class="card-form q-mb-md">
                 <div class="q-pa-md">
                     <div class="text-subtitle1 text-weight-medium q-mb-md">Filtros</div>
                     <div class="row q-col-gutter-md">
@@ -86,7 +86,7 @@
                         </div>
                         <div class="col-xs-12 col-sm-12 col-md-1 flex items-end">
                             <div class="row q-gutter-sm full-width">
-                                <q-btn
+                                <q-btn data-tour="audit-search"
                                     color="primary"
                                     label="Buscar"
                                     icon="eva-search-outline"
@@ -113,7 +113,7 @@
 
             <!-- Tabla -->
             <q-card class="card-form">
-                <q-table
+                <q-table data-tour="audit-table"
                     :rows="audits.data"
                     :columns="columns"
                     row-key="id"

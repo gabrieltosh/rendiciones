@@ -1,17 +1,17 @@
 <template>
-    <q-card class="card-form q-mb-md">
+    <q-card data-tour="expense-distribution" class="card-form q-mb-md">
         <q-card-section class="q-pb-sm">
             <div class="row items-center no-wrap">
                 <div class="col">
                     <div class="text-subtitle1 text-weight-medium">Reparto por líneas</div>
                     <div class="text-caption text-grey">
-                        Reparta el gasto entre varios centros de costo. Las líneas del asiento salen de
-                        combinar los repartos de cada dimensión. Con el reparto activo, los centros de
-                        costo se asignan solo aquí (no en Datos Contables).
+                        Reparta el gasto entre varios centros de costo (áreas) indicando el porcentaje de
+                        cada uno. Con el reparto activo, los centros de costo se asignan solo aquí y no en
+                        «Proyecto y centros de costo».
                     </div>
                 </div>
                 <div class="col-auto">
-                    <q-toggle :model-value="open" color="primary" aria-label="Repartir el gasto en varias líneas"
+                    <q-toggle data-tour="distribution-toggle" :model-value="open" color="primary" aria-label="Repartir el gasto en varias líneas"
                         @update:model-value="HandleToggle" />
                 </div>
             </div>
@@ -29,7 +29,7 @@
                     <div class="row q-col-gutter-lg">
                         <div v-for="dim in DIMENSIONS" :key="dim" class="col-xs-12 col-md-6">
                             <div class="row items-center no-wrap q-mb-xs">
-                                <div class="col form-label q-mb-none">Centro de Costo {{ dim }}</div>
+                                <div class="col form-label q-mb-none">Centro de costo {{ dim }}</div>
                                 <div class="col-auto">
                                     <q-btn v-if="!form.splits[dim]" flat dense no-caps size="12px" color="primary"
                                         icon="add" label="Asignar" @click="HandleStartSplit(dim)" />
@@ -89,21 +89,48 @@
                     <!-- Líneas resultantes -->
                     <div v-if="combinations.length > 0" class="q-mt-lg">
                         <div class="row items-center q-mb-sm">
-                            <div class="col text-subtitle2">Líneas del asiento</div>
+                            <div class="col text-subtitle2">Líneas resultantes</div>
                             <div class="col-auto text-caption"
                                 :class="combinations.length > MAX_LINES ? 'text-negative' : 'text-grey'">
                                 {{ combinations.length }} línea{{ combinations.length !== 1 ? 's' : '' }}
                                 (máx. {{ MAX_LINES }})
                             </div>
                         </div>
-                        <q-markup-table flat bordered dense separator="horizontal" class="table-theme">
+                        <!-- Celulares: una tarjeta por línea -->
+                        <div v-if="$q.screen.xs" class="q-gutter-sm">
+                            <q-card v-for="(combo, i) in combinations" :key="combo.combination" flat bordered>
+                                <q-card-section class="q-pa-sm">
+                                    <div class="row items-center q-mb-xs">
+                                        <div class="col text-weight-medium">Línea {{ i + 1 }}</div>
+                                        <div class="col-auto" style="font-variant-numeric: tabular-nums">{{ formatPercentage(combo.percentage) }} %</div>
+                                    </div>
+                                    <div v-for="(code, dim) in combo.codes" :key="dim" class="text-caption text-grey">
+                                        Centro de costo {{ dim }}: {{ codeLabel(dim, code) }}
+                                    </div>
+                                    <template v-if="lineFor(combo)">
+                                        <div class="form-label q-mt-sm">Tipo de gasto (cuenta)</div>
+                                        <q-select v-model="lineFor(combo).account" class="input-theme" dense outlined
+                                            :options="filteredAccounts" option-value="key" option-label="label"
+                                            emit-value map-options use-input input-debounce="0" clearable
+                                            :placeholder="lineFor(combo).account ? '' : documentAccountLabel"
+                                            :aria-label="`Tipo de gasto de la línea ${i + 1}`"
+                                            @filter="HandleFilterAccounts" />
+                                        <div class="form-label q-mt-sm">Concepto / glosa</div>
+                                        <q-input v-model="lineFor(combo).concept" class="input-theme" dense outlined
+                                            maxlength="50" :placeholder="form.concept || 'Concepto del documento'"
+                                            :aria-label="`Concepto de la línea ${i + 1}`" />
+                                    </template>
+                                </q-card-section>
+                            </q-card>
+                        </div>
+                        <q-markup-table v-else flat bordered dense separator="horizontal" class="table-theme">
                             <thead>
                                 <tr class="table-header-theme">
                                     <th class="text-left">#</th>
                                     <th class="text-left">Centros de costo</th>
                                     <th class="text-right">%</th>
-                                    <th class="text-left" style="min-width: 220px;">Cuenta</th>
-                                    <th class="text-left" style="min-width: 180px;">Glosa</th>
+                                    <th class="text-left" style="min-width: 220px;">Tipo de gasto (cuenta)</th>
+                                    <th class="text-left" style="min-width: 180px;">Concepto / glosa</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -123,21 +150,21 @@
                                             option-value="key" option-label="label" emit-value map-options
                                             use-input input-debounce="0" clearable
                                             :placeholder="lineFor(combo).account ? '' : documentAccountLabel"
-                                            :aria-label="`Cuenta de la línea ${i + 1}`"
+                                            :aria-label="`Tipo de gasto de la línea ${i + 1}`"
                                             @filter="HandleFilterAccounts" />
                                     </td>
                                     <td>
                                         <q-input v-if="lineFor(combo)" v-model="lineFor(combo).concept"
                                             class="input-theme" dense outlined maxlength="50"
-                                            :placeholder="form.concept || 'Glosa del documento'"
-                                            :aria-label="`Glosa de la línea ${i + 1}`" />
+                                            :placeholder="form.concept || 'Concepto del documento'"
+                                            :aria-label="`Concepto de la línea ${i + 1}`" />
                                     </td>
                                 </tr>
                             </tbody>
                         </q-markup-table>
                         <div class="text-caption text-grey q-mt-xs">
-                            Sin cuenta o glosa propia, la línea usa la cuenta (Concepto) y el comentario del
-                            documento. El IVA y las retenciones se calculan sobre el total de la factura.
+                            Si deja vacíos el tipo de gasto o el concepto de una línea, se usan los del documento.
+                            El IVA y las retenciones se calculan sobre el total de la factura.
                         </div>
                     </div>
                 </q-card-section>
@@ -217,7 +244,7 @@ function codeLabel(dim, code) {
 
 const documentAccountLabel = computed(() => {
     const account = props.accounts.find((a) => a.key === props.form.account);
-    return account ? `Cuenta del documento: ${account.label}` : "Cuenta del documento";
+    return account ? `Del documento: ${account.label}` : "Tipo de gasto del documento";
 });
 
 function sum(dim) {
@@ -302,7 +329,7 @@ function HandleToggle(value) {
     }
     $q.dialog({
         title: "Quitar reparto",
-        message: "Se eliminará el reparto y el gasto volverá a exportarse en una sola línea. Deberá elegir los centros de costo en Datos Contables. ¿Continuar?",
+        message: "Se eliminará el reparto y el gasto volverá a registrarse en una sola línea. Deberá elegir los centros de costo en «Proyecto y centros de costo». ¿Continuar?",
         cancel: { label: "Cancelar", flat: true, noCaps: true },
         ok: { label: "Quitar", color: "negative", noCaps: true },
         persistent: true,

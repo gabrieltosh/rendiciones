@@ -4,22 +4,11 @@
         <div class="row justify-center q-px-md q-py-lg">
             <div class="col-xs-12 col-sm-12 col-md-11 col-lg-10">
 
-                <!-- Header -->
-                <q-card class="q-pa-md card-form q-mb-md">
-                    <div class="row items-center">
-                        <div class="col">
-                            <div class="text-h6 title-form">
-                                Rendiciones
-                            </div>
-                            <div class="text-caption text-grey">
-                                Selecciona un perfil para gestionar sus rendiciones
-                            </div>
-                        </div>
-                    </div>
-                </q-card>
+                <PageHeader title="Mis rendiciones" icon="eva-folder-outline"
+                    subtitle="Elija un perfil para ver y registrar sus rendiciones" />
 
                 <!-- Empty State -->
-                <div
+                <div data-tour="profile-list"
                     v-if="profiles.length === 0"
                     class="text-center q-pa-xl"
                 >
@@ -30,12 +19,12 @@
                         aria-hidden="true"
                     />
                     <div class="text-body1 text-grey q-mt-md">
-                        No tienes perfiles asignados
+                        No tiene perfiles asignados. Solicite al administrador que le asigne uno.
                     </div>
                 </div>
 
                 <!-- Profile Cards -->
-                <div v-else class="row q-col-gutter-md">
+                <div data-tour="profile-list" v-else class="row q-col-gutter-md">
                     <div
                         v-for="(profile, index) in profiles"
                         :key="index"
@@ -69,7 +58,7 @@
                                             {{ profile.profile.name }}
                                         </div>
                                         <div class="text-caption text-grey">
-                                            {{ profile.profile.type_currency }}
+                                            Moneda: {{ currencySymbol(profile.profile.type_currency) }}
                                         </div>
                                     </div>
                                     <div class="col-auto">
@@ -92,6 +81,8 @@
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import { currencySymbol } from "@/utils/accountability";
 import { ref } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";

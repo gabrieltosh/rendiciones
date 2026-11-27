@@ -4,29 +4,34 @@
         <div class="row justify-center q-px-md q-py-lg">
             <div class="col-xs-12 col-sm-12 col-md-11 col-lg-10">
 
-                <!-- Header -->
-                <q-card class="q-pa-md card-form q-mb-md">
-                    <div class="row items-center q-col-gutter-sm">
-                        <div class="col">
-                            <div class="text-h6 title-form">
-                                Autorización de Rendiciones
-                            </div>
-                            <div class="text-caption text-grey">
-                                {{ pendingRows.length }} pendiente{{ pendingRows.length !== 1 ? 's' : '' }}
-                                &middot;
-                                {{ authorizedRows.length }} autorizada{{ authorizedRows.length !== 1 ? 's' : '' }}
-                            </div>
-                        </div>
-                    </div>
-                </q-card>
+                <PageHeader title="Autorización de Rendiciones" icon="eva-checkmark-square-2-outline">
+                    <template #subtitle>
+                        {{ pendingRows.length }} pendiente{{ pendingRows.length !== 1 ? 's' : '' }}
+                        <template v-if="authorizedTotal !== null">
+                            &middot; {{ authorizedTotal }} autorizada{{ authorizedTotal !== 1 ? 's' : '' }}
+                        </template>
+                        <template v-if="showAll"> &middot; mostrando todas las rendiciones</template>
+                    </template>
+                    <template v-if="isAdmin" #actions>
+                        <q-toggle data-tour="show-all"
+                            :model-value="showAll"
+                            label="Ver todas"
+                            color="primary"
+                            :disable="toggling"
+                            aria-label="Ver todas las rendiciones, no solo las que me toca autorizar"
+                            @update:model-value="HandleToggleAll"
+                        >
+                            <q-tooltip>Como Administrador puede ver y autorizar las rendiciones de todos los niveles</q-tooltip>
+                        </q-toggle>
+                    </template>
+                </PageHeader>
 
-                <!-- Content Card -->
                 <q-card class="card-form">
                     <!-- Tabs + Toolbar -->
                     <q-card-section class="q-pb-none">
                         <div class="row items-center q-col-gutter-sm">
                             <div class="col">
-                                <q-tabs
+                                <q-tabs data-tour="inbox-tabs"
                                     v-model="activeTab"
                                     dense
                                     no-caps
@@ -35,45 +40,32 @@
                                     align="left"
                                     narrow-indicator
                                 >
-                                    <q-tab
-                                        name="pending"
-                                        aria-label="Rendiciones pendientes de autorización"
-                                    >
+                                    <q-tab name="pending" aria-label="Rendiciones pendientes de autorización">
                                         <div class="row items-center q-gutter-xs no-wrap">
                                             <span>Pendientes</span>
-                                            <q-badge
-                                                v-if="pendingRows.length > 0"
-                                                color="orange"
-                                                :label="pendingRows.length"
-                                                class="q-ml-xs"
-                                            />
+                                            <q-badge v-if="pendingRows.length > 0" color="orange"
+                                                :label="pendingRows.length" class="q-ml-xs" />
                                         </div>
                                     </q-tab>
-                                    <q-tab
-                                        name="authorized"
-                                        aria-label="Rendiciones autorizadas"
-                                    >
+                                    <q-tab name="authorized" aria-label="Rendiciones autorizadas">
                                         <div class="row items-center q-gutter-xs no-wrap">
                                             <span>Autorizadas</span>
-                                            <q-badge
-                                                v-if="authorizedRows.length > 0"
-                                                color="green"
-                                                :label="authorizedRows.length"
-                                                class="q-ml-xs"
-                                            />
+                                            <q-badge v-if="authorizedTotal" color="green"
+                                                :label="authorizedTotal" class="q-ml-xs" />
                                         </div>
                                     </q-tab>
                                 </q-tabs>
                             </div>
-                            <div class="col-auto">
+                            <div data-tour="search" class="col-auto">
                                 <q-input
+                                    v-if="activeTab === 'pending'"
                                     v-model="filter"
                                     outlined
                                     dense
                                     placeholder="Buscar…"
                                     name="search-authorization"
                                     autocomplete="off"
-                                    aria-label="Buscar rendiciones"
+                                    aria-label="Buscar rendiciones pendientes"
                                     class="input-theme"
                                     style="min-width: 200px;"
                                     clearable
@@ -83,15 +75,12 @@
                                     </template>
                                 </q-input>
                             </div>
-                            <div class="col-auto q-gutter-xs">
+                            <div data-tour="view-mode" v-if="activeTab === 'pending'" class="col-auto q-gutter-xs">
                                 <q-btn
                                     :flat="viewMode !== 'grid'"
                                     :unelevated="viewMode === 'grid'"
                                     :color="viewMode === 'grid' ? 'secondary' : 'grey'"
-                                    dense
-                                    round
-                                    size="sm"
-                                    icon="eva-grid-outline"
+                                    dense round size="sm" icon="eva-grid-outline"
                                     aria-label="Vista de tarjetas"
                                     @click="viewMode = 'grid'"
                                 >
@@ -101,10 +90,7 @@
                                     :flat="viewMode !== 'table'"
                                     :unelevated="viewMode === 'table'"
                                     :color="viewMode === 'table' ? 'secondary' : 'grey'"
-                                    dense
-                                    round
-                                    size="sm"
-                                    icon="eva-list-outline"
+                                    dense round size="sm" icon="eva-list-outline"
                                     aria-label="Vista de tabla"
                                     @click="viewMode = 'table'"
                                 >
@@ -116,64 +102,34 @@
 
                     <q-separator />
 
-                    <q-card-section>
-                        <!-- Empty State -->
-                        <div
-                            v-if="filteredActiveRows.length === 0"
-                            class="text-center q-pa-xl"
-                        >
-                            <q-icon
-                                name="receipt_long"
-                                size="64px"
-                                color="grey-4"
-                                aria-hidden="true"
-                            />
+                    <!-- ── Pendientes ─────────────────────────────────── -->
+                    <q-card-section v-if="activeTab === 'pending'">
+                        <div v-if="filteredPending.length === 0" class="text-center q-pa-xl">
+                            <q-icon name="receipt_long" size="64px" color="grey-4" aria-hidden="true" />
                             <div class="text-body1 text-grey q-mt-md">
-                                {{ filter
-                                    ? 'Sin resultados para la búsqueda'
-                                    : activeTab === 'pending'
-                                        ? 'No hay rendiciones pendientes de autorización'
-                                        : 'No hay rendiciones autorizadas'
-                                }}
+                                {{ filter ? 'Sin resultados para la búsqueda' : 'No hay rendiciones pendientes de autorización' }}
                             </div>
                         </div>
 
-                        <!-- Grid View -->
-                        <div
-                            v-else-if="viewMode === 'grid'"
-                            class="row q-col-gutter-md"
-                        >
-                            <div
-                                v-for="row in filteredActiveRows"
-                                :key="row.id"
-                                class="col-xs-12 col-sm-6 col-md-4"
-                            >
-                                <q-card flat bordered class="acc-card full-height">
+                        <!-- Tarjetas -->
+                        <div data-tour="pending-list" v-else-if="viewMode === 'grid'" class="row q-col-gutter-md">
+                            <div v-for="row in sortedPendingForGrid" :key="row.id" class="col-xs-12 col-sm-6 col-md-4">
+                                <q-card data-tour="pending-card" flat bordered class="acc-card full-height">
                                     <q-card-section class="q-pb-sm">
                                         <div class="row items-start no-wrap q-gutter-sm">
                                             <div class="col" style="min-width: 0;">
                                                 <div class="text-body2 text-weight-medium ellipsis">
-                                                    {{ row.description || 'Sin descripcion' }}
+                                                    {{ row.description || 'Sin descripción' }}
                                                 </div>
-                                                <div class="text-caption text-grey q-mt-xs">
-                                                    Rendición #{{ row.id }}
+                                                <div class="text-caption text-grey q-mt-xs ellipsis">
+                                                    Rendición #{{ row.id }} &middot; {{ row.profile?.name || '-' }}
                                                 </div>
                                             </div>
-                                            <div class="col-auto">
-                                                <div class="column items-end q-gutter-xs">
-                                                    <q-badge
-                                                        :color="getStatusColor(row.status)"
-                                                        :label="row.status || 'Pendiente'"
-                                                        class="q-pa-xs"
-                                                    />
-                                                    <q-badge
-                                                        v-if="activeTab === 'authorized'"
-                                                        :color="getSapLocationColor(row)"
-                                                        :label="getSapLocationLabel(row)"
-                                                        class="q-pa-xs"
-                                                        outline
-                                                    />
-                                                </div>
+                                            <div data-tour="aging-badge" class="col-auto">
+                                                <q-badge :color="agingColor(row)" class="q-pa-xs">
+                                                    {{ agingLabel(row) }}
+                                                    <q-tooltip>{{ sentTooltip(row) }}</q-tooltip>
+                                                </q-badge>
                                             </div>
                                         </div>
                                     </q-card-section>
@@ -181,67 +137,32 @@
                                     <q-separator inset />
 
                                     <q-card-section class="q-py-sm">
-                                        <q-list dense class="q-mx-none">
+                                        <q-list dense>
                                             <q-item class="q-px-none">
                                                 <q-item-section avatar>
-                                                    <q-icon
-                                                        name="badge"
-                                                        size="xs"
-                                                        color="grey"
-                                                        aria-hidden="true"
-                                                    />
+                                                    <q-icon name="badge" size="xs" color="grey" aria-hidden="true" />
                                                 </q-item-section>
                                                 <q-item-section>
                                                     <q-item-label caption>Realizado por</q-item-label>
-                                                    <q-item-label class="text-caption ellipsis">
-                                                        {{ row.user?.name || '-' }}
-                                                    </q-item-label>
+                                                    <q-item-label class="text-caption ellipsis">{{ row.user?.name || '-' }}</q-item-label>
                                                 </q-item-section>
                                             </q-item>
                                             <q-item class="q-px-none">
                                                 <q-item-section avatar>
-                                                    <q-icon
-                                                        name="person_outline"
-                                                        size="xs"
-                                                        color="grey"
-                                                        aria-hidden="true"
-                                                    />
+                                                    <q-icon name="account_tree" size="xs" color="grey" aria-hidden="true" />
                                                 </q-item-section>
                                                 <q-item-section>
-                                                    <q-item-label class="text-caption ellipsis">
-                                                        {{ row.employee_name || '-' }}
-                                                    </q-item-label>
+                                                    <q-item-label caption>Nivel actual</q-item-label>
+                                                    <q-item-label class="text-caption ellipsis">{{ row.level_label || 'Autorizador directo' }}</q-item-label>
                                                 </q-item-section>
                                             </q-item>
                                             <q-item class="q-px-none">
                                                 <q-item-section avatar>
-                                                    <q-icon
-                                                        name="account_balance"
-                                                        size="xs"
-                                                        color="grey"
-                                                        aria-hidden="true"
-                                                    />
+                                                    <q-icon name="calendar_today" size="xs" color="grey" aria-hidden="true" />
                                                 </q-item-section>
                                                 <q-item-section>
-                                                    <q-item-label class="text-caption ellipsis">
-                                                        {{ row.account_alias || row.account_name || '-' }}
-                                                    </q-item-label>
-                                                </q-item-section>
-                                            </q-item>
-                                            <q-item class="q-px-none">
-                                                <q-item-section avatar>
-                                                    <q-icon
-                                                        name="calendar_today"
-                                                        size="xs"
-                                                        color="grey"
-                                                        aria-hidden="true"
-                                                    />
-                                                </q-item-section>
-                                                <q-item-section>
-                                                    <q-item-label class="text-caption">
-                                                        {{ row.start_date || '-' }}
-                                                        <span v-if="row.end_date"> &mdash; {{ row.end_date }}</span>
-                                                    </q-item-label>
+                                                    <q-item-label caption>Enviada</q-item-label>
+                                                    <q-item-label class="text-caption">{{ row.submitted_label || '-' }}</q-item-label>
                                                 </q-item-section>
                                             </q-item>
                                         </q-list>
@@ -250,50 +171,24 @@
                                     <q-separator />
 
                                     <q-card-section class="q-py-sm">
-                                        <div class="row items-center">
+                                        <div class="row items-center q-col-gutter-xs">
                                             <div class="col">
+                                                <div class="text-caption text-grey">Recibido / Gastado</div>
                                                 <div class="text-body2 text-weight-medium stat-number">
-                                                    Bs {{ row.total || 0 }}
+                                                    {{ money(row.total, row) }} / {{ money(row.spent, row) }}
+                                                </div>
+                                                <div class="text-caption stat-number" :class="`text-${balanceInfo(row.total, row.spent).color}`">
+                                                    {{ balanceInfo(row.total, row.spent).label }}: {{ money(balanceInfo(row.total, row.spent).balance, row) }}
                                                 </div>
                                             </div>
-                                            <div class="col-auto q-gutter-xs">
-                                                <q-btn
-                                                    flat
-                                                    round
-                                                    dense
-                                                    size="sm"
-                                                    icon="visibility"
-                                                    color="primary"
-                                                    aria-label="Ver detalle de rendición"
-                                                    @click="HandleDetailAccountability(row.id)"
-                                                >
-                                                    <q-tooltip>Ver Detalle</q-tooltip>
+                                            <div data-tour="card-actions" class="col-auto q-gutter-xs">
+                                                <q-btn flat round dense size="sm" icon="visibility" color="primary"
+                                                    aria-label="Ver detalle de rendición" @click="HandleDetailAccountability(row.id)">
+                                                    <q-tooltip>Ver detalle</q-tooltip>
                                                 </q-btn>
-                                                <q-btn
-                                                    v-if="activeTab === 'pending'"
-                                                    flat
-                                                    round
-                                                    dense
-                                                    size="sm"
-                                                    icon="edit"
-                                                    color="secondary"
-                                                    aria-label="Editar rendición"
-                                                    @click="HandleEditAccountability(row.id)"
-                                                >
+                                                <q-btn flat round dense size="sm" icon="edit" color="secondary"
+                                                    aria-label="Editar rendición" @click="HandleEditAccountability(row.id)">
                                                     <q-tooltip>Editar</q-tooltip>
-                                                </q-btn>
-                                                <q-btn
-                                                    v-if="activeTab === 'authorized'"
-                                                    flat
-                                                    round
-                                                    dense
-                                                    size="sm"
-                                                    icon="print"
-                                                    color="secondary"
-                                                    aria-label="Imprimir reporte de rendición"
-                                                    @click="HandleGetReport(row.id)"
-                                                >
-                                                    <q-tooltip>Reporte</q-tooltip>
                                                 </q-btn>
                                             </div>
                                         </div>
@@ -302,108 +197,145 @@
                             </div>
                         </div>
 
-                        <!-- Table View -->
-                        <q-table
+                        <!-- Tabla -->
+                        <q-table data-tour="pending-list"
                             v-else
-                            :rows="filteredActiveRows"
-                            :columns="columns"
+                            :rows="filteredPending"
+                            :columns="pendingColumns"
                             row-key="id"
                             class="table-theme"
                             flat
                             bordered
                             separator="horizontal"
                             :table-header-class="{ 'table-header-theme': true }"
-                            :pagination="{ rowsPerPage: 15 }"
-                            hide-bottom-space
+                            :pagination="{ rowsPerPage: 15, sortBy: 'submitted', descending: false }"
+                            rows-per-page-label="Filas por página"
+                            :pagination-label="(start, end, total) => `${start}-${end} de ${total}`"
                         >
                             <template v-slot:body="props">
                                 <q-tr :props="props">
-                                    <q-td key="id" :props="props">
-                                        {{ props.row.id }}
-                                    </q-td>
+                                    <q-td key="id" :props="props">{{ props.row.id }}</q-td>
                                     <q-td key="description" :props="props">
                                         <span class="ellipsis" style="max-width: 200px; display: inline-block;">
                                             {{ props.row.description || '-' }}
                                         </span>
                                     </q-td>
-                                    <q-td key="user_name" :props="props">
-                                        <span class="ellipsis" style="max-width: 150px; display: inline-block;">
-                                            {{ props.row.user?.name || '-' }}
-                                        </span>
+                                    <q-td key="user_name" :props="props">{{ props.row.user?.name || '-' }}</q-td>
+                                    <q-td key="profile" :props="props">{{ props.row.profile?.name || '-' }}</q-td>
+                                    <q-td key="level" :props="props">{{ props.row.level_label || 'Autorizador directo' }}</q-td>
+                                    <q-td key="submitted" :props="props">
+                                        <q-badge :color="agingColor(props.row)" :label="agingLabel(props.row)" />
+                                        <div class="text-caption text-grey">{{ props.row.submitted_label || '-' }}</div>
+                                        <q-tooltip>{{ sentTooltip(props.row) }}</q-tooltip>
                                     </q-td>
-                                    <q-td key="employee_name" :props="props">
-                                        <span class="ellipsis" style="max-width: 180px; display: inline-block;">
-                                            {{ props.row.employee_name || '-' }}
-                                        </span>
-                                    </q-td>
-                                    <q-td key="account_name" :props="props">
-                                        <span class="ellipsis" style="max-width: 180px; display: inline-block;">
-                                            {{ props.row.account_alias || props.row.account_name || '-' }}
-                                        </span>
-                                    </q-td>
-                                    <q-td key="total" :props="props">
-                                        <span class="stat-number text-weight-medium">
-                                            Bs {{ props.row.total || 0 }}
-                                        </span>
-                                    </q-td>
-                                    <q-td key="start_date" :props="props">
-                                        {{ props.row.start_date || '-' }}
-                                    </q-td>
-                                    <q-td key="end_date" :props="props">
-                                        {{ props.row.end_date || '-' }}
-                                    </q-td>
-                                    <q-td key="status" :props="props">
-                                        <div class="column items-start q-gutter-xs">
-                                            <q-badge
-                                                :color="getStatusColor(props.row.status)"
-                                                :label="props.row.status || 'Pendiente'"
-                                            />
-                                            <q-badge
-                                                v-if="activeTab === 'authorized'"
-                                                :color="getSapLocationColor(props.row)"
-                                                :label="getSapLocationLabel(props.row)"
-                                                outline
-                                            />
-                                        </div>
+                                    <q-td key="total" :props="props" class="stat-number">{{ money(props.row.total, props.row) }}</q-td>
+                                    <q-td key="spent" :props="props" class="stat-number">{{ money(props.row.spent, props.row) }}</q-td>
+                                    <q-td key="balance" :props="props" class="stat-number"
+                                        :class="`text-${balanceInfo(props.row.total, props.row.spent).color}`">
+                                        {{ money(balanceInfo(props.row.total, props.row.spent).balance, props.row) }}
+                                        <q-tooltip>{{ balanceInfo(props.row.total, props.row.spent).label }}</q-tooltip>
                                     </q-td>
                                     <q-td key="actions" :props="props">
-                                        <div class="q-gutter-xs">
-                                            <q-btn
-                                                flat
-                                                round
-                                                dense
-                                                size="sm"
-                                                icon="visibility"
-                                                color="primary"
-                                                aria-label="Ver detalle de rendición"
-                                                @click="HandleDetailAccountability(props.row.id)"
-                                            >
-                                                <q-tooltip>Ver Detalle</q-tooltip>
+                                        <div class="q-gutter-xs no-wrap">
+                                            <q-btn flat round dense size="sm" icon="visibility" color="primary"
+                                                aria-label="Ver detalle de rendición" @click="HandleDetailAccountability(props.row.id)">
+                                                <q-tooltip>Ver detalle</q-tooltip>
                                             </q-btn>
-                                            <q-btn
-                                                v-if="activeTab === 'pending'"
-                                                flat
-                                                round
-                                                dense
-                                                size="sm"
-                                                icon="edit"
-                                                color="secondary"
-                                                aria-label="Editar rendición"
-                                                @click="HandleEditAccountability(props.row.id)"
-                                            >
+                                            <q-btn flat round dense size="sm" icon="edit" color="secondary"
+                                                aria-label="Editar rendición" @click="HandleEditAccountability(props.row.id)">
                                                 <q-tooltip>Editar</q-tooltip>
                                             </q-btn>
-                                            <q-btn
-                                                v-if="activeTab === 'authorized'"
-                                                flat
-                                                round
-                                                dense
-                                                size="sm"
-                                                icon="print"
-                                                color="secondary"
-                                                aria-label="Imprimir reporte de rendición"
-                                                @click="HandleGetReport(props.row.id)"
-                                            >
+                                        </div>
+                                    </q-td>
+                                </q-tr>
+                            </template>
+                        </q-table>
+                    </q-card-section>
+
+                    <!-- ── Autorizadas (paginado en el servidor) ─────── -->
+                    <q-card-section v-else>
+                        <div data-tour="authorized-filters" class="row q-col-gutter-sm q-mb-md">
+                            <div class="col-xs-12 col-sm-5">
+                                <q-input
+                                    v-model="authFilters.search"
+                                    outlined dense clearable debounce="400"
+                                    placeholder="Buscar por descripción, empleado, usuario, N° o asiento…"
+                                    class="input-theme"
+                                    aria-label="Buscar rendiciones autorizadas"
+                                >
+                                    <template v-slot:prepend><q-icon name="search" aria-hidden="true" /></template>
+                                </q-input>
+                            </div>
+                            <div class="col-xs-6 col-sm-4">
+                                <q-select
+                                    v-model="authFilters.profile_id"
+                                    :options="profileOptions"
+                                    emit-value map-options clearable outlined dense
+                                    label="Perfil"
+                                    class="input-theme"
+                                />
+                            </div>
+                            <div class="col-xs-6 col-sm-3">
+                                <q-select
+                                    v-model="authFilters.sap"
+                                    :options="sapOptions"
+                                    emit-value map-options outlined dense
+                                    label="Estado SAP"
+                                    class="input-theme"
+                                />
+                            </div>
+                        </div>
+
+                        <q-table data-tour="authorized-list"
+                            :rows="authorizedRows"
+                            :columns="authorizedColumns"
+                            row-key="id"
+                            class="table-theme"
+                            flat
+                            bordered
+                            separator="horizontal"
+                            :table-header-class="{ 'table-header-theme': true }"
+                            v-model:pagination="authPagination"
+                            :rows-per-page-options="[10, 15, 25, 50]"
+                            :loading="authLoading"
+                            binary-state-sort
+                            rows-per-page-label="Filas por página"
+                            :pagination-label="(start, end, total) => `${start}-${end} de ${total}`"
+                            no-data-label="No hay rendiciones autorizadas"
+                            @request="HandleLoadAuthorized"
+                        >
+                            <template v-slot:body="props">
+                                <q-tr :props="props">
+                                    <q-td key="id" :props="props">{{ props.row.id }}</q-td>
+                                    <q-td key="description" :props="props">
+                                        <span class="ellipsis" style="max-width: 200px; display: inline-block;">
+                                            {{ props.row.description || '-' }}
+                                        </span>
+                                    </q-td>
+                                    <q-td key="user_name" :props="props">{{ props.row.user?.name || '-' }}</q-td>
+                                    <q-td key="profile" :props="props">{{ props.row.profile?.name || '-' }}</q-td>
+                                    <q-td key="end_date" :props="props">{{ props.row.end_date || '-' }}</q-td>
+                                    <q-td key="total" :props="props" class="stat-number">{{ money(props.row.total, props.row) }}</q-td>
+                                    <q-td key="spent" :props="props" class="stat-number">{{ money(props.row.spent, props.row) }}</q-td>
+                                    <q-td key="balance" :props="props" class="stat-number"
+                                        :class="`text-${balanceInfo(props.row.total, props.row.spent).color}`">
+                                        {{ money(balanceInfo(props.row.total, props.row.spent).balance, props.row) }}
+                                        <q-tooltip>{{ balanceInfo(props.row.total, props.row.spent).label }}</q-tooltip>
+                                    </q-td>
+                                    <q-td key="sap" :props="props">
+                                        <q-badge :color="props.row.sap_exported ? 'positive' : 'warning'" outline
+                                            :label="props.row.sap_exported
+                                                ? (props.row.sap_trans_id ? `En SAP · N° ${props.row.sap_trans_id}` : 'En SAP')
+                                                : 'Pendiente SAP'" />
+                                    </q-td>
+                                    <q-td key="actions" :props="props">
+                                        <div class="q-gutter-xs no-wrap">
+                                            <q-btn flat round dense size="sm" icon="visibility" color="primary"
+                                                aria-label="Ver detalle de rendición" @click="HandleDetailAccountability(props.row.id)">
+                                                <q-tooltip>Ver detalle</q-tooltip>
+                                            </q-btn>
+                                            <q-btn flat round dense size="sm" icon="print" color="secondary"
+                                                aria-label="Imprimir reporte de rendición" @click="HandleGetReport(props.row.id)">
                                                 <q-tooltip>Reporte</q-tooltip>
                                             </q-btn>
                                         </div>
@@ -421,154 +353,189 @@
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
-import { ref, computed, watch } from "vue";
+import PageHeader from "@/components/PageHeader.vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
-import { openURL, LocalStorage } from "quasar";
+import { openURL, LocalStorage, useQuasar } from "quasar";
+import axios from "axios";
+import { formatMoney, balanceInfo } from "@/utils/accountability";
 
-defineProps({
+const props = defineProps({
     title: String,
-    data: Object,
+    data: { type: Array, default: () => [] },
+    is_admin: Boolean,
+    show_all: Boolean,
+    profiles: { type: Array, default: () => [] },
 });
 
+const $q = useQuasar();
 const page = usePage();
-const pendingRows = ref(page.props.data);
-const authorizedRows = ref(page.props.authorized);
+const pendingRows = computed(() => props.data ?? []);
+const isAdmin = computed(() => props.is_admin);
+const showAll = computed(() => props.show_all);
 const filter = ref("");
 // La vista elegida (tarjetas/tabla) se recuerda entre visitas
 const viewMode = ref(LocalStorage.getItem("authorization-view-mode") || "grid");
 watch(viewMode, (mode) => LocalStorage.set("authorization-view-mode", mode));
 const activeTab = ref("pending");
 
-const columns = [
-    {
-        name: "id",
-        align: "center",
-        label: "ID",
-        field: "id",
-        sortable: true,
-        style: "width: 60px",
-    },
-    {
-        name: "description",
-        align: "left",
-        label: "Descripción",
-        field: "description",
-        sortable: true,
-    },
-    {
-        name: "user_name",
-        align: "left",
-        label: "Realizado por",
-        field: (row) => row.user?.name,
-        sortable: true,
-    },
-    {
-        name: "employee_name",
-        align: "left",
-        label: "Empleado",
-        field: "employee_name",
-        sortable: true,
-    },
-    {
-        name: "account_name",
-        align: "left",
-        label: "Cuenta",
-        field: "account_name",
-        sortable: true,
-    },
-    {
-        name: "total",
-        align: "right",
-        label: "Monto",
-        field: "total",
-        sortable: true,
-    },
-    {
-        name: "start_date",
-        align: "center",
-        label: "Inicio",
-        field: "start_date",
-    },
-    {
-        name: "end_date",
-        align: "center",
-        label: "Fin",
-        field: "end_date",
-    },
-    {
-        name: "status",
-        align: "center",
-        label: "Estado",
-        field: "status",
-        sortable: true,
-    },
-    {
-        name: "actions",
-        align: "center",
-        label: "Acciones",
-        field: "actions",
-        style: "width: 120px",
-    },
+function money(value, row) {
+    return formatMoney(value, row?.profile?.type_currency);
+}
+
+// ── Antigüedad del envío: más de 5 días en rojo, más de 2 en ámbar ──
+function agingColor(row) {
+    const days = row.days_waiting;
+    if (days === null || days === undefined) return "grey";
+    if (days > 5) return "negative";
+    if (days > 2) return "warning";
+    return "positive";
+}
+
+function agingLabel(row) {
+    const days = row.days_waiting;
+    if (days === null || days === undefined) return "Sin fecha";
+    if (days === 0) return "Hoy";
+    return `Hace ${days} día${days !== 1 ? "s" : ""}`;
+}
+
+function sentTooltip(row) {
+    if (!row.submitted_label) return "Sin fecha de envío";
+    return row.submitted_source === "envio"
+        ? `Enviada a autorización el ${row.submitted_label}`
+        : `Fecha aproximada (última modificación): ${row.submitted_label}`;
+}
+
+// ── Pendientes ──────────────────────────────────────────────
+const pendingColumns = [
+    { name: "id", align: "center", label: "ID", field: "id", sortable: true, style: "width: 60px" },
+    { name: "description", align: "left", label: "Descripción", field: "description", sortable: true },
+    { name: "user_name", align: "left", label: "Realizado por", field: (row) => row.user?.name, sortable: true },
+    { name: "profile", align: "left", label: "Perfil", field: (row) => row.profile?.name, sortable: true },
+    { name: "level", align: "left", label: "Nivel actual", field: "level_label", sortable: true },
+    { name: "submitted", align: "left", label: "Enviada", field: (row) => row.submitted_ts ?? 0, sortable: true },
+    { name: "total", align: "right", label: "Recibido", field: (row) => Number(row.total ?? 0), sortable: true },
+    { name: "spent", align: "right", label: "Gastado", field: (row) => Number(row.spent ?? 0), sortable: true },
+    { name: "balance", align: "right", label: "Saldo", field: (row) => Number(row.total ?? 0) - Number(row.spent ?? 0), sortable: true },
+    { name: "actions", align: "center", label: "Acciones", field: "actions" },
 ];
 
-const activeRows = computed(() => {
-    return activeTab.value === "pending"
-        ? pendingRows.value
-        : authorizedRows.value;
-});
-
-const filteredActiveRows = computed(() => {
-    if (!filter.value) return activeRows.value;
+const filteredPending = computed(() => {
+    if (!filter.value) return pendingRows.value;
     const needle = filter.value.toLowerCase();
-    return activeRows.value.filter((row) => {
-        return (
-            (row.description && row.description.toLowerCase().includes(needle)) ||
-            (row.employee_name && row.employee_name.toLowerCase().includes(needle)) ||
-            (row.account_alias && row.account_alias.toLowerCase().includes(needle)) ||
-            (row.account_name && row.account_name.toLowerCase().includes(needle)) ||
-            (row.user?.name && row.user.name.toLowerCase().includes(needle)) ||
-            (row.id && String(row.id).includes(needle)) ||
-            (row.sap_trans_id && String(row.sap_trans_id).includes(needle))
-        );
-    });
+    return pendingRows.value.filter((row) =>
+        [row.description, row.employee_name, row.account_alias, row.account_name, row.user?.name,
+            row.profile?.name, row.level_label, row.id]
+            .some((v) => v !== null && v !== undefined && String(v).toLowerCase().includes(needle))
+    );
 });
 
-function getStatusColor(status) {
-    const colors = {
-        Pendiente: "orange",
-        Rechazado: "red",
-        Anulado: "grey",
-        Autorizado: "green",
-    };
-    return colors[status] || "blue-grey";
+// En tarjetas, primero las que llevan más tiempo esperando
+const sortedPendingForGrid = computed(() =>
+    [...filteredPending.value].sort((a, b) => (a.submitted_ts ?? 0) - (b.submitted_ts ?? 0))
+);
+
+// ── Ver todas (Administrador) ───────────────────────────────
+const toggling = ref(false);
+function HandleToggleAll(value) {
+    router.get(
+        route("panel.accountability.authorization.index"),
+        value ? { all: 1 } : {},
+        {
+            preserveScroll: true,
+            onStart: () => (toggling.value = true),
+            onFinish: () => (toggling.value = false),
+            onSuccess: () => HandleLoadAuthorized({ pagination: { ...authPagination.value, page: 1 } }),
+        }
+    );
 }
 
-function getSapLocationLabel(row) {
-    if (row.sap_exported) return row.sap_trans_id ? `En SAP · N° ${row.sap_trans_id}` : 'En SAP';
-    return 'Pendiente SAP';
+// ── Autorizadas ─────────────────────────────────────────────
+const authorizedColumns = [
+    { name: "id", align: "center", label: "ID", field: "id", sortable: true, style: "width: 60px" },
+    { name: "description", align: "left", label: "Descripción", field: "description", sortable: true },
+    { name: "user_name", align: "left", label: "Realizado por", field: (row) => row.user?.name },
+    { name: "profile", align: "left", label: "Perfil", field: (row) => row.profile?.name },
+    { name: "end_date", align: "center", label: "Fecha fin", field: "end_date", sortable: true },
+    { name: "total", align: "right", label: "Recibido", field: "total", sortable: true },
+    { name: "spent", align: "right", label: "Gastado", field: "spent" },
+    { name: "balance", align: "right", label: "Saldo", field: "spent" },
+    { name: "sap", align: "left", label: "SAP", field: "sap_exported" },
+    { name: "actions", align: "center", label: "Acciones", field: "actions" },
+];
+
+const profileOptions = computed(() => props.profiles.map((p) => ({ label: p.name, value: p.id })));
+const sapOptions = [
+    { label: "Todas", value: null },
+    { label: "En SAP", value: "exported" },
+    { label: "Pendiente SAP", value: "pending" },
+];
+
+const authorizedRows = ref([]);
+const authorizedTotal = ref(null);
+const authLoading = ref(false);
+const authFilters = ref({ search: "", profile_id: null, sap: null });
+const authPagination = ref({ page: 1, rowsPerPage: 15, rowsNumber: 0, sortBy: "id", descending: true });
+let authRequest = 0;
+
+async function HandleLoadAuthorized({ pagination }) {
+    const { page: p, rowsPerPage, sortBy, descending } = pagination;
+    const current = ++authRequest;
+    authLoading.value = true;
+    try {
+        const res = await axios.get(route("panel.accountability.authorization.authorized"), {
+            headers: { Accept: "application/json" },
+            params: {
+                page: p,
+                per_page: rowsPerPage,
+                sort: sortBy || "id",
+                descending: descending ? "true" : "false",
+                search: authFilters.value.search || undefined,
+                profile_id: authFilters.value.profile_id || undefined,
+                sap: authFilters.value.sap || undefined,
+                all: showAll.value ? 1 : undefined,
+            },
+        });
+        // Una respuesta vieja (filtros cambiados mientras cargaba) no pisa la nueva
+        if (current !== authRequest) return;
+        authorizedRows.value = res.data.data;
+        authorizedTotal.value = res.data.total;
+        authPagination.value = { page: res.data.current_page, rowsPerPage, sortBy, descending, rowsNumber: res.data.total };
+    } catch {
+        if (current === authRequest) {
+            $q.notify({ type: "negative", message: "No se pudieron cargar las rendiciones autorizadas." });
+        }
+    } finally {
+        if (current === authRequest) authLoading.value = false;
+    }
 }
 
-function getSapLocationColor(row) {
-    return row.sap_exported ? 'positive' : 'warning';
-}
+watch(authFilters, () => HandleLoadAuthorized({ pagination: { ...authPagination.value, page: 1 } }), { deep: true });
+
+onMounted(() => {
+    HandleLoadAuthorized({ pagination: authPagination.value });
+    // Tras autorizar y exportar, el número de asiento se muestra en un diálogo para anotarlo
+    // (el manejador global de flash no notifica cuando hay sap_number)
+    if (page.props.flash?.sap_number) {
+        $q.dialog({
+            title: "Rendición exportada a SAP",
+            message: `${page.props.flash.message}.`,
+            ok: { label: "Aceptar", color: "primary", noCaps: true },
+        });
+    }
+});
 
 function HandleEditAccountability(id) {
-    router.visit(
-        route("panel.accountability.authorization.edit", id)
-    );
+    router.visit(route("panel.accountability.authorization.edit", id));
 }
 
 function HandleDetailAccountability(id) {
-    router.visit(
-        route("panel.accountability.authorization.detail.index", id)
-    );
+    router.visit(route("panel.accountability.authorization.detail.index", id));
 }
 
 function HandleGetReport(id) {
-    openURL(
-        route("panel.accountability.authorization.report", id)
-    );
+    openURL(route("panel.accountability.authorization.report", id));
 }
 </script>
 

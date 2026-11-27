@@ -22,12 +22,12 @@ class SupplierController extends Controller
     }
     public function HandleUpdateSupplier(SupplierRequest $request)
     {
-        Session::flash('message', "Proveedor actualizado correctamente");
-        Session::flash('type', 'positive');
         Supplier::findOrFail($request->id)->fill([
             'business'=>$request->business,
             'nit'=>$request->nit
         ])->save();
+        Session::flash('message', "Proveedor actualizado correctamente");
+        Session::flash('type', 'positive');
         return Redirect::route('panel.supplier.index');
     }
     public function HandleEditSupplier($id)
@@ -36,24 +36,26 @@ class SupplierController extends Controller
         return Inertia::render(
             'administration/suppliers/EditSupplier',
             [
-                'supplier' => Supplier::where('id', $id)->first()
+                'supplier' => Supplier::findOrFail($id)
             ]
         );
     }
     public function HandleDeleteSupplier($id)
     {
         try {
-                Supplier::findOrFail($id)->delete();
-                Session::flash('message', "Proveedor eliminado correctamente");
-                Session::flash('type', 'positive');
+            Supplier::findOrFail($id)->delete();
+            Session::flash('message', "Proveedor eliminado correctamente");
+            Session::flash('type', 'positive');
         } catch (QueryException $e) {
             Session::flash('type', 'negative');
-            if ($e->errorInfo[1] == 1451) {
-                Session::flash('message', 'No puedes eliminar este usuario porque hay registros asociados en otras tablas');
+            // 547: violación de FK en SQL Server (1451 en MySQL)
+            if ($e->errorInfo[1] == 547 || $e->errorInfo[1] == 1451) {
+                Session::flash('message', 'No puedes eliminar este proveedor porque hay registros asociados');
             } else {
                 Session::flash('message', $e->getMessage());
             }
         }
+        return Redirect::route('panel.supplier.index');
     }
     public function HandleCreateSupplier()
     {

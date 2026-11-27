@@ -28,7 +28,8 @@ class UserRequest extends FormRequest
             'username'=>['required',Rule::unique('users')->ignore($this->id)],
             // Al editar (PUT) la contraseña es opcional: vacía significa mantener la actual
             'password'=>[$this->method() === 'PUT' ? 'nullable' : 'required',Password::min(5)->letters()->mixedCase()->numbers()],
-            'type'=>'required'
+            'type'=>'required|in:Administrador,Autorizador,Usuario',
+            'card_code'=>'nullable|string|max:50',
         ];
     }
     public function messages(): array
@@ -44,6 +45,7 @@ class UserRequest extends FormRequest
             'password'=>'La contraseña debe tener al menos 5 caracteres, con mayúsculas, minúsculas y números',
             'password.min'=>'La contraseña debe tener al menos :min caracteres',
             'type.required'=>'Selecciona el rol del usuario',
+            'type.in'=>'El rol seleccionado no es válido',
         ];
     }
 }

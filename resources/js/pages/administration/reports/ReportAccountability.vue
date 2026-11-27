@@ -7,10 +7,25 @@
                 title="Reporte de Rendiciones"
                 subtitle="Consulta rendiciones por área, usuario, perfil, estado y fechas"
                 icon="eva-bar-chart-outline"
-            />
+            >
+                <template #actions>
+                    <q-btn data-tour="export-excel"
+                        outline
+                        color="positive"
+                        icon="eva-download-outline"
+                        label="Exportar a Excel"
+                        no-caps
+                        :disable="data.length === 0"
+                        :href="exportUrl"
+                        type="a"
+                    >
+                        <q-tooltip>Descarga el reporte con los filtros aplicados</q-tooltip>
+                    </q-btn>
+                </template>
+            </PageHeader>
 
             <!-- Filtros -->
-            <q-card class="card-form q-mb-md">
+            <q-card data-tour="report-filters" class="card-form q-mb-md">
                 <div class="q-pa-md">
                     <div class="text-subtitle1 text-weight-medium q-mb-md">Filtros</div>
                     <div class="row q-col-gutter-md">
@@ -87,7 +102,7 @@
                         </div>
                         <div class="col-xs-12 col-sm-12 col-md-2 flex items-end">
                             <div class="row q-gutter-sm full-width">
-                                <q-btn
+                                <q-btn data-tour="report-search"
                                     color="primary"
                                     label="Buscar"
                                     icon="eva-search-outline"
@@ -114,7 +129,7 @@
 
             <!-- Tabla de resultados -->
             <q-card class="card-form">
-                <q-table
+                <q-table data-tour="report-table"
                     :rows="data"
                     :columns="table.columns"
                     row-key="id"
@@ -123,12 +138,23 @@
                     separator="horizontal"
                     flat
                     :table-header-class="{ 'table-header-theme': true }"
+                    :pagination="{ rowsPerPage: 15 }"
+                    :grid="$q.screen.xs"
                 >
                     <template v-slot:top>
                         <div class="text-subtitle1 text-weight-medium">Resultados</div>
                         <q-space />
-                        <div v-if="data.length > 0" class="q-mr-md text-weight-bold" style="font-size:12px">
-                            Total: {{ totalAmount }}
+                        <div data-tour="report-totals" v-if="data.length > 0" class="row q-gutter-xs q-mr-md">
+                            <q-chip
+                                v-for="item in totalsByCurrency"
+                                :key="item.currency"
+                                dense
+                                color="blue-grey-1"
+                                text-color="blue-grey-9"
+                                class="text-weight-bold"
+                            >
+                                Total {{ formatMoney(item.total, item.currency) }}
+                            </q-chip>
                         </div>
                         <q-input
                             outlined
@@ -153,7 +179,7 @@
                     </template>
 
                     <template v-slot:body="props">
-                        <q-tr :props="props">
+                        <q-tr :props="props" class="cursor-pointer" @click="HandleOpenDetail(props.row)">
                             <q-td key="id" :props="props">{{ props.row.id }}</q-td>
                             <q-td key="user_name" :props="props">{{ props.row.user_name }}</q-td>
                             <q-td key="area_name" :props="props">
@@ -165,13 +191,13 @@
                             <q-td key="description" :props="props">{{ props.row.description }}</q-td>
                             <q-td key="start_date" :props="props">{{ props.row.start_date }}</q-td>
                             <q-td key="end_date" :props="props">{{ props.row.end_date }}</q-td>
-                            <q-td key="total" :props="props" class="text-right">
-                                {{ formatAmount(props.row.total) }}
+                            <q-td key="total" :props="props" class="text-right" style="font-variant-numeric: tabular-nums">
+                                {{ formatMoney(props.row.total, props.row.type_currency) }}
                             </q-td>
                             <q-td key="status" :props="props">
                                 <q-badge
                                     :color="statusColor(props.row.status)"
-                                    :label="props.row.status"
+                                    :label="statusLabel(props.row.status)"
                                 />
                             </q-td>
                             <q-td key="sap_location" :props="props">
@@ -181,6 +207,26 @@
                                 />
                             </q-td>
                         </q-tr>
+                    </template>
+
+                    <template v-slot:item="props">
+                        <div class="col-12 q-pa-xs">
+                            <q-card flat bordered class="card-grid cursor-pointer" @click="HandleOpenDetail(props.row)">
+                                <q-card-section class="q-pb-xs">
+                                    <div class="row items-center no-wrap">
+                                        <div class="col text-weight-medium ellipsis">N° {{ props.row.id }} · {{ props.row.description }}</div>
+                                        <q-badge :color="statusColor(props.row.status)" :label="statusLabel(props.row.status)" />
+                                    </div>
+                                    <div class="text-caption text-grey-7">{{ props.row.user_name }} · {{ props.row.profile_name }}</div>
+                                    <div class="text-caption text-grey">{{ props.row.start_date }} — {{ props.row.end_date }}</div>
+                                </q-card-section>
+                                <q-card-section class="q-pt-none row items-center">
+                                    <q-badge :color="sapLocationColor(props.row)" :label="sapLocationLabel(props.row)" />
+                                    <q-space />
+                                    <span class="text-weight-bold">{{ formatMoney(props.row.total, props.row.type_currency) }}</span>
+                                </q-card-section>
+                            </q-card>
+                        </div>
                     </template>
 
                     <template v-slot:no-data>
@@ -202,6 +248,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import { ref, computed } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
+import { formatMoney, currencySymbol, statusColor, statusLabel } from "@/utils/accountability";
 
 defineProps({
     title: String,
@@ -240,7 +287,7 @@ const table = ref({
         { name: "description",  align: "left",   label: "Descripción",   field: "description",  sortable: true },
         { name: "start_date",   align: "center", label: "Fecha Inicio",  field: "start_date",   sortable: true },
         { name: "end_date",     align: "center", label: "Fecha Fin",     field: "end_date",     sortable: true },
-        { name: "total",        align: "right",  label: "Monto",         field: "total",        sortable: true },
+        { name: "total",        align: "right",  label: "Monto",         field: "total",        sortable: true, sort: (a, b) => Number(a) - Number(b) },
         { name: "status",       align: "center", label: "Estado",        field: "status",       sortable: true },
         { name: "sap_location", align: "center", label: "Ubicación",      field: "sap_location", sortable: false },
     ],
@@ -295,19 +342,27 @@ function HandleSearch() {
     });
 }
 
-
-const totalAmount = computed(() => {
-    const sum = data.value.reduce((acc, row) => acc + parseFloat(row.total ?? 0), 0);
-    return formatAmount(sum);
+// Totales agrupados por moneda del perfil (no se suman bolivianos con dólares)
+const totalsByCurrency = computed(() => {
+    const groups = {};
+    for (const row of data.value) {
+        const key = currencySymbol(row.type_currency);
+        groups[key] = groups[key] ?? { currency: row.type_currency, total: 0 };
+        groups[key].total += Number(row.total ?? 0);
+    }
+    return Object.values(groups);
 });
 
-function formatAmount(val) {
-    return Number(val ?? 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+// Descarga Excel con los mismos filtros aplicados en la pantalla
+const exportUrl = computed(() => {
+    const params = Object.fromEntries(
+        Object.entries(filters.value).filter(([, value]) => value !== null && value !== "")
+    );
+    return route("panel.report.accountability.export", params);
+});
 
-function statusColor(status) {
-    const map = { Pendiente: "orange", Rechazado: "red", Autorizado: "green", Anulado: "grey" };
-    return map[status] ?? "grey";
+function HandleOpenDetail(row) {
+    router.visit(route("panel.accountability.authorization.detail.index", row.id));
 }
 
 function sapLocationLabel(row) {

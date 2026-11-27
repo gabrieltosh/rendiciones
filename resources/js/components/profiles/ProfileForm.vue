@@ -1,28 +1,28 @@
 <template>
     <q-card class="card-form">
-        <q-tabs :model-value="tab" @update:model-value="emit('update:tab', $event)" align="left" no-caps active-color="primary" indicator-color="primary"
+        <q-tabs data-tour="profile-tabs" :model-value="tab" @update:model-value="emit('update:tab', $event)" align="left" no-caps active-color="primary" indicator-color="primary"
             class="form-tabs q-px-sm" inline-label outside-arrows mobile-arrows>
             <q-tab name="general" icon="eva-settings-2-outline" label="General"
                 :alert="sectionHasError(errors, sections.general) ? 'negative' : false" />
-            <q-tab name="employees" icon="eva-people-outline">
+            <q-tab data-tour="tab-employees" name="employees" icon="eva-people-outline">
                 <div class="row items-center no-wrap q-gutter-xs">
                     <span class="q-tab__label">Empleados</span>
                     <q-badge v-if="form.sin_empleado ? null : form.employees.length" color="primary" rounded :label="form.sin_empleado ? null : form.employees.length" />
                 </div>
             </q-tab>
-            <q-tab name="general_accounts" icon="eva-book-outline">
+            <q-tab data-tour="tab-general-accounts" name="general_accounts" icon="eva-book-outline">
                 <div class="row items-center no-wrap q-gutter-xs">
                     <span class="q-tab__label">Cuentas cabecera</span>
                     <q-badge v-if="form.general.length" color="primary" rounded :label="form.general.length" />
                 </div>
             </q-tab>
-            <q-tab name="detail_accounts" icon="eva-list-outline">
+            <q-tab data-tour="tab-detail-accounts" name="detail_accounts" icon="eva-list-outline">
                 <div class="row items-center no-wrap q-gutter-xs">
                     <span class="q-tab__label">Cuentas detalle</span>
                     <q-badge v-if="form.detail.length" color="primary" rounded :label="form.detail.length" />
                 </div>
             </q-tab>
-            <q-tab name="documents" icon="eva-file-text-outline"
+            <q-tab data-tour="tab-documents" name="documents" icon="eva-file-text-outline"
                 :alert="sectionHasError(errors, sections.documents) ? 'negative' : false">
                 <div class="row items-center no-wrap q-gutter-xs">
                     <span class="q-tab__label">Documentos</span>
@@ -46,7 +46,7 @@
                                 placeholder="Ej: Viáticos Nacionales" />
                         </FormField>
                     </div>
-                    <div class="col-xs-12 col-md-6">
+                    <div data-tour="field-currency" class="col-xs-12 col-md-6">
                         <FormField label="Moneda" required :error="errors.type_currency">
                             <q-select v-model="form.type_currency" :options="currencies" option-value="CurrCode"
                                 option-label="CurrName" emit-value map-options dense outlined class="input-theme" />

@@ -10,7 +10,7 @@ use Inertia\Inertia;
 class ProfileController extends Controller
 {
     public function HandleIndexProfiles(Request $request){
-        Session::put('title', 'Crear Usuario');
+        Session::put('title', 'Mis rendiciones');
         $profiles=UserProfile::where('user_id',$request->user()->id)->with('profile')->get();
         return Inertia::render(
             'accountability/IndexProfiles',

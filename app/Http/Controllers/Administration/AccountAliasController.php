@@ -100,10 +100,14 @@ class AccountAliasController extends Controller
             $entries[] = ['format_code' => $formatCode, 'alias' => $alias];
         }
 
+        // La importación se invoca por axios: se responde JSON (sin flash de sesión)
         if (empty($entries)) {
-            Session::flash('message', 'No se encontraron filas válidas en el archivo.');
-            Session::flash('type', 'warning');
-            return back();
+            return response()->json([
+                'message'       => 'No se encontraron filas válidas en el archivo.',
+                'type'          => 'warning',
+                'created'       => 0,
+                'skipped_codes' => [],
+            ]);
         }
 
         // Bulk lookup in SAP by unique FormatCodes
@@ -112,10 +116,15 @@ class AccountAliasController extends Controller
 
         $created = 0;
         $skipped = 0;
+        $skippedCodes = [];
 
         foreach ($entries as $entry) {
             $sap = $sapAccounts[$entry['format_code']] ?? null;
-            if (!$sap) { $skipped++; continue; }
+            if (!$sap) {
+                $skipped++;
+                $skippedCodes[] = $entry['format_code'];
+                continue;
+            }
 
             AccountAlias::create([
                 'acct_code'   => $sap['AcctCode'],
@@ -126,9 +135,12 @@ class AccountAliasController extends Controller
             $created++;
         }
 
-        Session::flash('message', "Importación completada: {$created} creados, {$skipped} omitidos (código formato no encontrado en SAP).");
-        Session::flash('type', 'positive');
-        return back();
+        return response()->json([
+            'message'       => "Importación completada: {$created} creados, {$skipped} omitidos (código de formato no encontrado en SAP).",
+            'type'          => $skipped > 0 ? 'warning' : 'positive',
+            'created'       => $created,
+            'skipped_codes' => array_values(array_unique($skippedCodes)),
+        ]);
     }
 
     private function HandleGetAccountsByFormatCode(array $formatCodes): array

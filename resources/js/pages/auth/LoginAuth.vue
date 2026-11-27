@@ -94,15 +94,13 @@
 <script setup>
 import Login from "@/layouts/AuthLayout.vue";
 import { ref } from "vue";
-import { router, usePage, Head } from "@inertiajs/vue3";
-import { useQuasar, Dark } from "quasar";
+import { router, Head } from "@inertiajs/vue3";
+import { Dark } from "quasar";
 defineProps({
     errors: Object,
     title: String,
 });
-const page = usePage();
 
-const $q = useQuasar();
 const auth = ref({
     email: null,
     password: null,
@@ -119,14 +117,6 @@ function HandleAuthLogin() {
     router.post("/login", auth.value, {
         onStart: () => (loading.value = true),
         onFinish: () => (loading.value = false),
-        onSuccess: () => {
-            if (page.props.flash.message) {
-                $q.notify({
-                    type: page.props.flash.type,
-                    message: page.props.flash.message,
-                });
-            }
-        },
     });
 }
 </script>

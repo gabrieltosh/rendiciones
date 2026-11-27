@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
  * recibe tal cual y el servicio DI API lo traduce a objetos COM.
  *
  * Los montos de cada documento salen de DocumentLineCalculator, que también usa
- * la vista previa en PDF (AccountabilityController::HandleFormatLineReport).
+ * la vista contable del detalle (AccountabilityController::HandlePreviewAccountability).
  */
 class JournalVoucherPayloadBuilder
 {

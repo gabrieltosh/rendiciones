@@ -3,167 +3,24 @@
     <Layout>
         <div class="row justify-center q-px-md q-py-lg">
             <div class="col-xs-12 col-sm-12 col-md-9">
-                <PageHeader title="Editar Rendición" :subtitle="`${page.props.profile.name} · Rendición #${form.id}`" icon="eva-edit-2-outline" sticky>
+                <PageHeader title="Editar Rendición" :subtitle="`${profile.name} · Rendición #${form.id}`" icon="eva-edit-2-outline" sticky>
                     <template #actions>
                         <q-btn flat color="secondary" label="Cancelar" no-caps :disable="saving"
                             @click="router.visit(route('panel.accountability.authorization.index'))" />
-                        <q-btn color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
-                            :loading="saving" @click="HandleUpdateForm()" />
+                        <q-btn data-tour="save-accountability" color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
+                            :loading="saving" :disable="saving" @click="HandleUpdateForm()" />
                     </template>
                 </PageHeader>
 
-                <q-card class="q-pa-lg card-form">
+                <q-card data-tour="accountability-form" class="q-pa-lg card-form">
                     <div class="form-section-title q-mb-md">Datos de la rendición</div>
-                    <div class="row q-col-gutter-md">
-                        <div v-if="!page.props.profile.sin_empleado" class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <div class="form-label" for="device_name">
-                                Empleado
-                            </div>
-                            <q-select
-                                class="input-theme"
-                                dense
-                                outlined
-                                :options="options.employees"
-                                v-model="form.employee"
-                                option-value="card_code"
-                                option-label="card_name"
-                                emit-value
-                                map-options
-                                use-input
-                                input-debounce="0"
-                                @filter="HandleFilterEmployee"
-                                clearable
-                            />
-                            <div v-if="errors.employee" class="container-error">
-                                <ul
-                                    v-for="(error, index) in errors.employee"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <div class="form-label" for="device_name">
-                                Cuenta <span class="text-red">*</span>
-                            </div>
-                            <q-select
-                                class="input-theme"
-                                dense
-                                outlined
-                                :options="options.accounts"
-                                v-model="form.account"
-                                option-value="key"
-                                option-label="label"
-                                emit-value
-                                map-options
-                                use-input
-                                input-debounce="0"
-                                @filter="HandleFilterAccounts"
-                                clearable
-                            />
-                            <div v-if="errors.account" class="container-error">
-                                <ul
-                                    v-for="(error, index) in errors.account"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <div class="form-label" for="device_name">
-                                Monto Recepcionado
-                                <span class="text-red">*</span>
-                            </div>
-                            <q-input
-                                v-model="form.total"
-                                dense
-                                outlined
-                                type="number"
-                                class="input-theme"
-                            />
-                            <div v-if="errors.total" class="container-error">
-                                <ul
-                                    v-for="(error, index) in errors.total"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <div class="form-label" for="device_name">
-                                Descripción <span class="text-red">*</span>
-                            </div>
-                            <q-input
-                                v-model="form.description"
-                                dense
-                                outlined
-                                class="input-theme"
-                            />
-                            <div
-                                v-if="errors.description"
-                                class="container-error"
-                            >
-                                <ul
-                                    v-for="(error, index) in errors.description"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <div class="form-label" for="device_name">
-                                Fecha Inicio <span class="text-red">*</span>
-                            </div>
-                            <q-input
-                                v-model="form.start_date"
-                                dense
-                                outlined
-                                class="input-theme"
-                                type="date"
-                            />
-                            <div
-                                v-if="errors.start_date"
-                                class="container-error"
-                            >
-                                <ul
-                                    v-for="(error, index) in errors.start_date"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <div class="form-label" for="device_name">
-                                Fecha Final <span class="text-red">*</span>
-                            </div>
-                            <q-input
-                                v-model="form.end_date"
-                                dense
-                                outlined
-                                type="date"
-                                class="input-theme"
-                            />
-                            <div v-if="errors.end_date" class="container-error">
-                                <ul
-                                    v-for="(error, index) in errors.end_date"
-                                    :key="index"
-                                    class="message-error"
-                                >
-                                    <li>{{ error }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+                    <AccountabilityHeaderForm
+                        v-model="form"
+                        :profile="profile"
+                        :accounts="accounts"
+                        :employees="employees"
+                        :errors="errors"
+                    />
                 </q-card>
             </div>
         </div>
@@ -172,75 +29,31 @@
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import AccountabilityHeaderForm from "@/components/authorization/AccountabilityHeaderForm.vue";
 import { scrollToFirstError } from "@/utils/forms";
-import { ref,onMounted } from "vue";
-import { Head, usePage, router } from "@inertiajs/vue3";
+import { ref } from "vue";
+import { Head, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
-import { useQuasar } from "quasar";
 
-defineProps({
+const props = defineProps({
     title: String,
-    errors: Object,
+    errors: { type: Object, default: () => ({}) },
+    profile: { type: Object, required: true },
+    accounts: { type: Array, default: () => [] },
+    employees: { type: Array, default: () => [] },
+    accountability: { type: Object, required: true },
 });
-const $q = useQuasar();
-const page = usePage();
-let message = ref(page.props.flash.message);
-let type = ref(page.props.flash.type);
-const options = ref({
-    accounts: null,
-    employees:[]
-});
-const loading = ref({
-    card: false,
-});
-const form = ref(page.props.accountability);
+
+const form = ref({ ...props.accountability });
 const saving = ref(false);
 
+// El aviso de resultado lo muestra el manejador global de flash del layout
 function HandleUpdateForm() {
+    if (saving.value) return;
     router.put(route("panel.accountability.authorization.update"), form.value, {
         onStart: () => (saving.value = true),
         onFinish: () => (saving.value = false),
         onError: () => scrollToFirstError(),
-        onSuccess: () => {
-            message.value = page.props.flash.message;
-            type.value = page.props.flash.type;
-            $q.notify({
-                type: type.value,
-                message: message.value,
-            });
-        },
-    });
-}
-function HandleFilterAccounts(val, update) {
-    if (val === "") {
-        update(() => {
-            options.value.accounts = page.props.accounts;
-        });
-        return;
-    }
-    update(() => {
-        const needle = val.toLowerCase();
-        options.value.accounts = page.props.accounts.filter(
-            (v) => v.label.toLowerCase().indexOf(needle) > -1
-        );
-    });
-}
-onMounted(() => {
-    options.value.accounts = page.props.accounts;
-    options.value.employees = page.props.employees;
-})
-function HandleFilterEmployee(val,update){
-    if (val === "") {
-        update(() => {
-            options.value.employees = page.props.employees;
-        });
-        return;
-    }
-    update(() => {
-        const needle = val.toLowerCase();
-        options.value.employees = page.props.employees.filter(
-            (v) => v.card_name.toLowerCase().indexOf(needle) > -1
-        );
     });
 }
 </script>

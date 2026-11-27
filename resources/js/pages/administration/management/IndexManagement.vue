@@ -10,13 +10,13 @@
                     sticky
                 >
                     <template #actions>
-                        <q-btn color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
+                        <q-btn data-tour="save-management" color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
                             :loading="saving" @click="HandleStoreForm()" />
                     </template>
                 </PageHeader>
 
                 <q-card class="card-form">
-                    <q-tabs v-model="tab" align="left" no-caps active-color="primary" indicator-color="primary"
+                    <q-tabs data-tour="management-tabs" v-model="tab" align="left" no-caps active-color="primary" indicator-color="primary"
                         class="form-tabs q-px-sm" inline-label outside-arrows mobile-arrows>
                         <q-tab v-for="section in sections" :key="section.key" :name="section.key" :icon="section.icon"
                             :label="section.label" />
@@ -24,7 +24,7 @@
                     <q-separator />
 
                     <q-tab-panels v-model="tab" animated keep-alive class="bg-transparent">
-                        <q-tab-panel v-for="section in sections" :key="section.key" :name="section.key" class="q-pa-lg">
+                        <q-tab-panel data-tour="management-panel" v-for="section in sections" :key="section.key" :name="section.key" class="q-pa-lg">
                             <div class="form-section-title">{{ section.title }}</div>
                             <div class="form-section-caption q-mb-md">{{ section.caption }}</div>
                             <div class="row q-col-gutter-md">
@@ -47,7 +47,7 @@
                                     </FormField>
                                 </div>
 
-                                <div v-if="section.key === 'company'" class="col-xs-12 col-md-6">
+                                <div data-tour="company-logo" v-if="section.key === 'company'" class="col-xs-12 col-md-6">
                                     <FormField label="Logo de la empresa" hint="Se usa en los reportes PDF. Formatos de imagen (JPG, PNG).">
                                         <q-file v-model="img" dense outlined accept=".jpg, image/*" class="input-theme"
                                             clearable @rejected="onRejected">
@@ -158,10 +158,6 @@ function HandleStoreData() {
             preserveState: true,
             onFinish: () => (saving.value = false),
             onSuccess: () => {
-                $q.notify({
-                    type: page.props.flash.type,
-                    message: page.props.flash.message,
-                });
                 img.value = null;
                 data.value.accountability = page.props.accountability;
                 data.value.accountability_detail = page.props.accountability_detail;

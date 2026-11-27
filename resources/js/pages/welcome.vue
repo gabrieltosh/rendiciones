@@ -6,7 +6,7 @@
 
                 <PageHeader :title="`Hola, ${firstName}`" :subtitle="today" icon="eva-home-outline">
                     <template #actions>
-                        <q-btn
+                        <q-btn data-tour="new-accountability"
                             color="primary"
                             icon="add"
                             label="Nueva Rendición"
@@ -18,7 +18,7 @@
                 </PageHeader>
 
                 <!-- Tareas de revisión (Administrador / Autorizador) -->
-                <div v-if="review" class="row q-col-gutter-md q-mb-md">
+                <div data-tour="review-cards" v-if="review" class="row q-col-gutter-md q-mb-md">
                     <div class="col-xs-12 col-sm-6">
                         <q-card
                             class="card-form action-card full-height"
@@ -67,7 +67,7 @@
 
                 <!-- Resumen de mis rendiciones -->
                 <div class="text-subtitle2 text-grey-8 q-mb-sm section-title">Mis rendiciones</div>
-                <div class="row q-col-gutter-md q-mb-md">
+                <div data-tour="summary-cards" class="row q-col-gutter-md q-mb-md">
                     <div
                         v-for="card in summaryCards"
                         :key="card.status"
@@ -90,7 +90,7 @@
                 </div>
 
                 <!-- Últimas rendiciones -->
-                <q-card class="card-form">
+                <q-card data-tour="recent-accountabilities" class="card-form">
                     <q-card-section class="row items-center q-pb-sm">
                         <div class="text-subtitle1 text-weight-medium col">Últimas rendiciones</div>
                         <q-btn

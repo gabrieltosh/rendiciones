@@ -35,3 +35,24 @@ export function formatAmount(value) {
         maximumFractionDigits: 2,
     });
 }
+
+// Símbolo de la moneda del perfil (profiles.type_currency). Sin moneda: bolivianos.
+export function currencySymbol(currency) {
+    const code = String(currency ?? "").trim().toUpperCase();
+    if (!code || code === "BS" || code === "BOB" || code === "BS.") return "Bs";
+    if (code === "USD" || code === "US$" || code === "$") return "$us";
+    return code;
+}
+
+// Monto con formato y moneda: "Bs 1.234,50"
+export function formatMoney(value, currency) {
+    return `${currencySymbol(currency)} ${formatAmount(value)}`;
+}
+
+// Saldo de una rendición: positivo = el solicitante devuelve, negativo = se le reembolsa
+export function balanceInfo(received, spent) {
+    const balance = Math.round((Number(received ?? 0) - Number(spent ?? 0)) * 100) / 100;
+    if (balance > 0) return { balance, label: "Saldo a devolver", color: "positive" };
+    if (balance < 0) return { balance: -balance, label: "Saldo a reembolsar", color: "warning" };
+    return { balance: 0, label: "Rendición cuadrada", color: "primary" };
+}

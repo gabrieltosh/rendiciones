@@ -17,6 +17,7 @@ use App\Models\Employee;
 use App\Models\Document;
 use App\Models\Profile;
 use App\Models\AccountabilityField;
+use App\Models\AccountabilityLevelApproval;
 use Inertia\Inertia;
 use Notification;
 use PhpParser\Node\Expr\BinaryOp\NotIdentical;
@@ -93,6 +94,13 @@ class AccountabilityController extends Controller
         $user = User::with('user_authorization', 'authorizationCycle.cycle.levels.levelUsers.user')
             ->where('id', $accountability->user_id)->first();
 
+        // Una rendición sin documentos no tiene nada que autorizar
+        if (!AccountabilityDetail::where('accountability_id', $accountability_id)->exists()) {
+            Session::flash('message', 'Agregue al menos un documento antes de enviar la rendición a autorización.');
+            Session::flash('type', 'negative');
+            return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
+        }
+
         // Determine first level of cycle (if assigned) and notify accordingly
         $firstLevel = $this->HandleFirstCycleLevel($user->id);
 
@@ -132,7 +140,7 @@ class AccountabilityController extends Controller
             }
         }
 
-        Session::flash('message', "Documento enviado correctamente");
+        Session::flash('message', "Rendición enviada a autorización");
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
     }
@@ -216,7 +224,7 @@ class AccountabilityController extends Controller
                 'error' => $e->getMessage(),
             ]);
             return Redirect::back()->withErrors([
-                'general' => 'No se pudo actualizar el documento: ' . $e->getMessage(),
+                'general' => 'No se pudo actualizar el documento. Revise los datos e intente nuevamente; si el problema persiste, comuníquese con el administrador.',
             ]);
         }
         Session::flash('message', "Documento actualizado correctamente");
@@ -226,12 +234,17 @@ class AccountabilityController extends Controller
     }
     public function HandleEditDocument($profile_id, $accountability_id, $document_id)
     {
-        $params = Management::where('group', 'supplier')->get();
+        if ($locked = $this->HandleRejectIfLocked($profile_id, $accountability_id)) {
+            return $locked;
+        }
+        Session::put('title', 'Editar gasto');
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $accounts = $this->HandleBuildDetailAccounts($profile->id);
         $documents = Document::with('fields')->where('profile_id', $profile->id)->orderBy('name')->get();
-        $data = AccountabilityDetail::with('field', 'items')->where('id', $document_id)->first();
+        $data = AccountabilityDetail::with('field', 'items')
+            ->where('accountability_id', $accountability_id)
+            ->findOrFail($document_id);
         $data->account = $this->HandleMatchAccountKey($accounts, $data->account, $data->account_name);
         $distribution = new DistributionRules();
         $data->distribution_rule_one = $distribution->find($data->distribution_rule_one, 1);
@@ -251,7 +264,6 @@ class AccountabilityController extends Controller
                 'accountability' => $accountability,
                 'accounts' => $accounts,
                 'documents' => $documents,
-                'suppliers' => $this->HandleGetSuppliers($params),
                 'data' => $data,
                 'distribution' => $distribution->all(),
                 'projects' => $this->HandleGetProjects(),
@@ -327,51 +339,24 @@ class AccountabilityController extends Controller
                 'error' => $e->getMessage(),
             ]);
             return Redirect::back()->withErrors([
-                'general' => 'No se pudo guardar el documento: ' . $e->getMessage(),
+                'general' => 'No se pudo guardar el documento. Revise los datos e intente nuevamente; si el problema persiste, comuníquese con el administrador.',
             ]);
         }
         Session::flash('message', "Documento creado correctamente");
         Session::flash('type', 'positive');
-        return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
-    }
-
-    public function HandleGetSuppliers($params)
-    {
-        $params_sap = Management::where('group', 'accountability')->get();
-        $business_name = $params->where('name', 'business_name')->first()->value;
-        $nit = $params->where('name', 'nit')->first()->value;
-        if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
-            $db = Config::get('database.connections.hana.database');
-            $sql =
-                <<<SQL
-                select
-                    T1."$business_name" as "business_name",
-                    T1."$nit" as "nit"
-                from $db.OCRD as T1
-SQL;
-            $sap_suppliers = Hana::query($sql);
-        } else {
-            $sap_suppliers = DB::connection('sap')
-                ->table('OCRD')
-                ->select(
-                    $business_name . ' as business_name',
-                    $nit . ' as nit'
-                )
-                ->get()->toArray();
+        // "Guardar y agregar otro": vuelve a un formulario nuevo
+        if ($request->input('then') === 'new') {
+            return Redirect::route('panel.accountability.manage.detail.create', [$profile_id, $accountability_id]);
         }
-        $bd_suppliers = AccountabilityDetail::select(
-            'business_name',
-            'nit'
-        )
-            ->groupBy('business_name', 'nit')
-            ->get()
-            ->toArray();
-        return array_merge($sap_suppliers, $bd_suppliers);
+        return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
     }
 
     public function HandleCreateDocument($profile_id, $accountability_id)
     {
-        $params = Management::where('group', 'supplier')->get();
+        if ($locked = $this->HandleRejectIfLocked($profile_id, $accountability_id)) {
+            return $locked;
+        }
+        Session::put('title', 'Nuevo gasto');
         $profile = Profile::where('id', $profile_id)->first();
         $accountability = Accountability::where('id', $accountability_id)->first();
         $accounts = $this->HandleBuildDetailAccounts($profile->id);
@@ -385,15 +370,22 @@ SQL;
                 'documents' => $documents,
                 'distribution' => (new DistributionRules())->all(),
                 'projects' => $this->HandleGetProjects(),
-                'suppliers' => $this->HandleGetSuppliers($params)
             ]
         );
     }
     public function HandleDetailAccountability($profile_id, $accountability_id)
     {
+        Session::put('title', 'Detalle de rendición');
         $profile = Profile::where('id', $profile_id)->first();
-        $accountability = Accountability::where('id', $accountability_id)->first();
-        $documents = AccountabilityDetail::withCount(['lines', 'items'])->where('accountability_id', $accountability_id)->get();
+        // El solicitante solo ve sus propias rendiciones
+        $accountability = Accountability::where('id', $accountability_id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+        $documents = AccountabilityDetail::withCount(['lines', 'items'])
+            ->where('accountability_id', $accountability_id)
+            ->orderBy('date')
+            ->orderBy('id')
+            ->get();
 
         // Enrich with global aliases
         $allCodes = collect([$accountability->account_code])
@@ -407,24 +399,25 @@ SQL;
             return $doc;
         });
 
-        $audits = Audit::where('auditable_type', Accountability::class)
+        $rawAudits = Audit::where('auditable_type', Accountability::class)
             ->where('auditable_id', $accountability_id)
             ->with('user')
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($audit) {
-                return [
-                    'id' => $audit->id,
-                    'event' => $audit->event,
-                    'user' => $audit->user ? $audit->user->name : 'Sistema',
-                    'old_values' => $audit->old_values,
-                    'new_values' => $audit->new_values,
-                    'ip_address' => $audit->ip_address,
-                    'created_at' => \Carbon\Carbon::parse($audit->created_at)
-                        ->setTimezone('America/La_Paz')
-                        ->format('Y-m-d g:i A'),
-                ];
-            });
+            ->get();
+
+        // El historial del solicitante no muestra la IP de quien hizo el cambio
+        $audits = $rawAudits->map(function ($audit) {
+            return [
+                'id' => $audit->id,
+                'event' => $audit->event,
+                'user' => $audit->user ? $audit->user->name : 'Sistema',
+                'old_values' => $audit->old_values,
+                'new_values' => $audit->new_values,
+                'created_at' => \Carbon\Carbon::parse($audit->created_at)
+                    ->setTimezone('America/La_Paz')
+                    ->format('Y-m-d g:i A'),
+            ];
+        });
 
         $owner = User::with('user_authorization')->find($accountability->user_id);
 
@@ -435,18 +428,73 @@ SQL;
                 'accountability' => $accountability,
                 'documents' => $documents,
                 'audits' => $audits,
+                // Gastado = suma de los importes de los documentos (Recibido = accountability.total)
+                'spent' => round((float) $documents->sum(fn ($doc) => (float) $doc->amount), 2),
+                'rejection' => $accountability->status === 'Rechazado'
+                    ? $this->HandleRejectionInfo($accountability, $rawAudits)
+                    : null,
                 'has_authorizer' => $owner
                     ? $this->HandleHasAuthorizer($owner, $this->HandleFirstCycleLevel($owner->id))
                     : false,
             ]
         );
     }
+
+    /**
+     * Quién rechazó la rendición y cuándo: el último rechazo registrado en el ciclo
+     * de autorización o, en el sistema sin ciclo, la última auditoría que la dejó
+     * Rechazada. El comentario es el de la rendición (accountabilities.comments).
+     */
+    private function HandleRejectionInfo(Accountability $accountability, $rawAudits): array
+    {
+        $candidates = collect();
+
+        $approval = AccountabilityLevelApproval::with('user')
+            ->where('accountability_id', $accountability->id)
+            ->where('status', 'rechazado')
+            ->orderByDesc('acted_at')
+            ->orderByDesc('id')
+            ->first();
+        if ($approval) {
+            $candidates->push([
+                'by' => $approval->user?->name,
+                'at' => $approval->acted_at ? \Carbon\Carbon::parse($approval->acted_at) : null,
+                'comments' => $approval->comments,
+            ]);
+        }
+
+        $audit = $rawAudits->first(function ($audit) {
+            return $audit->event === 'updated' && data_get($audit->new_values, 'status') === 'Rechazado';
+        });
+        if ($audit) {
+            $candidates->push([
+                'by' => $audit->user?->name,
+                'at' => $audit->created_at ? \Carbon\Carbon::parse($audit->created_at) : null,
+                'comments' => data_get($audit->new_values, 'comments'),
+            ]);
+        }
+
+        $latest = $candidates->sortByDesc(fn ($c) => $c['at']?->getTimestamp() ?? 0)->first();
+        $comments = trim((string) ($accountability->comments ?? ($latest['comments'] ?? '')));
+
+        return [
+            'comments' => $comments !== '' ? $comments : null,
+            'by' => $latest['by'] ?? null,
+            'at' => $latest && $latest['at']
+                ? $latest['at']->setTimezone('America/La_Paz')->format('Y-m-d g:i A')
+                : null,
+        ];
+    }
     public function HandleIndexAccountability(Request $request, $profile_id)
     {
-        Session::put('title', 'Lista Rendiciones');
+        Session::put('title', 'Rendiciones');
         $profile = Profile::where('id', $profile_id)->first();
+        // detail_sum_amount = gastado (suma de los importes de los documentos)
         $accountabilities = Accountability::where('user_id', $request->user()->id)
             ->where('profile_id', $profile_id)
+            ->withSum('detail', 'amount')
+            ->withCount('detail')
+            ->orderByDesc('id')
             ->get();
         return Inertia::render(
             'accountability/IndexAccountabilityNew',
@@ -507,7 +555,7 @@ SQL;
     }
     public function HandleCreateAccountability($profile_id)
     {
-        Session::put('title', 'Crear Rendición');
+        Session::put('title', 'Nueva rendición');
         $profile = Profile::where('id', $profile_id)->first();
         $employees = Employee::where('profile_id', $profile_id)->get();
         $accounts = $this->HandleBuildGeneralAccounts($profile->id);
@@ -585,7 +633,7 @@ SQL;
             $employee_code = data_get($employee, 'CardCode');
         }
 
-        Accountability::create([
+        $accountability = Accountability::create([
             'profile_id' => $profile_id,
             'user_id' => $request->user()->id,
             'employee_name' => $employee_name,
@@ -597,9 +645,10 @@ SQL;
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
         ]);
-        Session::flash('message', "Rendición creado correctamente");
+        Session::flash('message', "Rendición creada correctamente. Ahora agregue sus documentos.");
         Session::flash('type', 'positive');
-        return Redirect::route('panel.accountability.manage.index', $profile_id);
+        // Siguiente paso natural: registrar los documentos de la rendición
+        return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability->id]);
     }
     public function HandleConsultaFactura(Request $request)
     {
@@ -639,19 +688,25 @@ SQL;
                     ]);
 
             if ($response->failed()) {
-                return response()->json(['error' => 'Error al consultar SIAT: ' . $response->status()], 500);
+                Log::warning('SIAT respondió con error al consultar una factura', [
+                    'status' => $response->status(),
+                    'nit' => $nit,
+                    'numero' => $numero,
+                ]);
+                return response()->json(['error' => 'El servicio de Impuestos Nacionales (SIAT) no respondió correctamente. Intente nuevamente en unos minutos o cargue los datos manualmente.'], 502);
             }
 
             $json = $response->json();
 
             if (!($json['transaccion'] ?? false)) {
-                $msg = $json['mensajes'][0]['descripcion'] ?? 'Error desconocido';
+                $msg = $json['mensajes'][0]['descripcion'] ?? 'El SIAT no encontró la factura. Verifique el código QR o cargue los datos manualmente.';
                 return response()->json(['error' => $msg], 422);
             }
 
             return response()->json($json['objeto']);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Error al conectar con SIAT: ' . $e->getMessage()], 500);
+            Log::error('No se pudo conectar con SIAT', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'No se pudo conectar con el SIAT. Verifique su conexión e intente nuevamente, o cargue los datos manualmente.'], 502);
         }
     }
     public function HandleUpdateAccountability(AccountabilityRequest $request, $profile_id)
@@ -691,9 +746,12 @@ SQL;
         }
         return Redirect::route('panel.accountability.manage.index', $profile_id);
     }
-    public function HandleEditAccountability($profile_id, $acc_id, )
+    public function HandleEditAccountability($profile_id, $acc_id)
     {
-        Session::put('title', 'Crear Rendición');
+        if ($locked = $this->HandleRejectIfLocked($profile_id, $acc_id)) {
+            return $locked;
+        }
+        Session::put('title', 'Editar rendición');
         $profile = Profile::where('id', $profile_id)->first();
         $accounts = $this->HandleBuildGeneralAccounts($profile->id);
         $accountability = Accountability::where('id', $acc_id)->first();

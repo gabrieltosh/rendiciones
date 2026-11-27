@@ -9,7 +9,7 @@
                     icon="eva-pie-chart-outline"
                 >
                     <template #actions>
-                        <q-btn
+                        <q-btn data-tour="create-area"
                             color="primary"
                             icon="add"
                             label="Crear Área"
@@ -21,7 +21,7 @@
                 </PageHeader>
 
                 <q-card class="card-form">
-                    <q-table
+                    <q-table data-tour="areas-table"
                         :rows="data"
                         :columns="table.columns"
                         row-key="id"
@@ -31,6 +31,7 @@
                         separator="horizontal"
                         :table-header-class="{ 'table-header-theme': true }"
                         :pagination="{ rowsPerPage: 15 }"
+                        :grid="$q.screen.xs"
                     >
                         <template v-slot:top>
                             <div class="text-subtitle1 text-weight-medium">Lista de Áreas</div>
@@ -60,7 +61,7 @@
                                 </q-td>
                                 <q-td key="created_at" :props="props">{{ props.row.created_at }}</q-td>
                                 <q-td key="actions" :props="props">
-                                    <q-btn
+                                    <q-btn data-tour="edit-area"
                                         flat
                                         round
                                         dense
@@ -86,6 +87,23 @@
                                     </q-btn>
                                 </q-td>
                             </q-tr>
+                        </template>
+                        <template v-slot:item="props">
+                            <div class="col-12 q-pa-xs">
+                                <q-card flat bordered class="card-grid">
+                                    <q-card-section class="q-pb-xs">
+                                        <div class="text-weight-medium">{{ props.row.name }}</div>
+                                        <div class="text-caption text-grey-7">{{ props.row.description || '—' }}</div>
+                                        <div class="text-caption text-grey">Creado: {{ props.row.created_at }}</div>
+                                    </q-card-section>
+                                    <q-card-actions align="right" class="q-pt-none">
+                                        <q-btn flat dense no-caps size="sm" color="primary" icon="eva-edit-2-outline"
+                                            label="Editar" @click="HandleEditArea(props.row.id)" />
+                                        <q-btn flat dense no-caps size="sm" color="negative" icon="eva-trash-2-outline"
+                                            label="Eliminar" @click="HandleDeleteArea(props.row)" />
+                                    </q-card-actions>
+                                </q-card>
+                            </div>
                         </template>
                         <template v-slot:no-data>
                             <div class="full-width text-center q-pa-xl text-grey">
@@ -145,7 +163,6 @@ function HandleDeleteArea(row) {
         router.delete(route("panel.area.delete", row.id), {
             onSuccess: () => {
                 data.value = page.props.data;
-                $q.notify({ type: page.props.flash.type, message: page.props.flash.message });
             },
         });
     });

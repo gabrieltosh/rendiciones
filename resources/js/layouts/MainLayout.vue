@@ -2,7 +2,7 @@
     <q-layout view="lHh Lpr fFf" class="backgroup-theme">
         <q-header class="q-ma-sm header-theme" height-hint="58">
             <q-toolbar class="q-py-xs">
-                <q-btn
+                <q-btn data-tour="menu-toggle"
                     dense
                     flat
                     round
@@ -18,7 +18,20 @@
 
                 <q-space />
 
-                <q-btn
+                <q-btn data-tour="help-button"
+                    id="tour-help-btn"
+                    flat
+                    dense
+                    round
+                    icon="help_outline"
+                    aria-label="Ver guía de esta pantalla"
+                    class="text-profile q-mr-xs"
+                    @click="startTour()"
+                >
+                    <q-tooltip>Ver guía de esta pantalla</q-tooltip>
+                </q-btn>
+
+                <q-btn data-tour="dark-mode"
                     flat
                     dense
                     round
@@ -30,7 +43,7 @@
                     <q-tooltip>{{ $q.dark.isActive ? 'Modo claro' : 'Modo oscuro' }}</q-tooltip>
                 </q-btn>
 
-                <q-btn flat no-caps class="user-btn q-px-sm" aria-label="Menú de usuario">
+                <q-btn data-tour="user-menu" flat no-caps class="user-btn q-px-sm" aria-label="Menú de usuario">
                     <q-avatar color="primary" text-color="white" size="32px" class="text-weight-medium">
                         {{ initials }}
                     </q-avatar>
@@ -57,6 +70,12 @@
                                 </q-item-section>
                             </q-item>
                             <q-separator />
+                            <q-item clickable v-close-popup @click="startTour()">
+                                <q-item-section avatar>
+                                    <q-icon name="help_outline" />
+                                </q-item-section>
+                                <q-item-section>Guía de la pantalla</q-item-section>
+                            </q-item>
                             <q-item clickable @click="toggleDarkMode()">
                                 <q-item-section avatar>
                                     <q-icon :name="$q.dark.isActive ? 'eva-sun-outline' : 'eva-moon-outline'" />
@@ -85,7 +104,7 @@
             </q-toolbar>
         </q-header>
 
-        <q-drawer
+        <q-drawer data-tour="main-menu"
             show-if-above
             v-model="leftDrawerOpen"
             side="left"
@@ -142,10 +161,21 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { router, usePage } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar, LocalStorage } from "quasar";
+import { installFlashNotifications, notifyInitialFlash } from "@/utils/flash";
+import { installTours, offerInitialTour } from "@/tours/engine";
+
+// Notificación global de mensajes flash (ver utils/flash.js): un único listener
+installFlashNotifications();
+// Manual interactivo (ver tours/engine.js): botón "?" y guía de primera visita
+installTours();
+onMounted(() => {
+    notifyInitialFlash();
+    offerInitialTour();
+});
 
 const leftDrawerOpen = ref(false);
 const page = usePage();
@@ -219,12 +249,6 @@ const menu = computed(() => {
                     count: counts.pending_sap,
                     countColor: "warning",
                 },
-                {
-                    label: "Reportes",
-                    icon: "eva-bar-chart-outline",
-                    route: "panel.report.accountability",
-                    active: isCurrent("panel.report.accountability"),
-                },
             ],
         });
     }
@@ -270,17 +294,42 @@ const menu = computed(() => {
                     active: isCurrent("panel.account-alias.*"),
                 },
                 {
-                    label: "Log de Auditoría",
-                    icon: "eva-clock-outline",
-                    route: "panel.report.audit-log",
-                    active: isCurrent("panel.report.audit-log"),
+                    label: "Proveedores",
+                    icon: "eva-car-outline",
+                    route: "panel.supplier.index",
+                    active: isCurrent("panel.supplier.*"),
                 },
             ],
         });
     }
 
+    if (isAdminOrAutorizador.value) {
+        const reports = [
+            {
+                label: "Reporte de Rendiciones",
+                icon: "eva-bar-chart-outline",
+                route: "panel.report.accountability",
+                active: isCurrent("panel.report.accountability", "panel.report.accountability.*"),
+            },
+        ];
+        if (isAdmin.value) {
+            reports.push({
+                label: "Log de Auditoría",
+                icon: "eva-clock-outline",
+                route: "panel.report.audit-log",
+                active: isCurrent("panel.report.audit-log"),
+            });
+        }
+        sections.push({ label: "Reportes", items: reports });
+    }
+
     return sections;
 });
+
+// El motor de guías (tours/engine.js) escucha este evento
+function startTour() {
+    window.dispatchEvent(new CustomEvent("start-tour"));
+}
 
 function toggleLeftDrawer() {
     leftDrawerOpen.value = !leftDrawerOpen.value;
@@ -303,432 +352,3 @@ function HandleLogout() {
     });
 }
 </script>
-<style lang="scss">
-* {
-    font-family: "Poppins", sans-serif;
-}
-.text-banner {
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-.text-profile {
-    color: black;
-}
-.icon-theme {
-    border-radius: 10px;
-    box-shadow: rgba(0, 0, 0, 0.1) 0rem 0.25rem 0.375rem -0.0625rem,
-        rgba(0, 0, 0, 0.06) 0rem 0.125rem 0.25rem -0.0625rem;
-}
-.header-theme {
-    background-color: white;
-    border-radius: 0.5rem;
-    box-shadow: rgba(0, 0, 0, 0.1) 0rem 0.25rem 0.375rem -0.0625rem,
-        rgba(0, 0, 0, 0.06) 0rem 0.125rem 0.25rem -0.0625rem;
-}
-.drawer-theme {
-    background-color: white;
-    border-radius: 15px;
-    box-shadow: rgba(0, 0, 0, 0.1) 0rem 0.25rem 0.375rem -0.0625rem,
-        rgba(0, 0, 0, 0.06) 0rem 0.125rem 0.25rem -0.0625rem;
-    border-radius: 0.5rem;
-}
-.footer-theme {
-    font-size: 12px;
-    font-family: Arial, Helvetica, sans-serif;
-    color: #ffffff;
-    box-shadow: rgba(0, 0, 0, 0.1) 0rem 0.25rem 0.375rem -0.0625rem,
-        rgba(0, 0, 0, 0.06) 0rem 0.125rem 0.25rem -0.0625rem;
-    background-color: #21283c;
-}
-.backgroup-theme {
-    background-color: #f0f2f5;
-}
-.menu {
-    background-color: #f0f2f5;
-    font-size: 12.5px;
-}
-body.screen--xs {
-    .menu {
-        padding: 0;
-        font-size: 12.5px;
-    }
-}
-body.screen--sm {
-    .menu {
-        padding: 0;
-        font-size: 12.5px;
-    }
-}
-.q-toolbar {
-    box-shadow: 0px 2px 7px #2553b91a;
-    border-radius: 0.5rem;
-}
-
-::-webkit-scrollbar {
-    height: 12px;
-    width: 14px;
-    background: transparent;
-    z-index: 12;
-    overflow: visible;
-}
-
-::-webkit-scrollbar-thumb {
-    width: 10px;
-    background-color: #c1c1c1;
-    border-radius: 10px;
-    z-index: 12;
-    border: 4px solid rgba(0, 0, 0, 0);
-    background-clip: padding-box;
-    transition: background-color 0.32s ease-in-out;
-    margin: 4px;
-    min-height: 32px;
-    min-width: 32px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #c1c1c1;
-}
-.body--dark {
-    .q-stepper__step-inner {
-        background-color: #1b2033;
-    }
-    .backgroup-theme {
-        background-color: #1b2033;
-    }
-    .menu {
-        background-color: #1b2033;
-    }
-    .drawer-theme {
-        background-color: #21283c;
-        box-shadow: rgba(0, 0, 0, 0.14) 0rem 0.125rem 0.125rem 0rem,
-            rgba(0, 0, 0, 0.2) 0rem 0.1875rem 0.0625rem -0.125rem,
-            rgba(0, 0, 0, 0.12) 0rem 0.0625rem 0.3125rem 0rem;
-    }
-    .header-theme {
-        background-color: #21283c;
-        box-shadow: rgba(0, 0, 0, 0.14) 0rem 0.125rem 0.125rem 0rem,
-            rgba(0, 0, 0, 0.2) 0rem 0.1875rem 0.0625rem -0.125rem,
-            rgba(0, 0, 0, 0.12) 0rem 0.0625rem 0.3125rem 0rem;
-    }
-    .text-profile {
-        color: white;
-    }
-    .icon-theme {
-        box-shadow: rgba(0, 0, 0, 0.14) 0rem 0.125rem 0.125rem 0rem,
-            rgba(0, 0, 0, 0.2) 0rem 0.1875rem 0.0625rem -0.125rem,
-            rgba(0, 0, 0, 0.12) 0rem 0.0625rem 0.3125rem 0rem;
-    }
-    .footer-theme {
-        color: #ffffff;
-        box-shadow: rgba(0, 0, 0, 0.14) 0rem 0.125rem 0.125rem 0rem,
-            rgba(0, 0, 0, 0.2) 0rem 0.1875rem 0.0625rem -0.125rem,
-            rgba(0, 0, 0, 0.12) 0rem 0.0625rem 0.3125rem 0rem;
-        background-color: #21283c;
-    }
-    .table-theme {
-        color: white;
-        background-color: #21283c;
-        .q-table th {
-            color: white;
-        }
-    }
-    .title-form {
-        color: white;
-    }
-    .form-label {
-        color: white;
-    }
-    .card-form {
-        background-color: #21283c;
-        box-shadow: rgba(0, 0, 0, 0.14) 0rem 0.125rem 0.125rem 0rem,
-            rgba(0, 0, 0, 0.2) 0rem 0.1875rem 0.0625rem -0.125rem,
-            rgba(0, 0, 0, 0.12) 0rem 0.0625rem 0.3125rem 0rem;
-    }
-    .title-tree {
-        color: white;
-    }
-    .tree-label {
-        color: white;
-    }
-}
-
-//INPUT
-.input-theme.q-tab__label {
-    font-size: 12px;
-}
-
-.input-theme.q-field--auto-height.q-field--dense .q-field__control,
-.q-field--auto-height.q-field--dense .q-field__native {
-    min-height: 25px;
-}
-
-.input-theme.q-field--dense .q-field__control,
-.q-field--dense .q-field__marginal {
-    height: 25px;
-}
-
-.input-theme.q-field {
-    font-size: 12px;
-}
-
-.input-theme-area.q-field {
-    font-size: 12px;
-}
-
-.input-theme {
-    .q-field__native,
-    .q-field__prefix,
-    .q-field__suffix,
-    .q-field__input {
-        padding: 0;
-    }
-    .q-field--outlined .q-field__control {
-        border-radius: 0.5rem;
-    }
-}
-.text-grid {
-    font-size: 12px;
-    white-space: normal;
-}
-.title-grid {
-    font-weight: bold;
-    color: #344767;
-    font-size: 11.5px;
-}
-.card-grid {
-    border-radius: 1rem;
-}
-//TABLE
-.table-theme {
-    box-shadow: 0 20px 27px 10px rgba(0, 0, 0, 0);
-    border-radius: 1rem;
-    color: #344767;
-    .q-table__top {
-        padding: 8px 20px;
-    }
-    .q-table th {
-        font-weight: bold;
-        color: #344767;
-        font-size: 11.5px;
-    }
-    .q-table tbody td {
-        font-size: 11.5px;
-        white-space: normal;
-    }
-    .q-field {
-        font-size: 12px;
-    }
-}
-
-.table-header-theme {
-    color: #344767;
-}
-
-//Other
-
-.card-form {
-    border-radius: 1rem;
-    box-shadow: rgba(0, 0, 0, 0.1) 0rem 0.25rem 0.375rem -0.0625rem,
-        rgba(0, 0, 0, 0.06) 0rem 0.125rem 0.25rem -0.0625rem;
-}
-.title-form {
-    color: #344767;
-    font-style: normal;
-    font-weight: 500;
-    margin-bottom: 0rem;
-    margin-top: 0;
-    font-size: 0.9rem;
-}
-.title-tree {
-    color: #344767;
-    font-style: normal;
-    font-weight: 500;
-    margin-bottom: 0rem;
-    margin-top: 0;
-    font-size: 0.8rem;
-}
-
-.q-btn--rectangle {
-    border-radius: 0.5rem;
-}
-.form-label {
-    color: #344767;
-    font-size: 0.75rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    margin-left: 0.25rem;
-}
-.tree-label {
-    color: #344767;
-    font-size: 0.75rem;
-    font-weight: 400;
-}
-
-//validation
-.container-error {
-    margin: 4px 0 0 2px;
-}
-.message-error {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    font-size: 11.5px;
-    line-height: 1.4;
-    color: $negative;
-}
-
-//FORMULARIOS
-.form-field {
-    .form-label {
-        display: block;
-    }
-}
-.form-field__error {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin: 4px 0 0 2px;
-    font-size: 11.5px;
-    line-height: 1.3;
-    color: $negative;
-}
-.form-field__hint {
-    margin: 4px 0 0 2px;
-    font-size: 11.5px;
-    color: #7b809a;
-}
-.form-field--error .q-field--outlined .q-field__control:before,
-// Formularios con el bloque de error clásico debajo del campo
-div:has(> .container-error) > .q-field--outlined .q-field__control:before {
-    border-color: $negative;
-}
-.form-section-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #344767;
-}
-.form-section-caption {
-    font-size: 0.78rem;
-    color: #7b809a;
-    margin-top: 2px;
-}
-.form-tabs {
-    .q-tab {
-        min-height: 44px;
-    }
-    .q-tab__label {
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-}
-.body--dark {
-    .form-section-title {
-        color: white;
-    }
-    .form-section-caption,
-    .form-field__hint {
-        color: rgba(255, 255, 255, 0.6);
-    }
-}
-
-//stepper
-.q-stepper--horizontal .q-stepper__step-inner {
-    padding: 0px 0px;
-}
-.q-stepper__header--alternative-labels .q-stepper__tab {
-    padding: 10px 32px;
-    min-height: 70px;
-}
-.q-stepper__dot {
-    font-size: 16px;
-    width: 24px;
-    height: 24px;
-}
-.q-stepper__title {
-    font-size: 12px;
-    line-height: 18px;
-    letter-spacing: 0.1px;
-}
-.q-stepper__step-inner {
-    background-color: #f0f2f5;
-}
-//BUSCADOR DE LISTAS
-.search-input {
-    min-width: 240px;
-}
-body.screen--xs .search-input {
-    min-width: 0;
-    width: 100%;
-    margin-top: 8px;
-}
-
-//NAVEGACIÓN
-.header-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    max-width: 50vw;
-}
-.user-btn {
-    border-radius: 0.5rem;
-}
-.user-name {
-    font-size: 0.8rem;
-    font-weight: 500;
-    max-width: 180px;
-}
-.brand-icon {
-    border-radius: 10px;
-    background-color: var(--q-primary);
-}
-.brand-title {
-    font-weight: 700;
-    color: #344767;
-    font-size: 0.95rem;
-    line-height: 1.2;
-}
-.menu-section {
-    font-size: 0.68rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 12px 16px 6px;
-}
-.menu-item {
-    border-radius: 0.5rem;
-    min-height: 44px;
-    color: #344767;
-    .menu-icon {
-        background-color: white;
-        color: #344767;
-        font-size: 16px;
-    }
-}
-.menu-item--active {
-    background-color: rgba(26, 115, 232, 0.1);
-    color: $primary;
-    font-weight: 600;
-    .menu-icon {
-        background-color: $primary;
-        color: white;
-    }
-}
-.body--dark {
-    .brand-title {
-        color: white;
-    }
-    .menu-item {
-        color: rgba(255, 255, 255, 0.85);
-        .menu-icon {
-            background-color: #1b2033;
-            color: white;
-        }
-    }
-    .menu-item--active {
-        background-color: rgba(26, 115, 232, 0.2);
-        color: white;
-        .menu-icon {
-            background-color: $primary;
-        }
-    }
-}
-</style>

@@ -68,5 +68,6 @@ class AreaController extends Controller
                 Session::flash('message', $e->getMessage());
             }
         }
+        return Redirect::route('panel.area.index');
     }
 }

@@ -10,13 +10,108 @@ use Inertia\Inertia;
 use Session;
 use DB;
 use App\Models\Audit;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
+    private const SAP_STATUS_FILTERS = ['exported', 'pending', 'not_authorized'];
+
     public function HandleIndexReport(Request $request)
     {
         Session::put('title', 'Reporte de Rendiciones');
 
+        $data = $this->HandleBuildReportQuery($request)->orderBy('A.id', 'desc')->get();
+
+        $users = User::select('id as value', 'name as label', 'area_id')
+            ->orderBy('name')
+            ->get();
+
+        $areas = Area::select('id as value', 'name as label')
+            ->orderBy('name')
+            ->get();
+
+        return Inertia::render('administration/reports/ReportAccountability', [
+            'data'    => $data,
+            'users'   => $users,
+            'areas'   => $areas,
+            'filters' => $request->only(['user_id', 'area_id', 'date_from', 'date_to', 'sap_status']),
+        ]);
+    }
+
+    /**
+     * Exporta a Excel el reporte de rendiciones con los mismos filtros de la pantalla.
+     * Los totales se agrupan por moneda (no se mezclan bolivianos con dólares).
+     */
+    public function HandleExportReport(Request $request): StreamedResponse
+    {
+        $rows = $this->HandleBuildReportQuery($request)->orderBy('A.id', 'desc')->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Rendiciones');
+
+        $headers = [
+            'ID', 'Usuario', 'Sucursal/Área', 'Perfil', 'Empleado', 'Descripción',
+            'Fecha Inicio', 'Fecha Fin', 'Moneda', 'Monto', 'Estado', 'Ubicación', 'N° Asiento SAP',
+        ];
+        $sheet->fromArray($headers, null, 'A1');
+        $sheet->getStyle('A1:M1')->getFont()->setBold(true);
+
+        $line = 2;
+        $totals = [];
+        foreach ($rows as $row) {
+            $currency = $row->type_currency ?: 'BS';
+            $totals[$currency] = ($totals[$currency] ?? 0) + (float) $row->total;
+
+            $sheet->fromArray([
+                $row->id,
+                $row->user_name,
+                $row->area_name,
+                $row->profile_name,
+                $row->employee_name,
+                $row->description,
+                $row->start_date ? substr((string) $row->start_date, 0, 10) : null,
+                $row->end_date ? substr((string) $row->end_date, 0, 10) : null,
+                $currency,
+                (float) $row->total,
+                $row->status ?: 'Borrador',
+                $this->HandleSapLocationLabel($row),
+                $row->sap_trans_id,
+            ], null, 'A' . $line);
+            $line++;
+        }
+
+        // Totales por moneda
+        if (!empty($totals)) {
+            $line++;
+            foreach ($totals as $currency => $total) {
+                $sheet->setCellValue('H' . $line, 'Total');
+                $sheet->setCellValue('I' . $line, $currency);
+                $sheet->setCellValue('J' . $line, round($total, 2));
+                $sheet->getStyle('H' . $line . ':J' . $line)->getFont()->setBold(true);
+                $line++;
+            }
+        }
+
+        $sheet->getStyle('J2:J' . max(2, $line))->getNumberFormat()->setFormatCode('#,##0.00');
+        foreach (range('A', 'M') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'reporte_rendiciones_' . now()->format('Ymd_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function HandleBuildReportQuery(Request $request)
+    {
         $query = DB::table('accountabilities as A')
             ->join('users as U', 'U.id', '=', 'A.user_id')
             ->join('profiles as P', 'P.id', '=', 'A.profile_id')
@@ -34,6 +129,7 @@ class ReportController extends Controller
                 'A.sap_trans_id',
                 DB::raw("U.name as user_name"),
                 DB::raw("P.name as profile_name"),
+                DB::raw("P.type_currency as type_currency"),
                 DB::raw("AR.name as area_name"),
             ]);
 
@@ -49,7 +145,7 @@ class ReportController extends Controller
         if ($request->filled('date_to')) {
             $query->where('A.start_date', '<=', $request->date_to);
         }
-        if ($request->filled('sap_status')) {
+        if ($request->filled('sap_status') && in_array($request->sap_status, self::SAP_STATUS_FILTERS, true)) {
             if ($request->sap_status === 'exported') {
                 $query->where('A.status', 'Autorizado')->where('A.sap_exported', 1);
             } elseif ($request->sap_status === 'pending') {
@@ -59,22 +155,18 @@ class ReportController extends Controller
             }
         }
 
-        $data = $query->orderBy('A.id', 'desc')->get();
+        return $query;
+    }
 
-        $users = User::select('id as value', 'name as label', 'area_id')
-            ->orderBy('name')
-            ->get();
-
-        $areas = Area::select('id as value', 'name as label')
-            ->orderBy('name')
-            ->get();
-
-        return Inertia::render('administration/reports/ReportAccountability', [
-            'data'    => $data,
-            'users'   => $users,
-            'areas'   => $areas,
-            'filters' => $request->only(['user_id', 'area_id', 'date_from', 'date_to', 'sap_status']),
-        ]);
+    private function HandleSapLocationLabel($row): string
+    {
+        if ($row->status === 'Autorizado' && $row->sap_exported) {
+            return 'Rendiciones + SAP';
+        }
+        if ($row->status === 'Autorizado') {
+            return 'Pendiente SAP';
+        }
+        return 'Solo Rendiciones';
     }
 
     public function HandleIndexAuditLog(Request $request)
@@ -93,6 +185,9 @@ class ReportController extends Controller
             'App\\Models\\Supplier'             => 'Proveedor',
             'App\\Models\\UserAuthorization'    => 'Autorización Usuario',
             'App\\Models\\UserProfile'          => 'Perfil Usuario',
+            'App\\Models\\Area'                 => 'Área',
+            'App\\Models\\AuthorizationCycle'   => 'Ciclo de Autorización',
+            'App\\Models\\AccountAlias'         => 'Alias de Cuenta',
         ];
 
         $query = Audit::with('user')->orderBy('created_at', 'desc');

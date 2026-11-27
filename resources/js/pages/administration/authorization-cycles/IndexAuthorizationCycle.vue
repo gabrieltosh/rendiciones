@@ -9,7 +9,7 @@
                     icon="eva-shuffle-2-outline"
                 >
                     <template #actions>
-                        <q-btn
+                        <q-btn data-tour="create-cycle"
                             color="primary"
                             icon="add"
                             label="Nuevo Ciclo"
@@ -21,7 +21,7 @@
                 </PageHeader>
 
             <q-card class="card-form">
-                <q-table
+                <q-table data-tour="cycles-table"
                     :rows="data"
                     :columns="columns"
                     row-key="id"
@@ -61,7 +61,7 @@
                     <template v-slot:body="props">
                         <q-tr :props="props">
                             <q-td auto-width>
-                                <q-btn
+                                <q-btn data-tour="expand-levels"
                                     flat round dense size="sm"
                                     :icon="props.expand ? 'expand_less' : 'expand_more'"
                                     color="grey"
@@ -101,7 +101,7 @@
                                     color="negative"
                                     icon="eva-trash-2-outline"
                                     aria-label="Eliminar ciclo"
-                                    @click="HandleDelete(props.row.id)"
+                                    @click="HandleDelete(props.row)"
                                 >
                                     <q-tooltip>Eliminar</q-tooltip>
                                 </q-btn>
@@ -170,7 +170,7 @@
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import { ref } from "vue";
-import { Head, usePage, router } from "@inertiajs/vue3";
+import { Head, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
 
@@ -187,20 +187,15 @@ const columns = [
     { name: "actions",     label: "Acciones",    field: "actions",     align: "center", style: "width: 100px" },
 ];
 
-function HandleDelete(id) {
+function HandleDelete(row) {
     $q.dialog({
-        title: "Eliminar Ciclo",
-        message: "¿Está seguro de eliminar este ciclo? Esta acción no se puede deshacer.",
+        title: "Eliminar ciclo",
+        message: `¿Está seguro de eliminar el ciclo "${row.name}"? Esta acción no se puede deshacer.`,
         cancel: { label: "Cancelar", flat: true, noCaps: true },
         ok: { label: "Eliminar", color: "negative", noCaps: true },
         persistent: true,
     }).onOk(() => {
-        router.delete(route("panel.authorization-cycle.delete", id), {
-            onSuccess: () => {
-                const flash = usePage().props.flash;
-                $q.notify({ type: flash.type, message: flash.message });
-            },
-        });
+        router.delete(route("panel.authorization-cycle.delete", row.id));
     });
 }
 </script>

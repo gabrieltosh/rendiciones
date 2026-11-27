@@ -13,12 +13,12 @@
                     <template #actions>
                         <q-btn flat color="secondary" label="Cancelar" no-caps :disable="saving"
                             @click="router.visit(route('panel.profile.index'))" />
-                        <q-btn color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
+                        <q-btn data-tour="save-profile" color="primary" icon="eva-checkmark-outline" label="Guardar cambios" no-caps unelevated
                             :loading="saving" @click="HandleUpdateForm()" />
                     </template>
                 </PageHeader>
 
-                <ProfileForm
+                <ProfileForm data-tour="profile-form"
                     v-model:tab="tab"
                     :form="form"
                     :errors="errors"
@@ -77,9 +77,6 @@ function HandleUpdateForm() {
             onError: (errors) => {
                 tab.value = firstSectionWithError(errors, profileSections) ?? tab.value;
                 scrollToFirstError();
-            },
-            onSuccess: () => {
-                $q.notify({ type: page.props.flash.type, message: page.props.flash.message });
             },
         });
     });

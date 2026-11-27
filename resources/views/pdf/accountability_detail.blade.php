@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Asiento Contable</title>
+    <title>Rendición de Cuentas</title>
     <style>
         @page {
             margin: 25px 35px 50px 35px;
@@ -101,6 +101,15 @@
 </head>
 
 <body>
+    @php
+        $currency = $data->profile->type_currency ?? '';
+        $received = (float) $data->total;
+        $spent = (float) $data->detail->sum('amount');
+        $balance = round($received - $spent, 2);
+        $approvals = method_exists($data, 'currentRoundApprovals') ? $data->currentRoundApprovals() : collect();
+        $approvalLabels = ['aprobado' => 'Aprobado', 'rechazado' => 'Rechazado', 'anulado' => 'Anulado'];
+        $money = fn ($value) => trim($currency . ' ' . number_format((float) $value, 2));
+    @endphp
     <table width="100%">
         <tr>
             <td align="left" style="width: 15%">
@@ -139,6 +148,16 @@
                             <strong>Fecha Reporte:</strong>
                         </td>
                     </tr>
+                    <tr style="font-size: 11px;">
+                        <td>
+                            <strong>Estado:</strong>
+                        </td>
+                    </tr>
+                    <tr style="font-size: 11px;">
+                        <td>
+                            <strong>N° Asiento SAP:</strong>
+                        </td>
+                    </tr>
                 </table>
             </td>
             <td style="font-size: 12px;width: 15%;padding:0px;margin:0px" align="left">
@@ -153,6 +172,16 @@
                             {{ Carbon\Carbon::now()->format('d-m-Y') }}
                         </td>
                     </tr>
+                    <tr style="font-size: 11px;">
+                        <td>
+                            {{ $data->status ?? 'Borrador' }}
+                        </td>
+                    </tr>
+                    <tr style="font-size: 11px;">
+                        <td>
+                            {{ $data->sap_trans_id ?: ($data->sap_exported ? 'Exportada' : 'Sin exportar') }}
+                        </td>
+                    </tr>
                 </table>
             </td>
         </tr>
@@ -163,7 +192,7 @@
             <td align="left" style="width: 70%;font-size: 13px;font-weight: 400;">
                 {{$data->description}}
             </td>
-            <td tyle="width: 70%;"></td>
+            <td style="width: 30%;"></td>
         </tr>
     </table>
     <div style="border-bottom: 0.5px rgba(0, 0, 0, 0.3) solid;margin: 10px 0px"></div>
@@ -191,9 +220,9 @@
         <tr>
             <td style="width: 33%;">
                 <div class="text-subtitle">
-                    MONTO:
+                    MONTO RECIBIDO:
                 </div>
-                <div class="text-detail"> {{$data->profile->type_currency.' '.$data->total}}</div>
+                <div class="text-detail">{{ $money($received) }}</div>
             </td>
             <td style="width: 33%;">
                 <div class="text-subtitle">
@@ -215,7 +244,7 @@
             <td align="left" style="width: 70%;" class="title-detail">
                 DETALLE DE DOCUMENTOS
             </td>
-            <td tyle="width: 70%;"></td>
+            <td style="width: 30%;"></td>
         </tr>
     </table>
     <div style="border-bottom: 0.5px rgba(0, 0, 0, 0.3) solid;margin: 15px 0px 0 0px"></div>
@@ -268,7 +297,7 @@
             </td>
             <td style="width: 33%;">
                 <div class="title-document">
-                    CODIGO DE CONTROL
+                    CÓDIGO DE CONTROL
                 </div>
                 <div class="text-document">{{$item->control_code?$item->control_code:'-'}}</div>
             </td>
@@ -276,7 +305,7 @@
         <tr>
             <td style="width: 33%;">
                 <div class="title-document">
-                   RAZON SOCIAL
+                   RAZÓN SOCIAL
                 </div>
                 <div class="text-document">{{$item->business_name?$item->business_name:'-'}}</div>
             </td>
@@ -338,9 +367,9 @@
                         <td align="center" class="title-document">Descuento</td>
                         <td align="center" class="title-document">Gift Card</td>
                         <td align="center" class="title-document">Tasa Cero</td>
-                        <td align="center" class="title-document">Excento</td>
+                        <td align="center" class="title-document">Exento</td>
                         <td align="center" class="title-document">Tasa</td>
-                        <td align="center" class="title-document">Ice</td>
+                        <td align="center" class="title-document">ICE</td>
                     </tr>
                     <tr>
                         <td colspan="7">
@@ -354,7 +383,7 @@
                         <td align="center" class="text-document">{{number_format($item->rate_zero,2)}}</td>
                         <td align="center" class="text-document">{{number_format($item->excento,2)}}</td>
                         <td align="center" class="text-document">{{number_format($item->rate,2)}}</td>
-                        <td align="center" class="text-document">{{number_format($item->rate,2)}}</td>
+                        <td align="center" class="text-document">{{number_format($item->ice,2)}}</td>
                     </tr>
                 </table>
             </td>
@@ -362,6 +391,62 @@
     </table>
     <div style="border-bottom: 0.5px rgba(0, 0, 0, 0.3) solid;"></div>
     @endforeach
+
+    {{-- Totales --}}
+    <table width="100%" style="margin-top: 15px;">
+        <tr>
+            <td align="left" class="title-detail">RESUMEN</td>
+        </tr>
+    </table>
+    <table width="100%" class="table-border-md" style="margin-top: 5px;">
+        <tr>
+            <td align="center" class="title-document">RECIBIDO</td>
+            <td align="center" class="title-document">GASTADO</td>
+            <td align="center" class="title-document">{{ $balance > 0 ? 'SALDO A DEVOLVER' : ($balance < 0 ? 'SALDO A REEMBOLSAR' : 'SALDO') }}</td>
+        </tr>
+        <tr>
+            <td align="center" class="text-document">{{ $money($received) }}</td>
+            <td align="center" class="text-document">{{ $money($spent) }}</td>
+            <td align="center" class="text-document">{{ $money(abs($balance)) }}</td>
+        </tr>
+    </table>
+
+    {{-- Cadena de aprobación de la ronda vigente --}}
+    @if ($approvals->isNotEmpty())
+    <table width="100%" style="margin-top: 15px;">
+        <tr>
+            <td align="left" class="title-detail">CADENA DE APROBACIÓN</td>
+        </tr>
+    </table>
+    <table width="100%" class="table-border-md" style="margin-top: 5px;">
+        <tr>
+            <td align="center" class="title-document">NIVEL</td>
+            <td align="center" class="title-document">AUTORIZADOR</td>
+            <td align="center" class="title-document">ACCIÓN</td>
+            <td align="center" class="title-document">FECHA</td>
+            <td align="center" class="title-document">COMENTARIO</td>
+        </tr>
+        @foreach ($approvals as $approval)
+        <tr>
+            <td align="center" class="text-document">{{ $approval->level?->name ?? '-' }}</td>
+            <td align="center" class="text-document">{{ $approval->user?->name ?? '-' }}</td>
+            <td align="center" class="text-document">{{ $approvalLabels[$approval->status] ?? $approval->status }}</td>
+            <td align="center" class="text-document">{{ Carbon\Carbon::parse($approval->acted_at)->setTimezone('America/La_Paz')->format('d-m-Y H:i') }}</td>
+            <td align="center" class="text-document">{{ $approval->comments ?: '-' }}</td>
+        </tr>
+        @endforeach
+    </table>
+    @endif
+
+    @if (in_array($data->status, ['Rechazado', 'Anulado']) && $data->comments)
+    <table width="100%" style="margin-top: 10px;">
+        <tr>
+            <td class="text-document">
+                <strong>Motivo ({{ $data->status === 'Rechazado' ? 'rechazo' : 'anulación' }}):</strong> {{ $data->comments }}
+            </td>
+        </tr>
+    </table>
+    @endif
     <script type="text/php">
         if (isset($pdf)) {
             $x = 550;

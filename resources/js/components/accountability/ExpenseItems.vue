@@ -1,16 +1,16 @@
 <template>
-    <q-card class="card-form q-mb-md">
+    <q-card data-tour="expense-items" class="card-form q-mb-md">
         <q-card-section class="q-pb-sm">
             <div class="row items-center q-col-gutter-sm">
                 <div class="col">
                     <div class="text-subtitle1 text-weight-medium">Artículos de la factura</div>
                     <div class="text-caption text-grey">
-                        Precio unitario <strong>sin IVA</strong>. El total debe ser igual al gasto del documento; al
-                        exportar se crea en SAP una entrada de mercancías en borrador contra la cuenta del gasto.
+                        Registre cada artículo con su precio unitario <strong>sin IVA</strong>. La suma de los
+                        artículos debe ser igual al gasto del documento sin IVA, que se calcula automáticamente.
                     </div>
                 </div>
                 <div v-if="siatDetail?.length" class="col-auto">
-                    <q-btn outline dense no-caps color="teal" icon="receipt_long" label="Cargar desde la factura SIAT"
+                    <q-btn data-tour="items-from-siat" outline dense no-caps color="teal" icon="receipt_long" label="Cargar desde la factura SIAT"
                         class="q-px-sm" @click="HandleLoadFromSiat()" />
                 </div>
             </div>
@@ -25,7 +25,7 @@
 
         <q-card-section>
             <!-- Almacén general -->
-            <div class="row items-end q-col-gutter-sm q-mb-md">
+            <div data-tour="items-warehouse" class="row items-end q-col-gutter-sm q-mb-md">
                 <div class="col-xs-12 col-sm-6 col-md-5">
                     <div class="form-label">Almacén para todas las líneas</div>
                     <q-select v-model="generalWarehouse" :options="filteredWarehouses" option-value="WhsCode"
@@ -42,6 +42,61 @@
             <div v-if="form.items.length === 0" class="text-center text-grey q-pa-lg">
                 <q-icon name="inventory_2" size="40px" color="grey-4" />
                 <div class="q-mt-sm">Agregue los artículos de la factura.</div>
+            </div>
+
+            <!-- Celulares: una tarjeta por artículo -->
+            <div v-else-if="$q.screen.xs" class="q-gutter-sm">
+                <q-card v-for="(item, i) in form.items" :key="i" flat bordered>
+                    <q-card-section class="q-pa-sm">
+                        <div class="row items-center q-mb-xs">
+                            <div class="col text-weight-medium">Artículo {{ i + 1 }}</div>
+                            <div class="col-auto stat-number text-weight-medium">{{ formatAmount(lineTotal(item)) }}</div>
+                            <div class="col-auto">
+                                <q-btn flat round dense size="sm" icon="eva-trash-2-outline" color="negative"
+                                    :aria-label="`Quitar el artículo ${i + 1}`" @click="HandleRemoveItem(i)" />
+                            </div>
+                        </div>
+                        <div class="form-label">Artículo <span class="text-negative">*</span></div>
+                        <q-select :model-value="item.item_code" :options="itemOptions[i] || selectedItemOption(item)"
+                            option-value="ItemCode" :option-label="itemLabel" emit-value map-options use-input
+                            input-debounce="300" dense outlined class="input-theme"
+                            :error="!!errors[`items.${i}.item_code`]" hide-bottom-space
+                            :aria-label="`Artículo de la línea ${i + 1}`"
+                            @filter="(val, update, abort) => HandleSearchItems(i, val, update, abort)"
+                            @update:model-value="(code) => HandleSelectItem(i, code)">
+                            <template v-slot:no-option>
+                                <q-item><q-item-section class="text-grey">
+                                    Escriba al menos 2 letras del código o la descripción
+                                </q-item-section></q-item>
+                            </template>
+                        </q-select>
+                        <div v-if="item.siat_description" class="text-caption text-grey q-mt-xs">
+                            Factura: {{ item.siat_description }}
+                        </div>
+                        <div class="row q-col-gutter-sm q-mt-xs">
+                            <div class="col-6">
+                                <div class="form-label">Cantidad <span class="text-negative">*</span></div>
+                                <q-input v-model.number="item.quantity" type="number" inputmode="decimal" min="0"
+                                    step="any" dense outlined class="input-theme" input-class="text-right"
+                                    :error="!!errors[`items.${i}.quantity`]" hide-bottom-space
+                                    :aria-label="`Cantidad de la línea ${i + 1}`" />
+                            </div>
+                            <div class="col-6">
+                                <div class="form-label">Precio s/IVA <span class="text-negative">*</span></div>
+                                <q-input v-model.number="item.price" type="number" inputmode="decimal" min="0"
+                                    step="any" dense outlined class="input-theme" input-class="text-right"
+                                    :error="!!errors[`items.${i}.price`]" hide-bottom-space
+                                    :aria-label="`Precio sin IVA de la línea ${i + 1}`" />
+                            </div>
+                        </div>
+                        <div class="form-label q-mt-xs">Almacén <span class="text-negative">*</span></div>
+                        <q-select v-model="item.warehouse_code" :options="filteredWarehouses" option-value="WhsCode"
+                            :option-label="warehouseLabel" emit-value map-options use-input input-debounce="0" dense
+                            outlined class="input-theme" :error="!!errors[`items.${i}.warehouse_code`]"
+                            hide-bottom-space :aria-label="`Almacén de la línea ${i + 1}`"
+                            @filter="HandleFilterWarehouses" />
+                    </q-card-section>
+                </q-card>
             </div>
 
             <q-markup-table v-else flat bordered dense separator="horizontal" class="items-table">
@@ -76,13 +131,13 @@
                             </div>
                         </td>
                         <td>
-                            <q-input v-model.number="item.quantity" type="number" min="0" step="any" dense outlined
+                            <q-input v-model.number="item.quantity" type="number" inputmode="decimal" min="0" step="any" dense outlined
                                 class="input-theme" input-class="text-right" :error="!!errors[`items.${i}.quantity`]"
                                 hide-bottom-space :aria-label="`Cantidad de la línea ${i + 1}`"
                                 input-style="font-variant-numeric: tabular-nums" />
                         </td>
                         <td>
-                            <q-input v-model.number="item.price" type="number" min="0" step="any" dense outlined
+                            <q-input v-model.number="item.price" type="number" inputmode="decimal" min="0" step="any" dense outlined
                                 class="input-theme" input-class="text-right" :error="!!errors[`items.${i}.price`]"
                                 hide-bottom-space :aria-label="`Precio sin IVA de la línea ${i + 1}`"
                                 input-style="font-variant-numeric: tabular-nums" />

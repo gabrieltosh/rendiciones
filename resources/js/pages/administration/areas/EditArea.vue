@@ -18,7 +18,7 @@
                             :disable="saving"
                             @click="router.visit(route('panel.area.index'))"
                         />
-                        <q-btn
+                        <q-btn data-tour="save-area"
                             color="primary"
                             icon="eva-checkmark-outline"
                             label="Guardar cambios"
@@ -30,7 +30,7 @@
                     </template>
                 </PageHeader>
 
-                <q-card class="q-pa-lg card-form">
+                <q-card data-tour="area-form" class="q-pa-lg card-form">
                     <div class="form-section-title">Datos del área</div>
                     <div class="form-section-caption q-mb-md">Los campos marcados con <span class="text-negative">*</span> son obligatorios.</div>
                     <q-form class="row q-col-gutter-md" @submit.prevent="HandleUpdateForm()">
@@ -58,7 +58,6 @@ import FormField from "@/components/FormField.vue";
 import { ref } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
-import { useQuasar } from "quasar";
 import { scrollToFirstError } from "@/utils/forms";
 
 defineProps({
@@ -66,7 +65,6 @@ defineProps({
     errors: Object,
     area: Object,
 });
-const $q = useQuasar();
 const page = usePage();
 const saving = ref(false);
 
@@ -77,9 +75,6 @@ function HandleUpdateForm() {
         onStart: () => (saving.value = true),
         onFinish: () => (saving.value = false),
         onError: () => scrollToFirstError(),
-        onSuccess: () => {
-            $q.notify({ type: page.props.flash.type, message: page.props.flash.message });
-        },
     });
 }
 </script>
