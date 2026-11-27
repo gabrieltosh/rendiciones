@@ -60,6 +60,9 @@
                             <div class="text-body1 text-grey q-mt-md">
                                 {{ rows.length === 0 ? 'Todavía no tiene rendiciones' : 'Sin resultados para los filtros elegidos' }}
                             </div>
+                            <div v-if="rows.length === 0" class="text-caption text-grey q-mt-xs">
+                                Cree una rendición por cada dinero que reciba y luego agregue sus gastos.
+                            </div>
                             <q-btn v-if="rows.length === 0" color="primary" label="Crear rendición" icon="add" no-caps
                                 unelevated class="q-mt-md" @click="HandleCreateAccountability()" />
                             <q-btn v-else flat color="primary" label="Quitar filtros" no-caps class="q-mt-md"
@@ -204,12 +207,15 @@
 
             </div>
         </div>
+        <AccountabilityFormDialog v-model="showFormDialog" :profile-id="page.props.profile.id"
+            :accountability-id="formDialogId" return-to="index" />
     </Layout>
 </template>
 
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import AccountabilityFormDialog from "@/components/accountability/AccountabilityFormDialog.vue";
 import { formatMoney, balanceInfo, statusLabel, statusColor } from "@/utils/accountability";
 import { formatDate } from "@/components/accountability/siat";
 import { ref, computed, watch } from "vue";
@@ -230,6 +236,9 @@ const currency = computed(() => page.props.profile?.type_currency);
 const filter = ref("");
 const statusFilter = ref("all");
 const deletingId = ref(null);
+// Diálogo de cabecera: sin id crea una rendición, con id edita esa
+const showFormDialog = ref(false);
+const formDialogId = ref(null);
 // La vista elegida (tarjetas/tabla) se recuerda entre visitas
 const viewMode = ref(LocalStorage.getItem("accountability-view-mode") || "grid");
 watch(viewMode, (mode) => LocalStorage.set("accountability-view-mode", mode));
@@ -301,12 +310,15 @@ function HandleClearFilters() {
     statusFilter.value = "all";
 }
 
+// Crear y editar la cabecera se hace en un diálogo, sin salir de la lista
 function HandleCreateAccountability() {
-    router.visit(route("panel.accountability.manage.create", page.props.profile.id));
+    formDialogId.value = null;
+    showFormDialog.value = true;
 }
 
 function HandleEditAccountability(id) {
-    router.visit(route("panel.accountability.manage.edit", [page.props.profile.id, id]));
+    formDialogId.value = id;
+    showFormDialog.value = true;
 }
 
 function HandleDetailAccountability(id) {

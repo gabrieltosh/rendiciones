@@ -30,7 +30,7 @@
                         flat
                         separator="horizontal"
                         :table-header-class="{ 'table-header-theme': true }"
-                        :pagination="{ rowsPerPage: 15 }"
+                        v-model:pagination="pagination"
                         :grid="$q.screen.xs"
                     >
                         <template v-slot:top>
@@ -51,7 +51,7 @@
                             </q-input>
                         </template>
                         <template v-slot:body="props">
-                            <q-tr :props="props">
+                            <q-tr :props="props" :class="{ 'bg-blue-1': props.row.id === highlightId }">
                                 <q-td key="id" :props="props">
                                     {{ props.row.id }}
                                 </q-td>
@@ -131,6 +131,8 @@
                                 <div class="q-mt-sm">
                                     {{ table.filter ? 'Sin resultados para la búsqueda' : 'No hay perfiles registrados' }}
                                 </div>
+                                <q-btn v-if="!table.filter" flat no-caps color="primary" icon="add" label="Crear el primer perfil"
+                                    class="q-mt-sm" @click="HandleCreateProfile()" />
                             </div>
                         </template>
                     </q-table>
@@ -142,17 +144,28 @@
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import { ref } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
-defineProps({
+const props = defineProps({
     title: String,
     data: Object,
+    // Perfil recién guardado: la lista se ubica en su página y lo resalta
+    highlight: { type: Number, default: null },
 });
 const $q = useQuasar();
 const page = usePage();
-let data = ref(page.props.data);
+const data = computed(() => props.data ?? []);
+const pagination = ref({ rowsPerPage: 15, page: 1 });
+const highlightId = ref(null);
+onMounted(() => {
+    const index = data.value.findIndex((row) => row.id === props.highlight);
+    if (index === -1) return;
+    pagination.value = { ...pagination.value, page: Math.floor(index / pagination.value.rowsPerPage) + 1 };
+    highlightId.value = props.highlight;
+    setTimeout(() => (highlightId.value = null), 3000);
+});
 const table = ref({
     filter: "",
     columns: [
@@ -178,11 +191,7 @@ function HandleCopyProfile(row) {
         ok: { label: "Duplicar", color: "primary", noCaps: true },
         persistent: true,
     }).onOk(() => {
-        router.post(route("panel.profile.copy", row.id), {}, {
-            onSuccess: () => {
-                data.value = page.props.data;
-            },
-        });
+        router.post(route("panel.profile.copy", row.id));
     });
 }
 function HandleDeleteProfile(row) {
@@ -193,11 +202,7 @@ function HandleDeleteProfile(row) {
         ok: { label: "Eliminar", color: "negative", noCaps: true },
         persistent: true,
     }).onOk(() => {
-        router.delete(route("panel.profile.delete", row.id), {
-            onSuccess: () => {
-                data.value = page.props.data;
-            },
-        });
+        router.delete(route("panel.profile.delete", row.id), { preserveScroll: true });
     });
 }
 </script>

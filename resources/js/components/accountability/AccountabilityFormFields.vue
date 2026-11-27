@@ -1,6 +1,6 @@
 <template>
-    <q-card class="q-pa-lg card-form">
-        <div class="text-subtitle1 text-weight-medium q-mb-md">Datos de la rendición</div>
+    <q-card :flat="embedded" :class="embedded ? '' : 'q-pa-lg card-form'">
+        <div v-if="!embedded" class="text-subtitle1 text-weight-medium q-mb-md">Datos de la rendición</div>
         <div class="row q-col-gutter-md">
             <div data-tour="field-employee" v-if="!profile.sin_empleado" class="col-xs-12 col-md-6">
                 <FormField label="Empleado" required :error="errors.employee">
@@ -75,6 +75,8 @@ const props = defineProps({
     profile: { type: Object, required: true },
     accounts: { type: Array, default: () => [] },
     employees: { type: Array, default: () => [] },
+    // Dentro de un diálogo: sin tarjeta ni título propios
+    embedded: { type: Boolean, default: false },
 });
 
 const symbol = computed(() => currencySymbol(props.profile?.type_currency));

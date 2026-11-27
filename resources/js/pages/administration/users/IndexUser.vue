@@ -30,7 +30,7 @@
                         flat
                         separator="horizontal"
                         :table-header-class="{ 'table-header-theme': true }"
-                        :pagination="{ rowsPerPage: 15 }"
+                        v-model:pagination="pagination"
                         :grid="$q.screen.xs"
                     >
                         <template v-slot:top>
@@ -75,7 +75,7 @@
                             </q-input>
                         </template>
                         <template v-slot:body="props">
-                            <q-tr :props="props">
+                            <q-tr :props="props" :class="{ 'bg-blue-1': props.row.id === highlightId }">
                                 <q-td key="name" :props="props">
                                     <div class="row items-center no-wrap">
                                         <q-avatar size="30px" color="blue-grey-1" text-color="blue-grey-9" class="text-caption text-weight-medium">
@@ -95,6 +95,24 @@
                                 </q-td>
                                 <q-td key="status" :props="props">
                                     <q-badge :color="statusColor(props.row.status)" :label="props.row.status" />
+                                </q-td>
+                                <q-td key="access" :props="props">
+                                    <div data-tour="user-access" class="row no-wrap items-center justify-center q-gutter-xs">
+                                        <q-chip dense clickable outline :color="props.row.profiles?.length ? 'primary' : 'warning'"
+                                            icon="eva-layers-outline" class="q-ma-none"
+                                            :aria-label="`Perfiles de ${props.row.name}`"
+                                            @click="HandleOpenAccess(props.row, 'profiles')">
+                                            {{ props.row.profiles?.length || 0 }}
+                                            <q-tooltip>{{ props.row.profiles?.length ? props.row.profiles.join(', ') : 'Sin perfiles: no puede crear rendiciones' }}</q-tooltip>
+                                        </q-chip>
+                                        <q-chip dense clickable outline :color="props.row.cycle_id ? 'primary' : 'grey'"
+                                            icon="eva-shuffle-2-outline" class="q-ma-none"
+                                            :aria-label="`Ciclo de autorización de ${props.row.name}`"
+                                            @click="HandleOpenAccess(props.row, 'cycle')">
+                                            <span class="ellipsis" style="max-width: 120px;">{{ cycleName(props.row.cycle_id) || 'Sin ciclo' }}</span>
+                                            <q-tooltip>Cambiar ciclo de autorización</q-tooltip>
+                                        </q-chip>
+                                    </div>
                                 </q-td>
                                 <q-td key="created_at" :props="props">
                                     {{ formatDate(props.row.created_at) }}
@@ -130,7 +148,7 @@
                         </template>
                         <template v-slot:item="props">
                             <div class="col-12 q-pa-xs">
-                                <q-card flat bordered class="card-grid">
+                                <q-card flat bordered class="card-grid" :class="{ 'bg-blue-1': props.row.id === highlightId }">
                                     <q-card-section class="row items-center no-wrap q-pb-xs">
                                         <q-avatar size="36px" color="blue-grey-1" text-color="blue-grey-9" class="text-caption text-weight-medium">
                                             {{ initials(props.row.name) }}
@@ -147,6 +165,8 @@
                                         <span class="text-caption text-grey">{{ formatDate(props.row.created_at) }}</span>
                                     </q-card-section>
                                     <q-card-actions align="right" class="q-pt-none">
+                                        <q-btn flat dense no-caps size="sm" color="primary" icon="eva-layers-outline"
+                                            label="Perfiles y ciclo" @click="HandleOpenAccess(props.row, 'profiles')" />
                                         <q-btn flat dense no-caps size="sm" color="primary" icon="eva-edit-2-outline"
                                             label="Editar" @click="HandleEditUser(props.row.id)" />
                                         <q-btn flat dense no-caps size="sm" color="negative" icon="eva-trash-2-outline"
@@ -167,22 +187,57 @@
                 </q-card>
             </div>
         </div>
+        <UserAccessDialog v-model="access.open" :user="access.user" :initial-tab="access.tab"
+            :profiles="profiles" :cycles="cycles" :users-for-cycle="usersForCycle" @saved="HandleHighlight" />
     </Layout>
 </template>
 <script setup>
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import { ref, computed } from "vue";
+import UserAccessDialog from "@/components/users/UserAccessDialog.vue";
+import { ref, computed, onMounted } from "vue";
 import { Head, usePage, router } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import { useQuasar } from "quasar";
-defineProps({
+const props = defineProps({
     title: String,
     data: Object,
+    profiles: { type: Array, default: () => [] },
+    cycles: { type: Array, default: () => [] },
+    usersForCycle: { type: Array, default: () => [] },
+    // Usuario recién guardado: la lista se ubica en su página y lo resalta
+    highlight: { type: Number, default: null },
 });
 const $q = useQuasar();
 const page = usePage();
-let data = ref(page.props.data);
+const data = computed(() => props.data ?? []);
+const pagination = ref({ rowsPerPage: 15, page: 1 });
+
+function cycleName(id) {
+    return props.cycles.find((c) => c.value === id)?.label ?? null;
+}
+
+// ── Resaltar el usuario guardado ────────────────────────────
+const highlightId = ref(null);
+function HandleHighlight(id) {
+    const index = filteredRows.value.findIndex((row) => row.id === id);
+    if (index === -1) return;
+    // Con la tabla sin ordenar por columna, la posición de la fila define su página
+    if (!pagination.value.sortBy && !table.value.filter && pagination.value.rowsPerPage) {
+        pagination.value = { ...pagination.value, page: Math.floor(index / pagination.value.rowsPerPage) + 1 };
+    }
+    highlightId.value = id;
+    setTimeout(() => (highlightId.value = null), 3000);
+}
+onMounted(() => {
+    if (props.highlight) HandleHighlight(props.highlight);
+});
+
+// ── Perfiles y ciclo desde la fila ──────────────────────────
+const access = ref({ open: false, user: null, tab: "profiles" });
+function HandleOpenAccess(row, tab) {
+    access.value = { open: true, user: row, tab };
+}
 
 // Filtro por rol (chips)
 const roleFilter = ref("all");
@@ -213,6 +268,7 @@ const table = ref({
         { name: "username", align: "left", label: "Usuario", field: "username", sortable: true },
         { name: "type", align: "center", label: "Rol", field: "type", sortable: true },
         { name: "status", align: "center", label: "Estado", field: "status", sortable: true },
+        { name: "access", align: "center", label: "Perfiles / Ciclo", field: (row) => row.profiles?.length ?? 0 },
         { name: "created_at", align: "center", label: "Fecha de Creación", field: "created_at", sortable: true },
         // Columna oculta solo para que el buscador también encuentre por correo
         { name: "email", label: "Correo", field: "email", classes: "hidden", headerClasses: "hidden" },
@@ -249,11 +305,7 @@ function HandleDeleteUser(row) {
         ok: { label: "Eliminar", color: "negative", noCaps: true },
         persistent: true,
     }).onOk(() => {
-        router.delete(route("panel.user.delete", row.id), {
-            onSuccess: () => {
-                data.value = page.props.data;
-            },
-        });
+        router.delete(route("panel.user.delete", row.id), { preserveScroll: true });
     });
 }
 </script>

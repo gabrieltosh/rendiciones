@@ -252,7 +252,8 @@ SQL;
         }
         Session::flash('message', "Perfil creado correctamente");
         Session::flash('type', 'positive');
-        return Redirect::route('panel.profile.index');
+        // highlight: la lista se ubica en el perfil guardado
+        return Redirect::route('panel.profile.index', ['highlight' => $profile->id]);
     }
     public function HandleGetAccountCode($data)
     {
@@ -325,7 +326,7 @@ SQL;
 
     public function HandleUpdateProfile(ProfileRequest $request)
     {
-        Session::flash('message', "Usuario actualizado correctamente");
+        Session::flash('message', "Perfil actualizado correctamente");
         Session::flash('type', 'positive');
         $params_sap = Management::where('group', 'accountability')->get();
         $hana=$params_sap->where('name', 'hana_enable')->first()->value == 'SI';
@@ -514,7 +515,11 @@ SQL;
                 }
             }
         }
-        return Redirect::route('panel.profile.index');
+        // "Guardar y seguir editando": vuelve a la edición con los datos ya guardados
+        if ($request->boolean('stay')) {
+            return Redirect::route('panel.profile.edit', $request->id);
+        }
+        return Redirect::route('panel.profile.index', ['highlight' => $request->id]);
     }
 
     public function HandleCopyProfile($id)
@@ -857,10 +862,14 @@ SQL;
                     ->map(fn($g) => $g->pluck('alias')->toArray()),
         ]);
     }
-    public function HandleIndexProfile()
+    public function HandleIndexProfile(\Illuminate\Http\Request $request)
     {
         Session::put('title', 'Perfiles');
         $data = Profile::orderBy('id', 'desc')->get();
-        return Inertia::render("administration/profile/IndexProfile")->with('data', $data);
+        return Inertia::render("administration/profile/IndexProfile", [
+            'data' => $data,
+            // Perfil recién guardado: la lista se ubica en su página y lo resalta
+            'highlight' => (int) $request->query('highlight') ?: null,
+        ]);
     }
 }

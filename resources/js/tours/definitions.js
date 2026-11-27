@@ -148,8 +148,8 @@ export const tours = {
             },
             {
                 target: "help-button",
-                title: "Guía de cada pantalla",
-                text: "Cada pantalla tiene su propia guía. Púlsela cuando la necesite; también está en su menú de usuario como <strong>Guía de la pantalla</strong>.",
+                title: "Ayuda y tutoriales",
+                text: "En <strong>Ayuda</strong> encontrará, en cada pantalla, el recorrido de la pantalla y los tutoriales paso a paso de sus procesos (por ejemplo, cargar una factura o autorizar una rendición). Ninguno se abre solo: elíjalo cuando lo necesite.",
             },
             {
                 target: "user-menu",
@@ -258,7 +258,6 @@ export const tours = {
     },
 
     "accountability/EditAccountability": {
-        auto: false,
         steps: [
             {
                 target: "accountability-form",
@@ -359,7 +358,6 @@ export const tours = {
     },
 
     "accountability/Detail/EditDetailNew": {
-        auto: false,
         steps: [
             { title: "Editar gasto", text: "Corrija los datos del comprobante. Puede volver a escanear el QR si lo necesita." },
             ...expenseSteps(),
@@ -428,6 +426,18 @@ export const tours = {
                 text: "Indica si la rendición ya fue autorizada, rechazada o anulada, y si llegó a SAP.",
             },
             {
+                target: "sap-panel",
+                optional: true,
+                title: "Pendiente de SAP",
+                text: "La exportación todavía no se hizo o falló. Aquí ve el último error de SAP, corrige y exporta sin salir de la rendición.",
+            },
+            {
+                target: "edit-header-detail",
+                optional: true,
+                title: "Editar encabezado",
+                text: "Corrija empleado, cuenta, monto recibido, descripción o periodo en un diálogo, sin salir de esta pantalla.",
+            },
+            {
                 target: "general-info",
                 title: "Información general",
                 text: "Monto recibido, gastado y saldo, más el empleado, la cuenta y el periodo.",
@@ -486,7 +496,6 @@ export const tours = {
     },
 
     "authorization/EditAccountability": {
-        auto: false,
         steps: [
             {
                 target: "accountability-form",
@@ -499,7 +508,6 @@ export const tours = {
     },
 
     "authorization/Detail/CreateDetailNew": {
-        auto: false,
         steps: [
             { title: "Agregar documento", text: "Agregue un gasto a la rendición que está revisando." },
             ...expenseSteps(),
@@ -508,7 +516,6 @@ export const tours = {
     },
 
     "authorization/Detail/EditDetail": {
-        auto: false,
         steps: [
             { title: "Corregir documento", text: "Corrija los datos del gasto antes de autorizar la rendición." },
             ...expenseSteps({ canScan: false }),
@@ -548,10 +555,16 @@ export const tours = {
                 text: "Todos los intentos de exportación con fecha, usuario y respuesta de SAP.",
             },
             {
+                target: "open-detail",
+                optional: true,
+                title: "Revisar y corregir",
+                text: "Abre la rendición con el error de SAP a la vista: ahí corrige el encabezado o los documentos y exporta, sin volver a esta lista.",
+            },
+            {
                 target: "edit-header",
                 optional: true,
-                title: "Editar cabecera o empleado",
-                text: "Corrija la cuenta, el empleado u otros datos de cabecera que causaron el error, sin devolver la rendición.",
+                title: "Editar encabezado rápido",
+                text: "Si solo hay que cambiar la cuenta o el empleado, corríjalo aquí mismo en un diálogo.",
             },
             {
                 target: "export-one",
@@ -600,7 +613,6 @@ export const tours = {
     },
 
     "administration/users/CreateUser": {
-        auto: false,
         steps: [
             { target: "user-tabs", title: "Datos por pestañas", text: "Complete cada pestaña antes de guardar." },
             { target: "field-role", title: "Rol", text: "Define qué menús y acciones verá el usuario." },
@@ -622,7 +634,6 @@ export const tours = {
     },
 
     "administration/users/EditUser": {
-        auto: false,
         steps: [
             { target: "user-tabs", title: "Editar usuario", text: "Los datos están organizados en pestañas." },
             { target: "field-role", title: "Rol", text: "Cambiar el rol modifica lo que el usuario ve en el menú." },
@@ -661,7 +672,6 @@ export const tours = {
     },
 
     "administration/profile/CreateProfile": {
-        auto: false,
         steps: [
             { target: "profile-tabs", title: "Configuración por pestañas", text: "Recorra cada pestaña para definir el perfil." },
             { target: "field-currency", title: "Moneda", text: "Moneda en la que se registran las rendiciones de este perfil." },
@@ -698,7 +708,6 @@ export const tours = {
     },
 
     "administration/profile/EditProfile": {
-        auto: false,
         steps: [
             { target: "profile-tabs", title: "Editar perfil", text: "Los cambios afectan a las rendiciones nuevas de este perfil." },
             { target: "tab-employees", title: "Empleados", text: "Empleados disponibles en el perfil." },
@@ -714,7 +723,6 @@ export const tours = {
     },
 
     "administration/areas/IndexArea": {
-        auto: false,
         steps: [
             { title: "Áreas", text: "Las áreas agrupan a los usuarios (Comercial, Finanzas, Logística…) y sirven para filtrar los reportes." },
             { target: "create-area", title: "Crear área", text: "Registre una nueva área." },
@@ -730,7 +738,6 @@ export const tours = {
     },
 
     "administration/areas/CreateArea": {
-        auto: false,
         steps: [
             { title: "Nueva área", text: "Las áreas agrupan a los usuarios para organizar los reportes." },
             { target: "area-form", title: "Datos del área", text: "Indique el nombre y, si quiere, una descripción para identificarla mejor." },
@@ -740,7 +747,6 @@ export const tours = {
     },
 
     "administration/areas/EditArea": {
-        auto: false,
         steps: [
             { title: "Editar área", text: "Los cambios se reflejan en los usuarios que tienen asignada esta área." },
             { target: "area-form", title: "Datos del área", text: "Cambie el nombre o la descripción." },
@@ -750,7 +756,6 @@ export const tours = {
     },
 
     "administration/suppliers/IndexSupplier": {
-        auto: false,
         steps: [
             {
                 title: "Proveedores",
@@ -768,7 +773,6 @@ export const tours = {
     },
 
     "administration/suppliers/CreateSupplier": {
-        auto: false,
         steps: [
             { title: "Nuevo proveedor", text: "Registre proveedores frecuentes para que la razón social se complete sola al cargar gastos." },
             { target: "supplier-form", title: "Datos del proveedor", text: "Indique la razón social y el NIT." },
@@ -778,7 +782,6 @@ export const tours = {
     },
 
     "administration/suppliers/EditSupplier": {
-        auto: false,
         steps: [
             { title: "Editar proveedor", text: "Los cambios se aplican al autocompletar la razón social en los próximos gastos." },
             { target: "supplier-form", title: "Datos del proveedor", text: "Corrija la razón social o el NIT." },
@@ -812,7 +815,6 @@ export const tours = {
     },
 
     "administration/authorization-cycles/CreateAuthorizationCycle": {
-        auto: false,
         steps: [
             { target: "cycle-data", title: "Datos del ciclo", text: "Nombre y descripción para identificarlo al asignarlo a los usuarios." },
             { target: "cycle-status", title: "Estado", text: "Solo los ciclos activos se pueden asignar." },
@@ -829,7 +831,6 @@ export const tours = {
     },
 
     "administration/authorization-cycles/EditAuthorizationCycle": {
-        auto: false,
         steps: [
             { target: "cycle-data", title: "Editar ciclo", text: "Cambie nombre, descripción o estado." },
             { target: "cycle-levels", title: "Niveles", text: "Agregue, quite o reordene niveles y sus autorizadores." },
@@ -867,7 +868,6 @@ export const tours = {
     },
 
     "administration/management/IndexManagement": {
-        auto: false,
         steps: [
             {
                 title: "Configuración",
@@ -924,7 +924,6 @@ export const tours = {
     },
 
     "administration/reports/AuditLog": {
-        auto: false,
         steps: [
             { title: "Log de auditoría", text: "Registro de cada creación, modificación y eliminación en el sistema: quién, qué y cuándo." },
             { target: "audit-filters", title: "Filtros", text: "Filtre por usuario, modelo (rendición, documento, usuario…), acción y fechas." },

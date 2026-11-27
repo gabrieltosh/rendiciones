@@ -4,7 +4,8 @@
         <div class="row justify-center q-px-md q-py-lg">
             <div class="col-xs-12 col-sm-12 col-md-9">
 
-                <PageHeader title="Nuevo gasto" :subtitle="`Rendición #${page.props.accountability.id}`"
+                <PageHeader :title="template ? 'Duplicar gasto' : 'Nuevo gasto'"
+                    :subtitle="`Rendición #${page.props.accountability.id}`"
                     icon="eva-file-add-outline" :back="detailUrl" sticky>
                     <template #actions>
                         <q-btn flat color="secondary" label="Cancelar" no-caps :disable="saving" @click="HandleCancel" />
@@ -14,6 +15,12 @@
                             :loading="saving === 'detail'" :disable="!hasDocument || !!saving" @click="HandleStoreForm()" />
                     </template>
                 </PageHeader>
+
+                <q-banner v-if="template" class="card-form q-mb-md bg-blue-1 text-dark" dense rounded>
+                    <template v-slot:avatar><q-icon name="content_copy" color="primary" /></template>
+                    Se copiaron el tipo de documento, la cuenta, el proveedor, el concepto y los centros de costo del
+                    gasto original. Complete el número, la fecha y los importes del nuevo comprobante.
+                </q-banner>
 
                 <!-- Atajo: escanear la factura antes de elegir el tipo de documento -->
                 <q-card data-tour="scan-invoice-cta" v-if="invoiceDocument && !facturaOriginal" class="card-form q-mb-md scan-cta">
@@ -114,6 +121,14 @@ const form = ref({
     items: [],
     field: [],
 });
+
+// "Duplicar gasto": el servidor manda los datos del gasto de origen (sin número, CUF ni importes)
+const template = page.props.template;
+if (template) {
+    Object.entries(template).forEach(([key, value]) => {
+        if (key in form.value && value !== null && value !== undefined && value !== "") form.value[key] = value;
+    });
+}
 
 const document = computed(() => page.props.documents.find((d) => d.id == form.value.document_id) ?? {});
 const hasDocument = computed(() => Object.keys(document.value).length > 0);

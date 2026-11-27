@@ -1,11 +1,43 @@
+// Paleta inspirada en Nuxt UI (neutros slate/zinc). El primario azul se mantiene.
+// Los tonos de texto sobre relleno sólido cumplen contraste AA con texto blanco
+// (excepto $warning, que siempre se usa con texto oscuro o en variante suave).
 $primary   : #1A73E8
-$secondary : #7b809a
-$accent    : #136F63
+$secondary : #64748b
+$accent    : #0f766e
 
-$dark      : #344767
+$dark      : #18181b
+$dark-page : #09090b
 
-$positive  : #4CAF50
-$negative  : #e91e63
+$positive  : #047857
+$negative  : #dc2626
 $info      : #1A73E8
-$warning   : #fb8c00
+$warning   : #f59e0b
 
+// Tipografía y forma (ver tokens --ui-* en resources/css/app.scss)
+$typography-font-family : 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif
+$body-font-size         : 14px
+$generic-border-radius  : 6px
+
+$button-border-radius   : 6px
+$button-padding         : 4px 12px
+$button-font-weight     : 500
+$button-shadow          : none
+$button-shadow-active   : none
+
+// Bordes y superficies resueltos en tiempo de ejecución con los tokens CSS,
+// así cambian solos entre modo claro y oscuro.
+$separator-color        : var(--ui-border)
+$separator-dark-color   : var(--ui-border)
+$table-hover-background : var(--ui-row-hover)
+$table-dark-hover-background : var(--ui-row-hover)
+$table-box-shadow       : none
+$table-box-shadow-dark  : none
+$input-text-color       : var(--ui-text-highlighted)
+$input-label-color      : var(--ui-text-muted)
+$menu-background        : var(--ui-bg)
+$tooltip-background     : var(--ui-tooltip-bg)
+$tooltip-color          : var(--ui-tooltip-text)
+$tooltip-padding        : 4px 8px
+$tooltip-fontsize       : 12px
+$layout-shadow          : none
+$layout-shadow-dark     : none

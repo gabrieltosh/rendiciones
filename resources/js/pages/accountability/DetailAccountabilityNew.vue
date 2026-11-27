@@ -14,7 +14,7 @@
                         #{{ accountability.id }}
                     </template>
                     <template #actions>
-                        <q-btn data-tour="edit-accountability" v-if="isEditable" color="primary" icon="edit" label="Editar" no-caps outline
+                        <q-btn data-tour="edit-accountability" v-if="isEditable" color="primary" icon="edit" label="Editar datos" no-caps outline
                             aria-label="Editar datos de la rendición" @click="HandleEditAccountability()" />
                         <div data-tour="send-accountability" v-if="isEditable" class="inline-block">
                             <q-btn color="positive" icon="send" :label="sendLabel" no-caps unelevated
@@ -49,7 +49,9 @@
                             </span>
                         </div>
                     </q-card-section>
-                    <q-card-actions align="right" class="q-px-md q-pb-md">
+                    <q-card-actions align="right" class="q-px-md q-pb-md q-gutter-sm">
+                        <q-btn color="secondary" flat no-caps icon="edit" label="Corregir datos de la rendición"
+                            @click="HandleEditAccountability()" />
                         <q-btn color="negative" outline no-caps icon="eva-edit-2-outline" label="Corregir y reenviar"
                             @click="HandleStartCorrection()" />
                     </q-card-actions>
@@ -107,6 +109,10 @@
                     :default-opened="$q.screen.gt.xs">
                     <q-card>
                         <q-card-section>
+                            <div v-if="isEditable" class="row justify-end q-mb-xs">
+                                <q-btn flat dense no-caps color="secondary" icon="edit" label="Editar"
+                                    aria-label="Editar datos de la rendición" @click="HandleEditAccountability()" />
+                            </div>
                             <div class="row q-col-gutter-md">
                                 <div class="col-xs-6 col-sm-4 col-md-3">
                                     <div class="text-caption text-grey">Inicio</div>
@@ -166,13 +172,17 @@
                         <div v-if="filteredDocuments.length === 0" class="text-center q-pa-xl">
                             <q-icon name="receipt_long" size="64px" color="grey-4" aria-hidden="true" />
                             <div class="text-body1 text-grey q-mt-md">
-                                {{ filter ? 'Sin resultados para la búsqueda' : 'Todavía no registró documentos' }}
+                                <template v-if="filter">Sin resultados para la búsqueda</template>
+                                <template v-else-if="isEditable">Agregue su primer gasto</template>
+                                <template v-else>La rendición no tiene documentos</template>
                             </div>
                             <div v-if="!filter && isEditable" class="text-caption text-grey q-mt-xs">
                                 Agregue sus facturas y recibos; puede escanear el QR de las facturas desde el celular.
                             </div>
                             <q-btn v-if="!filter && isEditable" color="primary" label="Agregar gasto" icon="add"
                                 no-caps unelevated class="q-mt-md" @click="HandleCreateDocument()" />
+                            <q-btn v-if="filter" flat color="primary" label="Quitar búsqueda" no-caps class="q-mt-md"
+                                @click="filter = ''" />
                         </div>
 
                         <div v-else class="q-gutter-md">
@@ -222,6 +232,11 @@
                                                 color="secondary" aria-label="Editar documento"
                                                 @click="HandleEditDocument(doc.id)">
                                                 <q-tooltip>Editar</q-tooltip>
+                                            </q-btn>
+                                            <q-btn data-tour="duplicate-expense" v-if="isEditable" flat round dense size="sm" icon="content_copy"
+                                                color="secondary" aria-label="Duplicar gasto"
+                                                @click="HandleDuplicateDocument(doc.id)">
+                                                <q-tooltip>Duplicar gasto (copia proveedor, cuenta y concepto)</q-tooltip>
                                             </q-btn>
                                             <q-btn v-if="isEditable" flat round dense size="sm" icon="delete_outline"
                                                 color="negative" aria-label="Eliminar documento"
@@ -346,6 +361,8 @@
         </div>
 
         <SiatInvoiceDialog v-model="showFacturaDialog" :factura="selectedFactura" />
+        <AccountabilityFormDialog v-model="showEditDialog" :profile-id="page.props.profile.id"
+            :accountability-id="accountability.id" return-to="detail" />
     </Layout>
 </template>
 
@@ -353,6 +370,7 @@
 import Layout from "@/layouts/MainLayout.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import SiatInvoiceDialog from "@/components/accountability/SiatInvoiceDialog.vue";
+import AccountabilityFormDialog from "@/components/accountability/AccountabilityFormDialog.vue";
 import { siatQueryUrl, formatDate } from "@/components/accountability/siat";
 import { formatMoney, balanceInfo, statusLabel, statusColor, statusIcon } from "@/utils/accountability";
 import { ref, computed, nextTick } from "vue";
@@ -433,6 +451,7 @@ const loadingFactura = ref(null);
 const sending = ref(false);
 const deletingId = ref(null);
 const documentsCard = ref(null);
+const showEditDialog = ref(false);
 
 const isEditable = computed(() => accountability.value.status === "Rechazado" || accountability.value.status === null);
 
@@ -479,8 +498,9 @@ function toggleExpand(id) {
     expandedRows.value[id] = !expandedRows.value[id];
 }
 
+// Los datos de la rendición se corrigen en un diálogo, sin salir del detalle
 function HandleEditAccountability() {
-    router.visit(route("panel.accountability.manage.edit", [page.props.profile.id, accountability.value.id]) + "?from=detail");
+    showEditDialog.value = true;
 }
 
 function HandleStartCorrection() {
@@ -517,6 +537,14 @@ async function HandleConsultaFactura(doc) {
 
 function HandleCreateDocument() {
     router.visit(route("panel.accountability.manage.detail.create", [page.props.profile.id, accountability.value.id]));
+}
+
+// Nuevo gasto precargado con el tipo de documento, cuenta, proveedor y concepto de otro
+function HandleDuplicateDocument(id) {
+    router.visit(
+        route("panel.accountability.manage.detail.create", [page.props.profile.id, accountability.value.id]) +
+            `?from_document=${encodeURIComponent(id)}`
+    );
 }
 
 function HandleEditDocument(id) {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Administration;
 
 use App\Http\Controllers\Controller;
+use App\Models\Accountability;
 use App\Models\AuthorizationCycle;
 use App\Models\AuthorizationCycleLevel;
 use App\Models\AuthorizationCycleLevelUser;
@@ -16,12 +17,14 @@ use DB;
 
 class AuthorizationCycleController extends Controller
 {
-    public function HandleIndexAuthorizationCycle()
+    public function HandleIndexAuthorizationCycle(Request $request)
     {
         Session::put('title', 'Ciclos de Autorización');
         $data = AuthorizationCycle::with('levels.users')->get();
         return Inertia::render('administration/authorization-cycles/IndexAuthorizationCycle', [
             'data' => $data,
+            // Ciclo recién guardado: se resalta y se muestran sus niveles
+            'highlight' => (int) $request->query('highlight') ?: null,
         ]);
     }
 
@@ -46,7 +49,7 @@ class AuthorizationCycleController extends Controller
             'levels.*.users' => 'required|array|min:1',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $cycleId = DB::transaction(function () use ($request) {
             $cycle = AuthorizationCycle::create([
                 'name'        => $request->name,
                 'description' => $request->description,
@@ -66,11 +69,12 @@ class AuthorizationCycleController extends Controller
                     ]);
                 }
             }
+            return $cycle->id;
         });
 
         Session::flash('message', 'Ciclo de autorización creado correctamente');
         Session::flash('type', 'positive');
-        return Redirect::route('panel.authorization-cycle.index');
+        return Redirect::route('panel.authorization-cycle.index', ['highlight' => $cycleId]);
     }
 
     public function HandleEditAuthorizationCycle($id)
@@ -105,29 +109,49 @@ class AuthorizationCycleController extends Controller
                 'is_active'   => $request->is_active ?? true,
             ])->save();
 
-            // Rebuild levels
-            $oldLevelIds = $cycle->levels()->pluck('id');
-            AuthorizationCycleLevelUser::whereIn('level_id', $oldLevelIds)->delete();
-            AuthorizationCycleLevel::whereIn('id', $oldLevelIds)->delete();
+            // Los niveles se actualizan en su lugar (por su id), no se borran y recrean:
+            // las aprobaciones se borran en cascada con su nivel y las rendiciones pendientes
+            // quedaban con current_level_id en null (nullOnDelete), fuera del ciclo.
+            $existing = $cycle->levels()->orderBy('order')->get()->keyBy('id');
+            $keptIds = [];
 
             foreach ($request->levels as $index => $levelData) {
-                $level = AuthorizationCycleLevel::create([
-                    'cycle_id' => $cycle->id,
-                    'order'    => $index + 1,
-                    'name'     => $levelData['name'],
-                ]);
-                foreach ($levelData['users'] as $userId) {
+                $level = isset($levelData['id']) ? $existing->get((int) $levelData['id']) : null;
+                if ($level) {
+                    $level->fill(['order' => $index + 1, 'name' => $levelData['name']])->save();
+                } else {
+                    $level = AuthorizationCycleLevel::create([
+                        'cycle_id' => $cycle->id,
+                        'order'    => $index + 1,
+                        'name'     => $levelData['name'],
+                    ]);
+                }
+
+                AuthorizationCycleLevelUser::where('level_id', $level->id)->delete();
+                foreach (array_unique($levelData['users']) as $userId) {
                     AuthorizationCycleLevelUser::create([
                         'level_id' => $level->id,
                         'user_id'  => $userId,
                     ]);
                 }
+                $keptIds[] = $level->id;
+            }
+
+            // Niveles quitados: las rendiciones pendientes en ellos pasan al último nivel
+            // que queda (no se pierden del ciclo) y luego se eliminan los niveles.
+            $removedIds = $existing->pluck('id')->diff($keptIds)->values();
+            if ($removedIds->isNotEmpty()) {
+                Accountability::whereIn('current_level_id', $removedIds)
+                    ->where('status', 'Pendiente')
+                    ->update(['current_level_id' => end($keptIds)]);
+                AuthorizationCycleLevelUser::whereIn('level_id', $removedIds)->delete();
+                AuthorizationCycleLevel::whereIn('id', $removedIds)->delete();
             }
         });
 
         Session::flash('message', 'Ciclo de autorización actualizado correctamente');
         Session::flash('type', 'positive');
-        return Redirect::route('panel.authorization-cycle.index');
+        return Redirect::route('panel.authorization-cycle.index', ['highlight' => $request->id]);
     }
 
     public function HandleStoreQuickCycle(Request $request)

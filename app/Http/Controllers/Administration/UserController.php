@@ -18,6 +18,7 @@ use App\Models\Area;
 use App\Models\AuthorizationCycle;
 use App\Models\UserAuthorizationCycle;
 use App\Services\Sap\DistributionRules;
+use Illuminate\Http\Request;
 use Hash;
 class UserController extends Controller
 {
@@ -60,7 +61,8 @@ class UserController extends Controller
         }
         Session::flash('message', "Usuario creado correctamente");
         Session::flash('type', 'positive');
-        return Redirect::route('panel.user.index');
+        // highlight: la lista se ubica en el usuario guardado
+        return Redirect::route('panel.user.index', ['highlight' => $user->id]);
     }
     public function HandleUpdateUser(UserRequest $request)
     {
@@ -156,7 +158,62 @@ class UserController extends Controller
             ])->save();
         }
 
-        return Redirect::route('panel.user.index');
+        return Redirect::route('panel.user.index', ['highlight' => $request->id]);
+    }
+
+    /**
+     * Asignación rápida desde la lista de usuarios: perfiles (por nombre, como el
+     * formulario completo) y ciclo de autorización, sin abrir la edición del usuario.
+     */
+    public function HandleUpdateUserAccess(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $request->validate([
+            'profiles' => 'present|array',
+            'profiles.*' => 'string|exists:profiles,name',
+            'cycle_id' => 'nullable|integer|exists:authorization_cycles,id',
+        ], [
+            'profiles.*.exists' => 'Uno de los perfiles seleccionados ya no existe.',
+            'cycle_id.exists' => 'El ciclo de autorización seleccionado ya no existe.',
+        ]);
+
+        DB::transaction(function () use ($request, $user) {
+            $profileIds = Profile::whereIn('name', (array) $request->profiles)->pluck('id')->all();
+            $current = UserProfile::where('user_id', $user->id)->pluck('profile_id')->all();
+            UserProfile::where('user_id', $user->id)
+                ->whereIn('profile_id', array_diff($current, $profileIds))
+                ->delete();
+            foreach (array_diff($profileIds, $current) as $profileId) {
+                UserProfile::create(['user_id' => $user->id, 'profile_id' => $profileId]);
+            }
+
+            UserAuthorizationCycle::where('user_id', $user->id)->delete();
+            if ($request->cycle_id) {
+                UserAuthorizationCycle::create(['user_id' => $user->id, 'cycle_id' => $request->cycle_id]);
+            }
+        });
+
+        Session::flash('message', "Acceso de {$user->name} actualizado correctamente");
+        Session::flash('type', 'positive');
+        return Redirect::route('panel.user.index', ['highlight' => $user->id]);
+    }
+
+    /** Ciclos activos con sus niveles, para elegir el ciclo de un usuario. */
+    private function HandleCycleOptions()
+    {
+        return AuthorizationCycle::with(['levels.users' => function ($q) {
+            $q->select('users.id', 'users.name');
+        }])->where('is_active', true)->get()->map(function ($c) {
+            return [
+                'value'  => (int) $c->id,
+                'label'  => $c->name,
+                'levels' => $c->levels->map(fn($l) => [
+                    'order' => $l->order,
+                    'name'  => $l->name,
+                    'users' => $l->users->pluck('name'),
+                ]),
+            ];
+        });
     }
     public function HandleFormatUser($data)
     {
@@ -275,11 +332,30 @@ class UserController extends Controller
             ]
         );
     }
-    public function HandleIndexUser()
+    public function HandleIndexUser(Request $request)
     {
         Session::put('title', 'Usuarios');
-        $data = User::orderBy('id', 'desc')->get();
-        return Inertia::render("administration/users/IndexUser")->with('data', $data);
+        // Perfiles y ciclo de cada usuario: se ven y se cambian desde la misma lista
+        $profileNames = UserProfile::join('profiles as T1', 'T1.id', 'profile_id')
+            ->get(['user_id', 'T1.name'])
+            ->groupBy('user_id');
+        $cycleByUser = UserAuthorizationCycle::pluck('cycle_id', 'user_id');
+        $data = User::orderBy('id', 'desc')->get()->map(function ($user) use ($profileNames, $cycleByUser) {
+            $user->profiles = ($profileNames[$user->id] ?? collect())->pluck('name')->values();
+            $user->cycle_id = isset($cycleByUser[$user->id]) ? (int) $cycleByUser[$user->id] : null;
+            return $user;
+        });
+
+        return Inertia::render("administration/users/IndexUser", [
+            'data' => $data,
+            'profiles' => Profile::select('name as label', 'id')->orderBy('name')->get(),
+            'cycles' => $this->HandleCycleOptions(),
+            'usersForCycle' => User::select('id as value', 'name as label')
+                ->whereIn('type', ['Administrador', 'Autorizador'])
+                ->orderBy('name')
+                ->get(),
+            'highlight' => (int) $request->query('highlight') ?: null,
+        ]);
     }
     public function HandleGetDistributions()
     {

@@ -351,7 +351,7 @@ class AccountabilityController extends Controller
         return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
     }
 
-    public function HandleCreateDocument($profile_id, $accountability_id)
+    public function HandleCreateDocument(Request $request, $profile_id, $accountability_id)
     {
         if ($locked = $this->HandleRejectIfLocked($profile_id, $accountability_id)) {
             return $locked;
@@ -361,6 +361,18 @@ class AccountabilityController extends Controller
         $accountability = Accountability::where('id', $accountability_id)->first();
         $accounts = $this->HandleBuildDetailAccounts($profile->id);
         $documents = Document::with('fields')->where('profile_id', $profile->id)->orderBy('name')->get();
+
+        // "Duplicar gasto": ?from_document={id} precarga el formulario con un gasto de la misma rendición
+        $template = null;
+        if ($request->filled('from_document')) {
+            $source = AccountabilityDetail::with('field')
+                ->where('accountability_id', $accountability_id)
+                ->find($request->integer('from_document'));
+            if ($source) {
+                $template = $this->HandleBuildDocumentTemplate($source, $accountability, $accounts, $documents);
+            }
+        }
+
         return Inertia::render(
             'accountability/Detail/CreateDetailNew',
             [
@@ -370,8 +382,49 @@ class AccountabilityController extends Controller
                 'documents' => $documents,
                 'distribution' => (new DistributionRules())->all(),
                 'projects' => $this->HandleGetProjects(),
+                'template' => $template,
             ]
         );
+    }
+
+    /**
+     * Datos de un gasto existente que se repiten al duplicarlo: tipo de documento, cuenta,
+     * proveedor, concepto, proyecto, centros de costo y campos adicionales. No se copian
+     * el número, CUF, códigos ni importes; la fecha es la de hoy si cae en el periodo.
+     */
+    private function HandleBuildDocumentTemplate(AccountabilityDetail $source, Accountability $accountability, $accounts, $documents): array
+    {
+        $today = now('America/La_Paz')->toDateString();
+        $inPeriod = (!$accountability->start_date || $today >= substr((string) $accountability->start_date, 0, 10))
+            && (!$accountability->end_date || $today <= substr((string) $accountability->end_date, 0, 10));
+
+        $document = $documents->firstWhere('id', (int) $source->document_id);
+        $previous = $source->field->keyBy('field_id');
+        $fields = $document
+            ? $document->fields->map(fn ($f) => [
+                'name' => $f->name,
+                'value' => optional($previous->get($f->id))->value,
+                'id' => $f->id,
+            ])->values()->all()
+            : [];
+
+        return [
+            'document_id' => $document ? $document->id : null,
+            'account' => $source->account
+                ? $this->HandleMatchAccountKey($accounts, $source->account, $source->account_name)
+                : null,
+            'date' => $inPeriod ? $today : null,
+            'business_name' => $source->business_name,
+            'nit' => $source->nit,
+            'concept' => $source->concept,
+            'project_code' => $source->project_code,
+            'distribution_rule_one' => $source->distribution_rule_one,
+            'distribution_rule_second' => $source->distribution_rule_second,
+            'distribution_rule_three' => $source->distribution_rule_three,
+            'distribution_rule_four' => $source->distribution_rule_four,
+            'distribution_rule_five' => $source->distribution_rule_five,
+            'field' => $fields,
+        ];
     }
     public function HandleDetailAccountability($profile_id, $accountability_id)
     {
@@ -553,21 +606,30 @@ SQL;
                 ->get();
         }
     }
-    public function HandleCreateAccountability($profile_id)
+    public function HandleCreateAccountability(Request $request, $profile_id)
     {
-        Session::put('title', 'Nueva rendición');
-        $profile = Profile::where('id', $profile_id)->first();
+        $profile = Profile::where('id', $profile_id)->firstOrFail();
         $employees = Employee::where('profile_id', $profile_id)->get();
         $accounts = $this->HandleBuildGeneralAccounts($profile->id);
+        $data = [
+            'profile' => $profile,
+            'accounts' => $accounts,
+            'employees' => $employees->count() == 0 ? $this->HandleGetUserEmployee(Auth::user()->card_code) : $employees
+        ];
 
-        return Inertia::render(
-            'accountability/CreateAccountability',
-            [
-                'profile' => $profile,
-                'accounts' => $accounts,
-                'employees' => $employees->count() == 0 ? $this->HandleGetUserEmployee(Auth::user()->card_code) : $employees
-            ]
-        );
+        // El diálogo "Nueva rendición" (lista de rendiciones) pide los mismos datos en JSON
+        if ($this->HandleWantsDialogData($request)) {
+            return response()->json($data);
+        }
+
+        Session::put('title', 'Nueva rendición');
+        return Inertia::render('accountability/CreateAccountability', $data);
+    }
+
+    /** Petición JSON (axios) de un diálogo, no una visita de Inertia. */
+    private function HandleWantsDialogData(Request $request): bool
+    {
+        return $request->wantsJson() && !$request->header('X-Inertia');
     }
     public function HandleGetEmployee($value)
     {
@@ -746,27 +808,40 @@ SQL;
         }
         return Redirect::route('panel.accountability.manage.index', $profile_id);
     }
-    public function HandleEditAccountability($profile_id, $acc_id)
+    public function HandleEditAccountability(Request $request, $profile_id, $acc_id)
     {
-        if ($locked = $this->HandleRejectIfLocked($profile_id, $acc_id)) {
+        $wantsDialog = $this->HandleWantsDialogData($request);
+        if ($wantsDialog) {
+            // Mismo control que HandleRejectIfLocked, pero sin dejar un aviso en la sesión
+            $owned = Accountability::where('id', $acc_id)->where('user_id', Auth::id())->firstOrFail();
+            if ($owned->status !== null && $owned->status !== 'Rechazado') {
+                return response()->json([
+                    'message' => "La rendición está {$owned->status} y ya no se puede modificar.",
+                ], 423);
+            }
+        } elseif ($locked = $this->HandleRejectIfLocked($profile_id, $acc_id)) {
             return $locked;
         }
-        Session::put('title', 'Editar rendición');
-        $profile = Profile::where('id', $profile_id)->first();
+        $profile = Profile::where('id', $profile_id)->firstOrFail();
         $accounts = $this->HandleBuildGeneralAccounts($profile->id);
         $accountability = Accountability::where('id', $acc_id)->first();
         $accountability->account = $this->HandleMatchAccountKey($accounts, $accountability->account_code, $accountability->account_name);
         $accountability->employee = $accountability->employee_code;
         $employees = Employee::where('profile_id', $profile_id)->get();
-        return Inertia::render(
-            'accountability/EditAccountability',
-            [
-                'profile' => $profile,
-                'accounts' => $accounts,
-                'accountability' => $accountability,
-                'employees' => $employees->count() == 0 ? $this->HandleGetUserEmployee(Auth::user()->card_code) : $employees
-            ]
-        );
+        $data = [
+            'profile' => $profile,
+            'accounts' => $accounts,
+            'accountability' => $accountability,
+            'employees' => $employees->count() == 0 ? $this->HandleGetUserEmployee(Auth::user()->card_code) : $employees
+        ];
+
+        // El diálogo "Editar datos" (detalle y lista de rendiciones) pide los mismos datos en JSON
+        if ($wantsDialog) {
+            return response()->json($data);
+        }
+
+        Session::put('title', 'Editar rendición');
+        return Inertia::render('accountability/EditAccountability', $data);
     }
 
     private function HandleBuildGeneralAccounts(int $profileId): \Illuminate\Support\Collection
