@@ -42,6 +42,8 @@ use App\Services\Sap\JournalVoucherPayloadBuilder;
 use App\Services\Sap\SapExporterFactory;
 use App\Services\Sap\SapExportResult;
 use Log;
+use App\Models\SapExportLog;
+use Illuminate\Support\Facades\Auth;
 
 class AccountabilityController extends Controller
 {
@@ -162,6 +164,48 @@ class AccountabilityController extends Controller
         ]);
     }
 
+    /**
+     * El usuario puede aprobar, rechazar o exportar la rendición: está Pendiente y él es
+     * autorizador de su nivel actual (o del solicitante, en el sistema sin ciclo).
+     * El Administrador puede actuar sobre cualquier rendición pendiente.
+     */
+    private function HandleCanAuthorize(Accountability $accountability, $user): bool
+    {
+        if ($accountability->status !== 'Pendiente') {
+            return false;
+        }
+        if ($user->type === 'Administrador') {
+            return true;
+        }
+
+        return Accountability::pendingAuthorizationFor($user->id)->where('id', $accountability->id)->exists();
+    }
+
+    private function HandleDenied(Accountability $accountability)
+    {
+        $message = $accountability->status === 'Pendiente'
+            ? 'No es autorizador de esta rendición en su nivel actual.'
+            : "La rendición está " . ($accountability->status ?? 'en borrador') . " y no se puede autorizar ni rechazar.";
+
+        return Redirect::route('panel.accountability.authorization.index')->with(['message' => $message, 'type' => 'negative']);
+    }
+
+    /** Aviso por correo al solicitante. Un fallo del correo no debe revertir ni ocultar lo ya guardado. */
+    private function HandleNotifyStatus(Accountability $accountability): void
+    {
+        try {
+            $params = Management::where('group', 'accountability')->get();
+            if ($params->where('name', 'notification_email')->first()?->value == 'SI') {
+                User::find($accountability->user_id)?->notify(new StatusAccountabilityNotification($accountability->fresh()));
+            }
+        } catch (Throwable $e) {
+            Log::warning('No se pudo notificar el estado de la rendición', [
+                'accountability_id' => $accountability->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     private function HandleAdvanceOrFinalize($accountability, $request, $sapExported, $redirectOnFinish)
     {
         $currentLevel = $accountability->current_level_id
@@ -185,12 +229,18 @@ class AccountabilityController extends Controller
                 ])->save();
 
                 // Notify next level authorizers
-                $params = Management::where('group', 'accountability')->get();
-                if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-                    $nextUsers = $nextLevel->users;
-                    foreach ($nextUsers as $nextUser) {
-                        $nextUser->notify(new CreateAccountabilityNotification($accountability));
+                try {
+                    $params = Management::where('group', 'accountability')->get();
+                    if ($params->where('name', 'notification_email')->first()?->value == 'SI') {
+                        foreach ($nextLevel->users as $nextUser) {
+                            $nextUser->notify(new CreateAccountabilityNotification($accountability));
+                        }
                     }
+                } catch (Throwable $e) {
+                    Log::warning('No se pudo notificar al siguiente nivel', [
+                        'accountability_id' => $accountability->id,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
 
                 $levelName = $nextLevel->name;
@@ -201,25 +251,28 @@ class AccountabilityController extends Controller
         }
 
         // No more levels (or legacy system) — fully authorize
-        $accountability->fill([
+        $attributes = [
             'status'      => 'Autorizado',
             'comments'    => $request->comments,
-            'sap_exported' => $sapExported,
             'current_level_id' => null,
-        ])->save();
-
-        $user = User::find($accountability->user_id);
-        $params = Management::where('group', 'accountability')->get();
-        if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-            $user->notify(new StatusAccountabilityNotification($accountability->fresh()));
+        ];
+        // Una rendición que ya tiene asiento en SAP no vuelve a quedar "sin exportar"
+        if (!$accountability->sap_trans_id && !$accountability->sap_exported) {
+            $attributes['sap_exported'] = $sapExported;
         }
+        $accountability->fill($attributes)->save();
+
+        $this->HandleNotifyStatus($accountability);
 
         return $redirectOnFinish;
     }
 
     public function HandleExportSAP($accountability_id, Request $request)
     {
-        $accountability = Accountability::where('id', $accountability_id)->first();
+        $accountability = Accountability::findOrFail($accountability_id);
+        if (!$this->HandleCanAuthorize($accountability, $request->user())) {
+            return $this->HandleDenied($accountability);
+        }
 
         // If cycle system: check if there's a next level before attempting SAP export
         $currentLevel = $accountability->current_level_id
@@ -261,11 +314,7 @@ class AccountabilityController extends Controller
         Session::flash('type', 'positive');
         Session::flash('sap_number', $result->key);
 
-        $user = User::find($accountability->user_id);
-        $params = Management::where('group', 'accountability')->get();
-        if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-            $user->notify(new StatusAccountabilityNotification($accountability->fresh()));
-        }
+        $this->HandleNotifyStatus($accountability);
         return Redirect::route('panel.accountability.authorization.index');
     }
 
@@ -275,16 +324,52 @@ class AccountabilityController extends Controller
      */
     private function HandleSendToSap(Accountability $accountability): SapExportResult
     {
+        $this->sap_export_mode = null;
+        $sent = null;
+        $result = $this->HandleAttemptSapExport($accountability, $sent);
+
+        // Cada intento (al autorizar o al reintentar) queda en el historial, exitoso o no.
+        // Un fallo al guardar el historial no debe ocultar el resultado de SAP.
+        try {
+            SapExportLog::create([
+                'accountability_id' => $accountability->id,
+                'user_id'           => Auth::id(),
+                'success'           => $result->success,
+                'mode'              => $this->sap_export_mode,
+                'sap_key'           => $result->key,
+                'message'           => $result->success
+                    ? $this->HandleSapExportMessage('Exportada correctamente', $result)
+                    : $result->errorMessage,
+                'payload'           => $sent ? json_encode($sent, JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION) : null,
+            ]);
+        } catch (Throwable $e) {
+            Log::error('No se pudo guardar el historial de exportación a SAP', [
+                'accountability_id' => $accountability->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array|null  $sent  lo enviado a SAP (asiento y borradores), para el historial
+     */
+    private function HandleAttemptSapExport(Accountability $accountability, ?array &$sent): SapExportResult
+    {
         // El asiento ya existe en SAP: no se vuelve a enviar aunque el usuario reintente.
-        if ($accountability->sap_trans_id) {
-            return SapExportResult::failure(
-                "Esta rendición ya fue exportada a SAP (asiento {$accountability->sap_trans_id})."
-            );
+        // Se relee de la base por si otro usuario la exportó mientras tanto; sap_exported
+        // cubre el caso en que SAP aceptó el asiento pero no se pudo obtener su número.
+        $current = Accountability::whereKey($accountability->id)->first(['sap_exported', 'sap_trans_id']);
+        if ($current?->sap_trans_id || $current?->sap_exported) {
+            $number = $current->sap_trans_id ? " (asiento {$current->sap_trans_id})" : '';
+            return SapExportResult::failure("Esta rendición ya fue exportada a SAP{$number}.");
         }
 
         try {
             $builder = new JournalVoucherPayloadBuilder();
             $payload = $builder->build($accountability);
+            $sent = ['journal' => $payload];
 
             Log::info('SAP Export Data:', $payload);
 
@@ -302,6 +387,7 @@ class AccountabilityController extends Controller
                 $accountability,
                 $this->HandleSapReference($accountability)
             );
+            $sent = ['journal' => $payload, 'drafts' => $drafts];
             if ($drafts) {
                 Log::info('SAP Export Inventory Drafts:', $drafts);
             }
@@ -363,6 +449,9 @@ class AccountabilityController extends Controller
     public function HandleForceAuthorize($accountability_id, Request $request)
     {
         $accountability = Accountability::findOrFail($accountability_id);
+        if (!$this->HandleCanAuthorize($accountability, $request->user())) {
+            return $this->HandleDenied($accountability);
+        }
         return $this->HandleAdvanceOrFinalize(
             $accountability,
             $request,
@@ -377,7 +466,7 @@ class AccountabilityController extends Controller
     public function HandleIndexPendingExport(Request $request)
     {
         Session::put('title', 'Pendientes de Exportación SAP');
-        $data = Accountability::with('user', 'profile', 'detail.document')
+        $data = Accountability::with('user', 'profile', 'detail.document', 'exportLogs.user:id,name')
             ->pendingSapExport()
             ->get();
         return Inertia::render('authorization/PendingExport', [
@@ -392,20 +481,80 @@ class AccountabilityController extends Controller
         $accounts = $this->HandleBuildGeneralAccounts($profile->id);
         $accountability->account = $this->HandleMatchAccountKey($accounts, $accountability->account_code, $accountability->account_name);
         $accountability->employee = $accountability->employee_code;
-        $employees = Employee::where('profile_id', $profile->id)->get();
+        $employees = Employee::where('profile_id', $profile->id)->get(['card_code', 'card_name']);
+        $employees = collect($employees->count() == 0
+            ? $this->HandleGetUserEmployee($accountability->user->card_code)
+            : $employees)
+            ->map(fn ($e) => ['card_code' => data_get($e, 'card_code'), 'card_name' => data_get($e, 'card_name')]);
+
+        // El empleado actual siempre figura entre las opciones, aunque no esté en la lista del perfil
+        if ($accountability->employee_code && !$employees->contains('card_code', $accountability->employee_code)) {
+            $employees->prepend([
+                'card_code' => $accountability->employee_code,
+                'card_name' => $accountability->employee_name ?? $accountability->employee_code,
+            ]);
+        }
+
         return response()->json([
             'profile' => $profile,
             'accounts' => $accounts,
             'accountability' => $accountability,
-            'employees' => $employees->count() == 0
-                ? $this->HandleGetUserEmployee($accountability->user->card_code)
-                : $employees,
+            'employees' => $employees->values(),
         ]);
+    }
+
+    /**
+     * Busca socios de negocio de SAP (OCRD) por código o nombre para elegir el
+     * empleado de una rendición. Máximo 30 resultados.
+     */
+    public function HandleSearchEmployees(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+        if (mb_strlen($search) < 2) {
+            return response()->json([]);
+        }
+
+        $params_sap = Management::where('group', 'accountability')->get();
+        if ($params_sap->where('name', 'hana_enable')->first()?->value == 'SI') {
+            $db = Config::get('database.connections.hana.database');
+            // HANA se consulta con SQL armado: se escapan comillas y comodines
+            $like = str_replace(["'", '%', '_'], ["''", '', ''], mb_strtoupper($search));
+            $sql =
+                <<<SQL
+            select top 30
+                T1."CardCode" as "card_code",
+                T1."CardName" as "card_name"
+            from $db.OCRD as T1
+            where UPPER(T1."CardCode") like '%$like%' or UPPER(T1."CardName") like '%$like%'
+            order by T1."CardName"
+SQL;
+            $rows = Hana::query($sql);
+            return response()->json(is_array($rows) ? $rows : []);
+        }
+
+        // SQL Server: los comodines se escapan entre corchetes
+        $like = '%' . str_replace(['[', '%', '_'], ['[[]', '[%]', '[_]'], $search) . '%';
+        return response()->json(
+            DB::connection('sap')
+                ->table('OCRD')
+                ->select('CardCode as card_code', 'CardName as card_name')
+                ->where(fn ($q) => $q->where('CardCode', 'like', $like)->orWhere('CardName', 'like', $like))
+                ->orderBy('CardName')
+                ->limit(30)
+                ->get()
+        );
     }
 
     public function HandleReExportSAP($accountability_id, Request $request)
     {
         $accountability = Accountability::findOrFail($accountability_id);
+        // Solo se reintenta lo autorizado que aún no está en SAP
+        if ($accountability->status !== 'Autorizado') {
+            return Redirect::route('panel.accountability.authorization.pending-export')->with([
+                'message' => 'Solo se exportan rendiciones autorizadas.',
+                'type' => 'negative',
+            ]);
+        }
         $result = $this->HandleSendToSap($accountability);
 
         if ($result->success) {
@@ -494,6 +643,7 @@ class AccountabilityController extends Controller
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
             $db = Config::get('database.connections.hana.database');
+            $value = str_replace("'", "''", (string) $value);
             $sql =
                 <<<SQL
             select
@@ -516,10 +666,14 @@ SQL;
     }
     public function HandleGetEmployee($value)
     {
+        if ($value === null || $value === '') {
+            return null;
+        }
         $params_sap = Management::where('group', 'accountability')->get();
         $hana = $params_sap->where('name', 'hana_enable')->first()->value == 'SI';
         if ($hana) {
             $db = Config::get('database.connections.hana.database');
+            $value = str_replace("'", "''", (string) $value);
             $sql =
                 <<<SQL
             select
@@ -538,20 +692,30 @@ SQL;
     {
         ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
         $account = GeneralAccounts::where('account_code', $acctCode)->first();
-        $params_sap = Management::where('group', 'accountability')->get();
-        $hana = $params_sap->where('name', 'hana_enable')->first()->value == 'SI';
-        $auth_accountability = Accountability::where('id', $request->id)->first();
+        $auth_accountability = Accountability::findOrFail($request->id);
         $auth_profile = Profile::where('id', $auth_accountability->profile_id)->first();
+        $fromPending = $request->input('from') === 'pending-export';
+        $back = $fromPending
+            ? Redirect::route('panel.accountability.authorization.pending-export')
+            : Redirect::route('panel.accountability.authorization.index');
+
+        // Una rendición ya registrada en SAP no se modifica: el asiento quedaría distinto.
+        if ($auth_accountability->sap_exported) {
+            return $back->with(['message' => 'La rendición ya fue exportada a SAP y no se puede modificar.', 'type' => 'negative']);
+        }
 
         $employee_name = null;
         $employee_code = null;
         if (!$auth_profile || !$auth_profile->sin_empleado) {
             $employee = $this->HandleGetEmployee($request->employee);
-            $employee_name = $hana ? $employee['CardName'] : $employee->CardName;
-            $employee_code = $hana ? $employee['CardCode'] : $employee->CardCode;
+            if (empty($employee)) {
+                return Redirect::back()->withErrors(['employee' => 'El empleado no existe como socio de negocio en SAP.']);
+            }
+            $employee_name = data_get($employee, 'CardName');
+            $employee_code = data_get($employee, 'CardCode');
         }
 
-        Accountability::findOrFail($request->id)->fill([
+        $auth_accountability->fill([
             'employee_name' => $employee_name,
             'employee_code' => $employee_code,
             'account_code' => $acctCode,
@@ -561,9 +725,7 @@ SQL;
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
         ])->save();
-        Session::flash('message', "Rendición actualizada correctamente");
-        Session::flash('type', 'positive');
-        return Redirect::route('panel.accountability.authorization.index');
+        return $back->with(['message' => 'Rendición actualizada correctamente', 'type' => 'positive']);
     }
     public function HandleDetailAccountability(Request $request, $accountability_id)
     {
@@ -697,7 +859,13 @@ SQL;
         if ($rejected = $this->HandleRejectIfExported($accountability_id)) {
             return $rejected;
         }
-        AccountabilityDetail::findOrFail($document_id)->delete();
+        // Solo un documento de esta rendición (si no, se saltaría el control de exportada)
+        $detail = AccountabilityDetail::where('accountability_id', $accountability_id)->findOrFail($document_id);
+        DB::transaction(function () use ($detail) {
+            // Los campos adicionales no se borran en cascada (FK sin cascade)
+            AccountabilityField::where('accountability_detail_id', $detail->id)->delete();
+            $detail->delete();
+        });
         Session::flash('message', "Documento eliminado correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id);
@@ -707,6 +875,8 @@ SQL;
         if ($rejected = $this->HandleRejectIfExported($accountability_id)) {
             return $rejected;
         }
+        // Solo un documento de esta rendición: no se mueven documentos entre rendiciones
+        AccountabilityDetail::where('accountability_id', $accountability_id)->findOrFail($request->id);
         try {
             DB::transaction(function () use ($request, $accountability_id) {
                 ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
@@ -939,7 +1109,19 @@ SQL;
     }
     public function HandleUpdateStatus($accountability_id, Request $request)
     {
+        $request->validate(['status' => 'required|in:Rechazado,Anulado']);
         $accountability = Accountability::findOrFail($accountability_id);
+
+        if ($request->status === 'Rechazado' && !$this->HandleCanAuthorize($accountability, $request->user())) {
+            return $this->HandleDenied($accountability);
+        }
+        // Una rendición ya registrada en SAP no se anula aquí: el asiento seguiría en SAP
+        if ($request->status === 'Anulado' && $accountability->sap_exported) {
+            return Redirect::route('panel.accountability.authorization.detail.index', $accountability_id)->with([
+                'message' => 'La rendición ya fue exportada a SAP y no se puede anular.',
+                'type' => 'negative',
+            ]);
+        }
 
         // Record rejection in approvals when using cycle system
         if ($accountability->current_level_id && $request->status === 'Rechazado') {
@@ -958,11 +1140,7 @@ SQL;
             'current_level_id' => null,
         ])->save();
 
-        $user = User::find($accountability->user_id);
-        $params = Management::where('group', 'accountability')->get();
-        if ($params->where('name', 'notification_email')->first()->value == 'SI') {
-            $user->notify(new StatusAccountabilityNotification($accountability->fresh()));
-        }
+        $this->HandleNotifyStatus($accountability);
         Session::flash('message', "Documento enviado correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.authorization.index');

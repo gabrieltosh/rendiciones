@@ -57,8 +57,38 @@ class AccountabilityController extends Controller
         $pdf->setPaper('letter', 'portrait');
         return $pdf->stream();
     }
+    /**
+     * El solicitante solo modifica sus propias rendiciones (404 si es de otro usuario) y
+     * solo mientras están en borrador o rechazadas. Devuelve la redirección con el aviso
+     * si la rendición ya no se puede modificar, o null si se puede.
+     */
+    private function HandleRejectIfLocked($profile_id, $accountability_id)
+    {
+        $accountability = Accountability::where('id', $accountability_id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if ($accountability->status === null || $accountability->status === 'Rechazado') {
+            return null;
+        }
+
+        return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id])->with([
+            'message' => "La rendición está {$accountability->status} y ya no se puede modificar.",
+            'type' => 'negative',
+        ]);
+    }
+
+    /** Documento que pertenece a la rendición indicada (404 si no). */
+    private function HandleFindDetail($accountability_id, $document_id): AccountabilityDetail
+    {
+        return AccountabilityDetail::where('accountability_id', $accountability_id)->findOrFail($document_id);
+    }
+
     public function HandleUpdateStatus($profile_id, $accountability_id, Request $request)
     {
+        if ($locked = $this->HandleRejectIfLocked($profile_id, $accountability_id)) {
+            return $locked;
+        }
         $accountability = Accountability::where('id', $accountability_id)->first();
         $user = User::with('user_authorization', 'authorizationCycle.cycle.levels.levelUsers.user')
             ->where('id', $accountability->user_id)->first();
@@ -74,8 +104,10 @@ class AccountabilityController extends Controller
             return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
         }
 
+        // El solicitante solo envía la rendición: el estado no se toma del request
+        // (si no, podría marcarse a sí mismo como Autorizado y saltar el ciclo).
         Accountability::findOrFail($accountability_id)->fill([
-            'status'           => $request->status,
+            'status'           => 'Pendiente',
             'current_level_id' => $firstLevel ? $firstLevel->id : null,
         ])->save();
 
@@ -130,6 +162,10 @@ class AccountabilityController extends Controller
     }
     public function HandleUpdateDocument(DocumentRequest $request, $profile_id, $accountability_id)
     {
+        if ($locked = $this->HandleRejectIfLocked($profile_id, $accountability_id)) {
+            return $locked;
+        }
+        $this->HandleFindDetail($accountability_id, $request->id);
         try {
             DB::transaction(function () use ($request) {
                 ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
@@ -224,13 +260,24 @@ class AccountabilityController extends Controller
     }
     public function HandleDeleteDocument($profile_id, $accountability_id, $document_id)
     {
-        AccountabilityDetail::findOrFail($document_id)->delete();
+        if ($locked = $this->HandleRejectIfLocked($profile_id, $accountability_id)) {
+            return $locked;
+        }
+        $detail = $this->HandleFindDetail($accountability_id, $document_id);
+        DB::transaction(function () use ($detail) {
+            // Los campos adicionales no se borran en cascada (FK sin cascade)
+            AccountabilityField::where('accountability_detail_id', $detail->id)->delete();
+            $detail->delete();
+        });
         Session::flash('message', "Documento eliminado correctamente");
         Session::flash('type', 'positive');
         return Redirect::route('panel.accountability.manage.detail.index', [$profile_id, $accountability_id]);
     }
     public function HandleStoreDocument(DocumentRequest $request, $profile_id, $accountability_id)
     {
+        if ($locked = $this->HandleRejectIfLocked($profile_id, $accountability_id)) {
+            return $locked;
+        }
         try {
             DB::transaction(function () use ($request, $accountability_id) {
                 ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
@@ -437,6 +484,7 @@ SQL;
         $params_sap = Management::where('group', 'accountability')->get();
         if ($params_sap->where('name', 'hana_enable')->first()->value == 'SI') {
             $db = Config::get('database.connections.hana.database');
+            $value = str_replace("'", "''", (string) $value);
             $sql =
                 <<<SQL
             select
@@ -475,10 +523,15 @@ SQL;
     }
     public function HandleGetEmployee($value)
     {
+        if ($value === null || $value === '') {
+            return null;
+        }
         $params_sap = Management::where('group', 'accountability')->get();
         $hana = $params_sap->where('name', 'hana_enable')->first()->value == 'SI';
         if ($hana) {
             $db = Config::get('database.connections.hana.database');
+            // HANA se consulta con SQL armado: se escapan las comillas
+            $value = str_replace("'", "''", (string) $value);
             $sql =
                 <<<SQL
             select
@@ -495,10 +548,23 @@ SQL;
     }
     public function HandleDeleteAccountability($profile_id, $accountability_id)
     {
-        AccountabilityDetail::where('accountability_id', $accountability_id)->delete();
-        Accountability::findOrFail($accountability_id)->delete();
-        Session::flash('message', "Rendición eliminada correctamente");
-        Session::flash('type', 'positive');
+        $back = Redirect::route('panel.accountability.manage.index', $profile_id);
+        // Solo el dueño, y solo en borrador o rechazada: una enviada o autorizada no se borra
+        $accountability = Accountability::where('id', $accountability_id)->where('user_id', Auth::id())->firstOrFail();
+        if ($accountability->status !== null && $accountability->status !== 'Rechazado') {
+            return $back->with(['message' => "La rendición está {$accountability->status} y no se puede eliminar.", 'type' => 'negative']);
+        }
+
+        DB::transaction(function () use ($accountability) {
+            $detailIds = AccountabilityDetail::where('accountability_id', $accountability->id)->pluck('id');
+            // Los campos adicionales no se borran en cascada (FK sin cascade)
+            AccountabilityField::whereIn('accountability_detail_id', $detailIds)->delete();
+            AccountabilityDetail::whereIn('id', $detailIds)->delete();
+            $accountability->delete();
+        });
+
+        // Inertia necesita una redirección: sin respuesta no se ejecuta onSuccess en el front
+        return $back->with(['message' => 'Rendición eliminada correctamente', 'type' => 'positive']);
     }
     public function HandleStoreAccountability(AccountabilityRequest $request, $profile_id)
     {
@@ -512,8 +578,11 @@ SQL;
         $employee_code = null;
         if (!$profile->sin_empleado) {
             $employee = $this->HandleGetEmployee($request->employee);
-            $employee_name = $hana ? $employee['CardName'] : $employee->CardName;
-            $employee_code = $hana ? $employee['CardCode'] : $employee->CardCode;
+            if (empty($employee)) {
+                return Redirect::back()->withErrors(['employee' => 'El empleado no existe como socio de negocio en SAP.']);
+            }
+            $employee_name = data_get($employee, 'CardName');
+            $employee_code = data_get($employee, 'CardCode');
         }
 
         Accountability::create([
@@ -587,18 +656,22 @@ SQL;
     }
     public function HandleUpdateAccountability(AccountabilityRequest $request, $profile_id)
     {
+        if ($locked = $this->HandleRejectIfLocked($profile_id, $request->id)) {
+            return $locked;
+        }
         ['code' => $acctCode, 'name' => $aliasName] = $this->HandleParseAccountKey($request->account);
         $account = GeneralAccounts::where('account_code', $acctCode)->first();
-        $params_sap = Management::where('group', 'accountability')->get();
-        $hana = $params_sap->where('name', 'hana_enable')->first()->value == 'SI';
         $profile = Profile::where('id', $profile_id)->first();
 
         $employee_name = null;
         $employee_code = null;
         if (!$profile->sin_empleado) {
             $employee = $this->HandleGetEmployee($request->employee);
-            $employee_name = $hana ? $employee['CardName'] : $employee->CardName;
-            $employee_code = $hana ? $employee['CardCode'] : $employee->CardCode;
+            if (empty($employee)) {
+                return Redirect::back()->withErrors(['employee' => 'El empleado no existe como socio de negocio en SAP.']);
+            }
+            $employee_name = data_get($employee, 'CardName');
+            $employee_code = data_get($employee, 'CardCode');
         }
 
         Accountability::findOrFail($request->id)->fill([
